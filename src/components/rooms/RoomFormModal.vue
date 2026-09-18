@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppIcon from '@/components/common/AppIcon.vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, useId } from 'vue'
 import { ValidationError } from 'yup'
 import { roomService } from '@/services/room.service'
@@ -170,7 +171,7 @@ async function submit() {
           {{ statusOnly ? 'Update room status' : editing ? 'Edit room' : 'Add room' }}
         </h2>
         <button type="button" aria-label="Close dialog" :disabled="saving" @click="close">
-          &times;
+          <AppIcon name="close" />
         </button>
       </header>
       <p v-if="loading" role="status">Loading room information...</p>

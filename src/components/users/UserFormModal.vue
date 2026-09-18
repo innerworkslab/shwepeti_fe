@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppIcon from '@/components/common/AppIcon.vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, useId } from 'vue'
 import { ValidationError } from 'yup'
 import { userService } from '@/services/user.service'
@@ -123,7 +124,7 @@ async function submit() {
       <header>
         <h2 :id="`${prefix}-title`">{{ editing ? 'Edit user' : 'Add user' }}</h2>
         <button type="button" aria-label="Close dialog" :disabled="saving" @click="close">
-          &times;
+          <AppIcon name="close" />
         </button>
       </header>
       <p v-if="loading" role="status">Loading user...</p>

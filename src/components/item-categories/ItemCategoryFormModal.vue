@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppIcon from '@/components/common/AppIcon.vue'
 import { computed, nextTick, onMounted, onBeforeUnmount, reactive, ref, useId } from 'vue'
 import { ValidationError } from 'yup'
 import {
@@ -108,7 +109,7 @@ async function submit() {
           }}
         </h2>
         <button type="button" aria-label="Close dialog" :disabled="saving" @click="close">
-          Ã—
+          <AppIcon name="close" />
         </button>
       </header>
       <p v-if="statusOnly && category">{{ category.name }} Â· ID {{ category.id }}</p>

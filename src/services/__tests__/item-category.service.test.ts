@@ -8,17 +8,31 @@ describe('itemCategoryService', () => {
   it('posts only the selected boolean status to the category toggle endpoint', async () => {
     const post = vi.spyOn(apiClient, 'post').mockResolvedValue({ data: null })
     await itemCategoryService.toggleActive(12, { is_active: false })
-    expect(post).toHaveBeenCalledExactlyOnceWith('/item-categories/12/toggle-active', {
+    expect(post).toHaveBeenCalledExactlyOnceWith('/api/v1/admin/item-categories/12/toggle-active', {
       is_active: false,
     })
   })
   it('GETs the list with pagination, search, and cancellation', async () => {
     const data = { data: [], total: 0, page: 2, perPage: 10 }
-    const get = vi.spyOn(apiClient, 'get').mockResolvedValue({ data })
+    const get = vi
+      .spyOn(apiClient, 'get')
+      .mockResolvedValue({
+        data: {
+          success: true,
+          message: 'Loaded',
+          data: data.data,
+          meta: {
+            current_page: data.page,
+            per_page: data.perPage,
+            total: data.total,
+            last_page: 1,
+          },
+        },
+      })
     const signal = new AbortController().signal
     const params = { page: 2, perPage: 10, search: 'suite' }
     expect(await itemCategoryService.list(params, signal)).toEqual(data)
-    expect(get).toHaveBeenCalledWith('/item-categories', { params, signal })
+    expect(get).toHaveBeenCalledWith('/api/v1/admin/item-categories', { params, signal })
   })
 
   it('POSTs both create and update to the collection endpoint with exact payloads', async () => {
@@ -38,7 +52,7 @@ describe('itemCategoryService', () => {
     }
     await itemCategoryService.create(create)
     await itemCategoryService.update(update)
-    expect(post).toHaveBeenNthCalledWith(1, '/item-categories', create)
-    expect(post).toHaveBeenNthCalledWith(2, '/item-categories', update)
+    expect(post).toHaveBeenNthCalledWith(1, '/api/v1/admin/item-categories', create)
+    expect(post).toHaveBeenNthCalledWith(2, '/api/v1/admin/item-categories', update)
   })
 })

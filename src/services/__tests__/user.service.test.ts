@@ -14,13 +14,25 @@ describe('userService', () => {
     const list = { data: [user], total: 1, page: 1, perPage: 20 }
     const get = vi
       .spyOn(apiClient, 'get')
-      .mockResolvedValueOnce({ data: list })
+      .mockResolvedValueOnce({
+        data: {
+          success: true,
+          message: 'Loaded',
+          data: list.data,
+          meta: {
+            current_page: list.page,
+            per_page: list.perPage,
+            total: list.total,
+            last_page: 1,
+          },
+        },
+      })
       .mockResolvedValueOnce({ data: user })
     const signal = new AbortController().signal
     expect(await userService.list({ page: 1 }, signal)).toEqual(list)
     expect(await userService.get(9, signal)).toEqual(user)
-    expect(get).toHaveBeenNthCalledWith(1, '/users', { params: { page: 1 }, signal })
-    expect(get).toHaveBeenNthCalledWith(2, '/users/9', { signal })
+    expect(get).toHaveBeenNthCalledWith(1, '/api/v1/admin/users', { params: { page: 1 }, signal })
+    expect(get).toHaveBeenNthCalledWith(2, '/api/v1/admin/users/9', { signal })
   })
   it('POSTs create and update to /users, including ID only on update', async () => {
     const post = vi.spyOn(apiClient, 'post').mockResolvedValue({ data: null })
@@ -32,7 +44,7 @@ describe('userService', () => {
     }
     await userService.create(input)
     await userService.update({ ...input, id: 9 })
-    expect(post).toHaveBeenNthCalledWith(1, '/users', input)
-    expect(post).toHaveBeenNthCalledWith(2, '/users', { ...input, id: 9 })
+    expect(post).toHaveBeenNthCalledWith(1, '/api/v1/admin/users', input)
+    expect(post).toHaveBeenNthCalledWith(2, '/api/v1/admin/users', { ...input, id: 9 })
   })
 })

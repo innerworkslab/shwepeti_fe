@@ -48,6 +48,16 @@ async function render() {
       { path: '/rooms', component: { template: '<p>Rooms</p>' } },
       { path: '/room-categories', component: { template: '<p>Room categories</p>' } },
       { path: '/item-categories', component: { template: '<p>Item categories</p>' } },
+      { path: '/unit-groups', component: { template: '<p>Unit groups</p>' } },
+      { path: '/warehouses', component: { template: '<p>Warehouses</p>' } },
+      { path: '/stock-ins', component: { template: '<p>Stock In</p>' } },
+      { path: '/inventory-transfers', component: { template: '<p>Transfers</p>' } },
+      { path: '/inventory-adjustments', component: { template: '<p>Adjustments</p>' } },
+      { path: '/menu-categories', component: { template: '<p>Menu categories</p>' } },
+      { path: '/menus', component: { template: '<p>Menus</p>' } },
+      { path: '/inventory-ledgers', component: { template: '<p>Inventory Ledger</p>' } },
+      { path: '/items', component: { template: '<p>Items</p>' } },
+      { path: '/units', component: { template: '<p>Units</p>' } },
       { path: '/users', component: { template: '<p>Users</p>' } },
       { path: '/login', name: 'login', component: { template: '<p>Login</p>' } },
     ],
@@ -59,13 +69,13 @@ async function render() {
 }
 
 describe('admin navigation', () => {
-  it('shows the logo, current user and all five destinations with icons', async () => {
+  it('shows the logo, current user and all fourteen destinations with icons', async () => {
     const { wrapper } = await render()
     expect(wrapper.get('.brand').text()).toContain('SHWE PETIT')
     expect(wrapper.get('.user-profile').text()).toContain(user.name)
     expect(wrapper.get('.user-profile').text()).toContain('hotel administrator')
-    expect(wrapper.findAll('nav .nav-link')).toHaveLength(5)
-    expect(wrapper.findAll('nav .nav-link svg')).toHaveLength(5)
+    expect(wrapper.findAll('nav .nav-link')).toHaveLength(14)
+    expect(wrapper.findAll('nav .nav-link svg')).toHaveLength(14)
     expect(wrapper.get('nav [href="/users"]').attributes('aria-current')).toBe('page')
     expect(wrapper.get('nav [href="/users"]').classes()).toContain('is-active')
   })

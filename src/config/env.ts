@@ -1,4 +1,8 @@
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim() || '/api'
+// Backend root only; endpoint prefixes belong to the service methods.
+const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL?.trim() || 'http://localhost:8000').replace(
+  /\/$/,
+  '',
+)
 const apiTimeout = Number(import.meta.env.VITE_API_TIMEOUT ?? 15000)
 
 if (!Number.isFinite(apiTimeout) || apiTimeout <= 0) {

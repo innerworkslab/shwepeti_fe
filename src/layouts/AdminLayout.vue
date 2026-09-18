@@ -12,10 +12,19 @@ const route = useRoute()
 const router = useRouter()
 const session = useSessionStore()
 const links: { to: string; label: string; icon: IconName }[] = [
-  { to: '/', label: 'Dashboard', icon: 'dashboard' },
+  { to: '/menus', label: 'Menus', icon: 'menus' },
+  { to: '/menu-categories', label: 'Menu categories', icon: 'menuCategories' },
   { to: '/rooms', label: 'Rooms', icon: 'rooms' },
   { to: '/room-categories', label: 'Room categories', icon: 'categories' },
+  { to: '/inventory-adjustments', label: 'Adjustments', icon: 'adjustment' },
+  { to: '/inventory-transfers', label: 'Transfers', icon: 'transfer' },
+  { to: '/stock-ins', label: 'Stock In', icon: 'stockIn' },
+  { to: '/warehouses', label: 'Warehouses', icon: 'warehouse' },
+  { to: '/inventory-ledgers', label: 'Inventory Ledger', icon: 'ledger' },
+  { to: '/items', label: 'Items', icon: 'items' },
   { to: '/item-categories', label: 'Item categories', icon: 'items' },
+  { to: '/unit-groups', label: 'Unit groups', icon: 'categories' },
+  { to: '/units', label: 'Units', icon: 'items' },
   { to: '/users', label: 'Users', icon: 'users' },
 ]
 const media = window.matchMedia('(max-width: 760px)')

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppIcon from '@/components/common/AppIcon.vue'
 import { ref } from 'vue'
 import DataTable from '@/components/common/DataTable.vue'
 import ItemCategoryFormModal from '@/components/item-categories/ItemCategoryFormModal.vue'
@@ -94,19 +95,7 @@ function saved() {
             class="icon-button"
             @click="openForm(row, true)"
           >
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 24 24"
-              width="18"
-              height="18"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="m16 4 4 4M4 20l4-1L20 7a2.8 2.8 0 0 0-4-4L4 15l-1 6Z" />
-            </svg>
+            <AppIcon name="pencil" :size="18" />
           </button>
         </div>
       </template>

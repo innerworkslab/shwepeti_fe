@@ -42,10 +42,10 @@ export function parseLoginResponse(response: unknown): LoginResult {
 
 export const authService = {
   async login(input: LoginInput): Promise<LoginResult> {
-    const response = await apiClient.post<unknown>('/login', input)
+    const response = await apiClient.post<unknown>('/api/v1/admin/login', input)
     return parseLoginResponse(response.data)
   },
   async logout(): Promise<void> {
-    await apiClient.post('/logout')
+    await apiClient.post('/api/v1/admin/logout')
   },
 }
