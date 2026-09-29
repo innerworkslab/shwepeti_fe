@@ -8,7 +8,7 @@ export const apiClient = axios.create({
   headers: { Accept: 'application/json' },
 })
 
-// Set after login, clear on logout. Tokens are kept in memory only.
+// Set on login/session restoration and clear on logout.
 export function setAccessToken(token: string | null): void {
   if (token) apiClient.defaults.headers.common.Authorization = `Bearer ${token}`
   else delete apiClient.defaults.headers.common.Authorization

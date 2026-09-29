@@ -1,3 +1,4 @@
+import { mountLargeFormFlow } from './mountLargeFormFlow'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import RoomsView from '../RoomsView.vue'
@@ -30,7 +31,7 @@ const room = {
 const wrappers: ReturnType<typeof mount>[] = []
 const descriptors = Object.getOwnPropertyDescriptors(HTMLDialogElement.prototype)
 async function render() {
-  const wrapper = mount(RoomsView, { attachTo: document.body })
+  const wrapper = await mountLargeFormFlow(RoomsView, 'rooms')
   wrappers.push(wrapper)
   await flushPromises()
   return wrapper
@@ -99,7 +100,7 @@ describe('Rooms page', () => {
       price: 120,
       room_beds: room.room_beds,
     })
-    expect(wrapper.find('dialog').exists()).toBe(false)
+    expect(wrapper.find('[data-form-surface]').exists()).toBe(false)
     expect(roomService.list).toHaveBeenCalledTimes(2)
   })
 
@@ -111,11 +112,11 @@ describe('Rooms page', () => {
     await wrapper.get('form').trigger('submit')
     await flushPromises()
     expect(roomService.create).not.toHaveBeenCalled()
-    expect(wrapper.get('dialog').text()).toContain('Room name is required.')
-    expect(wrapper.get('dialog').text()).toContain('Choose a room category.')
-    expect(wrapper.get('dialog').text()).toContain('Price cannot be negative.')
-    expect(wrapper.get('dialog').text()).toContain('Bed type is required.')
-    expect(wrapper.get('dialog').text()).toContain('Quantity must be a whole number.')
+    expect(wrapper.get('[data-form-surface]').text()).toContain('Room name is required.')
+    expect(wrapper.get('[data-form-surface]').text()).toContain('Choose a room category.')
+    expect(wrapper.get('[data-form-surface]').text()).toContain('Price cannot be negative.')
+    expect(wrapper.get('[data-form-surface]').text()).toContain('Bed type is required.')
+    expect(wrapper.get('[data-form-surface]').text()).toContain('Quantity must be a whole number.')
   })
 
   it('loads fresh details and posts edited beds with the existing ID', async () => {
@@ -146,7 +147,7 @@ describe('Rooms page', () => {
     await wrapper.get('[aria-label="Remove bed 1"]').trigger('click')
     await wrapper.get('form').trigger('submit')
     await flushPromises()
-    expect(wrapper.get('dialog').text()).toContain('Add at least one bed.')
+    expect(wrapper.get('[data-form-surface]').text()).toContain('Add at least one bed.')
     expect(roomService.create).not.toHaveBeenCalled()
     await wrapper.get('.beds-heading button').trigger('click')
     await wrapper.get('[name="room_beds[0].bed_type"]').setValue('custom_bed')
@@ -179,9 +180,11 @@ describe('Rooms page', () => {
     )
     const wrapper = await render()
     await openCreate(wrapper)
-    expect(wrapper.get('dialog [role="alert"]').text()).toContain('Categories unavailable.')
+    expect(wrapper.get('[data-form-surface] [role="alert"]').text()).toContain(
+      'Categories unavailable.',
+    )
     expect(wrapper.get('[type="submit"]').attributes('disabled')).toBeDefined()
-    await wrapper.get('dialog [role="alert"] button').trigger('click')
+    await wrapper.get('[data-form-surface] [role="alert"] button').trigger('click')
     await flushPromises()
     expect(wrapper.find('[name="room_category_id"]').exists()).toBe(true)
   })
@@ -193,7 +196,7 @@ describe('Rooms page', () => {
     await fill(wrapper)
     await wrapper.get('form').trigger('submit')
     await flushPromises()
-    expect(wrapper.get('dialog [role="alert"]').text()).toBe('Save failed.')
+    expect(wrapper.get('[data-form-surface] [role="alert"]').text()).toBe('Save failed.')
     let done!: () => void
     vi.mocked(roomService.create).mockImplementationOnce(
       () =>
@@ -204,12 +207,13 @@ describe('Rooms page', () => {
     await wrapper.get('form').trigger('submit')
     await flushPromises()
     await wrapper.get('form').trigger('submit')
-    await wrapper.get('dialog').trigger('cancel')
+    await wrapper.get('[data-form-surface]').trigger('cancel')
+    await flushPromises()
     expect(roomService.create).toHaveBeenCalledTimes(2)
-    expect(wrapper.find('dialog').exists()).toBe(true)
+    expect(wrapper.find('[data-form-surface]').exists()).toBe(true)
     done()
     await flushPromises()
-    expect(wrapper.find('dialog').exists()).toBe(false)
+    expect(wrapper.find('[data-form-surface]').exists()).toBe(false)
   })
 
   it('aborts loading when dismissed and ignores late room details', async () => {
@@ -222,8 +226,10 @@ describe('Rooms page', () => {
     )
     const wrapper = await render()
     await wrapper.get('[aria-label="Edit Room 101"]').trigger('click')
+    await flushPromises()
     const signal = vi.mocked(roomService.get).mock.lastCall?.[1]
-    await wrapper.get('dialog').trigger('cancel')
+    await wrapper.get('[data-form-surface]').trigger('cancel')
+    await flushPromises()
     expect(signal?.aborted).toBe(true)
     await openCreate(wrapper)
     done(room)

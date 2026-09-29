@@ -80,7 +80,7 @@ List services use `{ success, message, data, meta: { current_page, per_page, tot
 
 Axios handles JSON serialization. The response interceptor normalizes failed requests to `ApiError` with optional HTTP status, code, and response details. Cancellations remain Axios cancellation errors; pass an `AbortController.signal` to list/get and detect cancellation with `axios.isCancel(error)`.
 
-Login now populates the session store and calls `setAccessToken(token)` on the shared Axios client. Every service request then includes `Authorization: Bearer <token>`. Tokens live in memory and reset on refresh. Token refresh and cookie authentication are not configured. Requests are not automatically retried.
+Login now populates the session store and calls `setAccessToken(token)` on the shared Axios client. Every service request then includes `Authorization: Bearer <token>`. The token and basic user profile persist in sessionStorage for the current tab and are restored on refresh. Token refresh and cookie authentication are not configured. Requests are not automatically retried.
 
 ## Navigation and authentication
 
@@ -91,7 +91,7 @@ The admin shell has a Shwe Petit monogram at the top left, the signed-in user's 
 - The Pinia session store installs the returned token on the single Axios client, including for existing list/create/update/status services and logout.
 - All admin routes require a local authenticated session; successful login returns to the requested protected page. Backend authorization still enforces access to API resources.
 - Log out POSTs `/api/v1/admin/logout` with the bearer header, then clears the user and token and returns to `/login`. If the request fails, the session is retained and an error permits retry.
-- Session state is in memory only. Reloading the browser requires signing in again; no token is persisted in localStorage or sessionStorage.
+- Session state is restored from sessionStorage before protected-route checks. Reloading keeps the current tab signed in; logout clears the persisted session.
 
 ## Checks
 
@@ -235,7 +235,7 @@ Visit `/stock-ins` for the searchable, paginated list. GET `/api/v1/admin/stock-
 - Create: POST `/api/v1/admin/stock-ins` with `{ warehouse_id, transaction_date, items: [{ item_id, unit_id, quantity, unit_cost }] }`.
 - Status pencil: POST `/api/v1/admin/stock-ins/:id/status` with `{ status: "posted" | "cancelled" }`.
 
-The creation modal loads all warehouse, item, and unit options. It requires a date/time and at least one item, with positive finite quantities and nonnegative finite unit costs. Date/time is sent as `YYYY-MM-DD HH:mm:ss`, preserving the entered local time. Dynamic rows can be added or removed. No edit or detail endpoint is assumed; the status modal identifies the selected list record and submits only its status. Backend errors remain visible for retry, and successful submissions refresh the list.
+The creation page loads all warehouse, item, and unit options. It requires a date/time and at least one item, with positive finite quantities and nonnegative finite unit costs. Date/time is sent as `YYYY-MM-DD HH:mm:ss`, preserving the entered local time. Dynamic rows can be added or removed. No edit or detail endpoint is assumed; the status modal identifies the selected list record and submits only its status. Backend errors remain visible for retry, and successful submissions refresh the list.
 
 ## Transfers
 
@@ -276,3 +276,53 @@ The Yup-validated form loads all category/item/unit pages and supports adding/re
 Visit `/inventory-ledgers` for a read-only paginated/searchable list from GET `/api/v1/admin/inventory-ledgers`. It uses the standard collection envelope and bearer token. There are no create/edit/status controls or mutation methods.
 
 Columns match the supplied response: transaction date/type, warehouse, item, unit, quantity, base quantity, balance quantity, unit/total costs, reference type/ID, batch, expiry date, remark, and creator. Related names are displayed with ID fallbacks. Decimal strings are preserved without rounding; null costs/dates display a dash. The shared table provides horizontal scrolling for the wide ledger.
+
+## Inventory Stock Balances
+
+Visit `/inventory-stock-balances` for a read-only list from GET `/api/v1/admin/inventory-stock-balances`. Warehouse and item dropdowns load all existing option pages and send numeric `warehouse_id` and `item_id` filters. Filters are initially unset, reset pagination when changed, and persist across page changes. Clear filters returns to all balances. No create/edit/status actions are provided. The standard paginated envelope is normalized; provisional columns are warehouse, item, unit, and quantity pending a sample row response.
+
+## Cashbooks
+
+Visit `/cashbooks` for the shared searchable paginated table. All requests use `/api/v1/admin` and the bearer token.
+
+- GET `/cashbooks` lists records using the standard collection envelope.
+- POST `/cashbooks` creates with `{ code, name, type, description }`. Opening balance is omitted.
+- GET `/cashbooks/:id` loads fresh details before editing/status changes.
+- POST `/cashbooks` updates with only `{ id, code, name, type }`, matching the supplied edit payload.
+- POST `/cashbooks/:id/toggle-active` sends boolean `is_active`.
+
+Name/code/type are required. Type defaults to `cash` with custom text allowed until the full type list is provided. Description is available on create only. Saves refresh the list; errors support retry and input is retained.
+
+### Cashbook transactions
+
+`/cashbook-transactions` lists transactions using the shared paginated table with optional From/To date filters. Add transaction loads all cashbooks into a dropdown and validates cashbook, positive amount, type, and local transaction date/time with Yup. Type suggests `income` and accepts other backend values. Details are fetched from GET `/api/v1/admin/cashbook-transactions/:id`. Creation posts only cashbook_id, transaction_type, amount, transaction_date, and remark to `/api/v1/admin/cashbook-transactions`.
+
+### Suppliers
+
+`/suppliers` provides the shared paginated, searchable list. `/suppliers/create` and `/suppliers/:id/edit` are standalone Yup-validated form pages. Editing loads GET `/api/v1/admin/suppliers/:id`; both forms POST `/api/v1/admin/suppliers`, including `id` only when updating. Status is included as a boolean in the form. Phone and bank account numbers remain strings, and credit limit must be finite and nonnegative. Supplier type suggests `wholesale` and allows other values.
+
+### Supplier AP
+
+`/supplier-ap-balances` lists paginated supplier balances. Supplier rows link to `/suppliers/:id/ap-ledgers`, which fetches `/api/v1/admin/supplier-ap-ledgers` with the route supplier ID on every page request. `/supplier-ap-payments/create` provides a Yup-validated payment form with all-page supplier/cashbook dropdowns and local payment date formatting.
+
+Balance and ledger columns are provisional pending example response records. Payment update and posted-status service methods and schemas are implemented, but corresponding UI actions await a confirmed source of payment IDs and payment details. Balance/ledger IDs are not assumed to be payment IDs.
+
+### Asset categories
+
+`/asset-categories` uses the shared searchable, paginated table with an optional `parent_id` filter. Yup-validated create/edit dialogs load parent choices across all asset-category pages; no parent sends `null`. Editing excludes the category itself and its descendants as parents. Edit/status dialogs GET `/api/v1/admin/asset-categories/:id` before saving. Create/update POST the collection endpoint, adding `id` for updates; active status POSTs a boolean to `/:id/toggle-active`.
+
+### Fixed assets
+
+`/fixed-assets` provides category, cashbook, and date-range filters. `/fixed-assets/create` and `/fixed-assets/:id/edit` use standalone Yup-validated forms with all-page category/cashbook dropdowns. Edit fetches the latest detail by ID. Create/update post the specified fields and document name/path pairs to `/api/v1/admin/fixed-assets`, including ID only on update. Status supports posted/cancelled through POST `/:id/status`.
+
+Documents have Lucide icons and removable rows; removal changes the saved document list and does not delete a remote file. Full HTTP(S) document URLs open for preview. Upload and relative stored-path previews require the backend upload/public-file URL contract, which has not been supplied. No upload endpoint or `/storage` URL is assumed.
+
+### Large forms and page navigation
+
+Create/edit forms with more than five inputs use dedicated pages. Items, Menus, and Rooms use `/<resource>/create` and `/<resource>/:id/edit`; Stock In, Transfers, and Adjustments use their `/create` routes (no edit APIs were supplied for those transactions). Rooms are included because bed rows can grow beyond five inputs. Supplier and Fixed Asset forms remain dedicated pages. Smaller create/edit forms and status/price/availability actions remain dialogs.
+
+The new nested form routes preserve table filters and pagination on return and refresh the existing list after a successful save. Invalid edit IDs are rejected before loading details, leaving while saving is blocked, and requests are aborted when a form unmounts.
+
+### Session persistence
+
+Login persists the bearer token and basic user profile in `sessionStorage` for the current tab. The session store restores both synchronously before route guards and protected API calls, so refreshing a page retains its URL and login. Logout clears storage, the user, and the Axios authorization header. Malformed saved sessions are discarded. Passwords are never stored. Closing the tab ends this browser session; persistence across browser restarts is not enabled.

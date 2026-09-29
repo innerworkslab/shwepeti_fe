@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppIcon from '@/components/common/AppIcon.vue'
 import { ref } from 'vue'
 import DataTable from '@/components/common/DataTable.vue'
 import UserFormModal from '@/components/users/UserFormModal.vue'
@@ -65,11 +66,18 @@ function saved() {
       @refresh="refresh"
     >
       <template #toolbar
-        ><button type="button" class="primary" @click="openForm()">Add user</button></template
+        ><button type="button" class="primary" @click="openForm()">
+          <AppIcon name="add" :size="16" />Add user
+        </button></template
       >
       <template #cell-actions="{ row }"
-        ><button type="button" :aria-label="`Edit ${row.name}`" @click="openForm(row.id)">
-          Edit
+        ><button
+          type="button"
+          :aria-label="`Edit ${row.name}`"
+          @click="openForm(row.id)"
+          :title="`Edit ${row.name}`"
+        >
+          <AppIcon name="pencil" :size="18" /><span class="action-label">Edit</span>
         </button></template
       >
     </DataTable>

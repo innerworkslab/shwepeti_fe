@@ -110,7 +110,7 @@ async function submit() {
           <AppIcon name="close" />
         </button>
       </header>
-      <p v-if="statusOnly && category">{{ category.name }} Â· ID {{ category.id }}</p>
+      <p v-if="statusOnly && category">{{ category.name }} | ID {{ category.id }}</p>
       <p v-if="saveError" role="alert" class="error">{{ saveError }}</p>
       <fieldset :disabled="saving">
         <p v-if="errors.id" role="alert" class="error">{{ errors.id }}</p>
@@ -168,7 +168,7 @@ async function submit() {
         <button type="submit" class="primary" :disabled="saving">
           {{
             saving
-              ? 'Savingâ€¦'
+              ? 'Saving...'
               : statusOnly
                 ? 'Update status'
                 : editing

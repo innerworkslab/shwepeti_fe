@@ -1,3 +1,4 @@
+import { mountLargeFormFlow } from './mountLargeFormFlow'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import MenusView from '../MenusView.vue'
@@ -35,8 +36,8 @@ const group = {
 }
 const wrappers: ReturnType<typeof mount>[] = []
 const dialogDescriptors = Object.getOwnPropertyDescriptors(HTMLDialogElement.prototype)
-function render() {
-  const wrapper = mount(MenusView, { attachTo: document.body })
+async function render() {
+  const wrapper = await mountLargeFormFlow(MenusView, 'menus')
   wrappers.push(wrapper)
   return wrapper
 }
@@ -108,7 +109,7 @@ async function openCreate(wrapper: ReturnType<typeof mount>) {
 }
 describe('Menus', () => {
   it('defaults to active and supports inactive and all filters', async () => {
-    const wrapper = render()
+    const wrapper = await render()
     await flushPromises()
     expect(menuService.list).toHaveBeenLastCalledWith(
       expect.objectContaining({ is_active: 1, page: 1 }),
@@ -128,7 +129,7 @@ describe('Menus', () => {
     )
   })
   it('creates with nullable cost/image and validated recipe rows', async () => {
-    const wrapper = render()
+    const wrapper = await render()
     await flushPromises()
     await openCreate(wrapper)
     await wrapper
@@ -141,7 +142,9 @@ describe('Menus', () => {
     await wrapper.get('form').trigger('submit')
     await flushPromises()
     expect(menuService.create).not.toHaveBeenCalled()
-    expect(wrapper.get('dialog').text()).toContain('Quantity must be greater than zero.')
+    expect(wrapper.get('[data-form-surface]').text()).toContain(
+      'Quantity must be greater than zero.',
+    )
     await wrapper.get('[name="recipes[0].quantity"]').setValue('150')
     await wrapper.get('[name="recipes[0].remark"]').setValue('Chicken portion')
     await wrapper.get('form').trigger('submit')
@@ -151,7 +154,7 @@ describe('Menus', () => {
     expect(menuService.list).toHaveBeenCalledTimes(2)
   })
   it('loads fresh details, removes recipes, and updates with ID', async () => {
-    const wrapper = render()
+    const wrapper = await render()
     await flushPromises()
     await wrapper.get('[aria-label="Edit Fried Rice"]').trigger('click')
     await flushPromises()
@@ -170,7 +173,7 @@ describe('Menus', () => {
     })
   })
   it.each([true, false])('updates active status independently to %s', async (value) => {
-    const wrapper = render()
+    const wrapper = await render()
     await flushPromises()
     await wrapper.get('[aria-label="Update status for Fried Rice"]').trigger('click')
     await flushPromises()
@@ -182,7 +185,7 @@ describe('Menus', () => {
     expect(menuCategoryService.listOptions).not.toHaveBeenCalled()
   })
   it.each([true, false])('updates availability independently to %s', async (value) => {
-    const wrapper = render()
+    const wrapper = await render()
     await flushPromises()
     await wrapper.get('[aria-label="Update availability for Fried Rice"]').trigger('click')
     await flushPromises()
@@ -195,23 +198,23 @@ describe('Menus', () => {
   it('retries failed detail loading and preserves missing recipe options', async () => {
     vi.mocked(menuService.get).mockRejectedValueOnce(new Error('Unavailable'))
     vi.mocked(itemService.listOptions).mockResolvedValue([])
-    const wrapper = render()
+    const wrapper = await render()
     await flushPromises()
     await wrapper.get('[aria-label="Edit Fried Rice"]').trigger('click')
     await flushPromises()
     expect(wrapper.get('[type="submit"]').attributes('disabled')).toBeDefined()
-    await wrapper.get('dialog [role="alert"] button').trigger('click')
+    await wrapper.get('[data-form-surface] [role="alert"] button').trigger('click')
     await flushPromises()
     expect(wrapper.get('[name="recipes[0].item_id"]').text()).toContain('Item #1 (not in list)')
   })
   it('retains input after save failure and prevents duplicate requests', async () => {
     vi.mocked(menuService.create).mockRejectedValueOnce(new Error('Save failed'))
-    const wrapper = render()
+    const wrapper = await render()
     await flushPromises()
     await openCreate(wrapper)
     await wrapper.get('form').trigger('submit')
     await flushPromises()
-    expect(wrapper.get('dialog [role="alert"]').text()).toBe('Save failed')
+    expect(wrapper.get('[data-form-surface] [role="alert"]').text()).toBe('Save failed')
     let done!: () => void
     vi.mocked(menuService.create).mockImplementationOnce(
       () =>
@@ -222,11 +225,12 @@ describe('Menus', () => {
     await wrapper.get('form').trigger('submit')
     await flushPromises()
     await wrapper.get('form').trigger('submit')
-    await wrapper.get('dialog').trigger('cancel')
+    await wrapper.get('[data-form-surface]').trigger('cancel')
+    await flushPromises()
     expect(menuService.create).toHaveBeenCalledTimes(2)
-    expect(wrapper.find('dialog').exists()).toBe(true)
+    expect(wrapper.find('[data-form-surface]').exists()).toBe(true)
     done()
     await flushPromises()
-    expect(wrapper.find('dialog').exists()).toBe(false)
+    expect(wrapper.find('[data-form-surface]').exists()).toBe(false)
   })
 })

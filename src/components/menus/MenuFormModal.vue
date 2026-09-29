@@ -17,7 +17,11 @@ import {
 } from '@/schemas/menu.schema'
 import { toApiError } from '@/services/api/api-error'
 
-const props = defineProps<{ menuId?: number | null; mode?: 'edit' | 'status' | 'availability' }>()
+const props = defineProps<{
+  page?: boolean
+  menuId?: number | null
+  mode?: 'edit' | 'status' | 'availability'
+}>()
 const emit = defineEmits<{ close: []; saved: [] }>()
 const editing = computed(() => props.menuId != null)
 const prefix = useId()
@@ -63,6 +67,7 @@ function removeRecipe(index: number) {
 }
 const loading = ref(true)
 const saving = ref(false)
+defineExpose({ saving })
 const loadError = ref('')
 const saveError = ref('')
 const errors = ref<Record<string, string>>({})
@@ -123,14 +128,14 @@ async function load() {
 
 onMounted(() => {
   previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null
-  dialog.value?.showModal()
+  if (!props.page) dialog.value?.showModal()
   void load()
 })
 onBeforeUnmount(() => {
   disposed = true
   controller?.abort()
-  dialog.value?.close()
-  previousFocus?.focus()
+  if (!props.page) dialog.value?.close()
+  if (!props.page) previousFocus?.focus()
 })
 function close() {
   if (!saving.value) emit('close')
@@ -207,7 +212,10 @@ async function submit() {
 </script>
 
 <template>
-  <dialog
+  <component
+    :is="page ? 'section' : 'dialog'"
+    data-form-surface
+    :class="{ 'form-page': page }"
     ref="dialog"
     class="menu-modal"
     :aria-labelledby="`${prefix}-title`"
@@ -215,7 +223,7 @@ async function submit() {
   >
     <form novalidate :aria-busy="loading || saving" @submit.prevent="submit">
       <header>
-        <h2 :id="`${prefix}-title`">
+        <component :is="page ? 'h1' : 'h2'" :id="`${prefix}-title`">
           {{
             statusOnly
               ? 'Update menu status'
@@ -225,8 +233,13 @@ async function submit() {
                   ? 'Edit menu'
                   : 'Add menu'
           }}
-        </h2>
-        <button type="button" aria-label="Close dialog" :disabled="saving" @click="close">
+        </component>
+        <button
+          type="button"
+          :aria-label="page ? 'Back to list' : 'Close dialog'"
+          :disabled="saving"
+          @click="close"
+        >
           <AppIcon name="close" />
         </button>
       </header>
@@ -533,7 +546,7 @@ async function submit() {
         </button>
       </footer>
     </form>
-  </dialog>
+  </component>
 </template>
 <style scoped>
 .checkbox-label {
@@ -658,5 +671,19 @@ h4 {
 }
 textarea {
   resize: vertical;
+}
+.form-page {
+  width: 100%;
+  max-width: 1100px;
+  max-height: none;
+  overflow: visible;
+  margin: 0;
+  box-shadow: none;
+  background: white;
+  box-sizing: border-box;
+}
+.form-page h1 {
+  margin: 0;
+  font-size: 1.5rem;
 }
 </style>

@@ -1,3 +1,4 @@
+import { mountLargeFormFlow } from './mountLargeFormFlow'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import StockInsView from '../StockInsView.vue'
@@ -24,8 +25,8 @@ const group = {
 }
 const wrappers: ReturnType<typeof mount>[] = []
 const dialogDescriptors = Object.getOwnPropertyDescriptors(HTMLDialogElement.prototype)
-function render() {
-  const wrapper = mount(StockInsView, { attachTo: document.body })
+async function render() {
+  const wrapper = await mountLargeFormFlow(StockInsView, 'stock-ins')
   wrappers.push(wrapper)
   return wrapper
 }
@@ -92,22 +93,26 @@ async function fill(wrapper: ReturnType<typeof mount>) {
 }
 describe('Stock In', () => {
   it('validates required fields and creates the supplied payload, then refreshes', async () => {
-    const wrapper = render()
+    const wrapper = await render()
     await flushPromises()
     expect(wrapper.get('tbody').text()).toContain('Kitchen Warehouse')
     await wrapper.get('button.primary').trigger('click')
     await flushPromises()
+    expect(wrapper.find('dialog').exists()).toBe(false)
+    expect(wrapper.get('[data-form-surface]').classes()).toContain('form-page')
     await wrapper.get('form').trigger('submit')
     await flushPromises()
     expect(stockInService.create).not.toHaveBeenCalled()
-    expect(wrapper.get('dialog').text()).toContain('Choose a warehouse.')
+    expect(wrapper.get('[data-form-surface]').text()).toContain('Choose a warehouse.')
     await fill(wrapper)
     await wrapper.get('[name="items[0].quantity"]').setValue('0')
     await wrapper.get('[name="items[0].unit_cost"]').setValue('-1')
     await wrapper.get('form').trigger('submit')
     await flushPromises()
-    expect(wrapper.get('dialog').text()).toContain('Quantity must be greater than zero.')
-    expect(wrapper.get('dialog').text()).toContain('Unit cost cannot be negative.')
+    expect(wrapper.get('[data-form-surface]').text()).toContain(
+      'Quantity must be greater than zero.',
+    )
+    expect(wrapper.get('[data-form-surface]').text()).toContain('Unit cost cannot be negative.')
     await fill(wrapper)
     await wrapper.get('form').trigger('submit')
     await flushPromises()
@@ -117,10 +122,10 @@ describe('Stock In', () => {
       items: [{ item_id: 1, unit_id: 1, quantity: 10, unit_cost: 5000 }],
     })
     expect(stockInService.list).toHaveBeenCalledTimes(2)
-    expect(wrapper.find('dialog').exists()).toBe(false)
+    expect(wrapper.find('[data-form-surface]').exists()).toBe(false)
   })
   it('supports adding and removing lines and requires at least one', async () => {
-    const wrapper = render()
+    const wrapper = await render()
     await flushPromises()
     await wrapper.get('button.primary').trigger('click')
     await flushPromises()
@@ -147,17 +152,17 @@ describe('Stock In', () => {
     await wrapper.get('[aria-label="Remove item 1"]').trigger('click')
     await wrapper.get('form').trigger('submit')
     await flushPromises()
-    expect(wrapper.get('dialog').text()).toContain('Add at least one item.')
+    expect(wrapper.get('[data-form-surface]').text()).toContain('Add at least one item.')
     expect(stockInService.create).toHaveBeenCalledTimes(1)
   })
   it.each(['posted', 'cancelled'])(
     'updates status to %s without loading lookups',
     async (status) => {
-      const wrapper = render()
+      const wrapper = await render()
       await flushPromises()
       await wrapper.get('[aria-label="Update status for stock in #7"]').trigger('click')
       await flushPromises()
-      expect(wrapper.get('dialog').text()).toContain('Stock in #7')
+      expect(wrapper.get('[data-form-surface]').text()).toContain('Stock in #7')
       await wrapper.get('form').trigger('submit')
       await flushPromises()
       expect(stockInService.updateStatus).not.toHaveBeenCalled()
@@ -173,25 +178,25 @@ describe('Stock In', () => {
   )
   it('blocks submission after lookup failure and retries', async () => {
     vi.mocked(warehouseService.listOptions).mockRejectedValueOnce(new Error('Unavailable'))
-    const wrapper = render()
+    const wrapper = await render()
     await flushPromises()
     await wrapper.get('button.primary').trigger('click')
     await flushPromises()
     expect(wrapper.get('[type="submit"]').attributes('disabled')).toBeDefined()
-    await wrapper.get('dialog [role="alert"] button').trigger('click')
+    await wrapper.get('[data-form-surface] [role="alert"] button').trigger('click')
     await flushPromises()
     expect(wrapper.get('[name="warehouse_id"]').text()).toContain('Kitchen Warehouse')
   })
   it('preserves fields on save failure and prevents duplicate creation', async () => {
     vi.mocked(stockInService.create).mockRejectedValueOnce(new Error('Save failed'))
-    const wrapper = render()
+    const wrapper = await render()
     await flushPromises()
     await wrapper.get('button.primary').trigger('click')
     await flushPromises()
     await fill(wrapper)
     await wrapper.get('form').trigger('submit')
     await flushPromises()
-    expect(wrapper.get('dialog [role="alert"]').text()).toBe('Save failed')
+    expect(wrapper.get('[data-form-surface] [role="alert"]').text()).toBe('Save failed')
     expect((wrapper.get('[name="items[0].quantity"]').element as HTMLInputElement).value).toBe('10')
     let done!: () => void
     vi.mocked(stockInService.create).mockImplementationOnce(
@@ -203,12 +208,13 @@ describe('Stock In', () => {
     await wrapper.get('form').trigger('submit')
     await flushPromises()
     await wrapper.get('form').trigger('submit')
-    await wrapper.get('dialog').trigger('cancel')
+    await wrapper.get('[data-form-surface]').trigger('cancel')
+    await flushPromises()
     expect(stockInService.create).toHaveBeenCalledTimes(2)
-    expect(wrapper.find('dialog').exists()).toBe(true)
+    expect(wrapper.find('[data-form-surface]').exists()).toBe(true)
     done()
     await flushPromises()
-    expect(wrapper.find('dialog').exists()).toBe(false)
+    expect(wrapper.find('[data-form-surface]').exists()).toBe(false)
   })
   it('aborts outstanding option requests when dismissed', async () => {
     let done!: (value: []) => void
@@ -218,14 +224,16 @@ describe('Stock In', () => {
           done = resolve
         }),
     )
-    const wrapper = render()
+    const wrapper = await render()
     await flushPromises()
     await wrapper.get('button.primary').trigger('click')
+    await flushPromises()
     const signal = vi.mocked(warehouseService.listOptions).mock.lastCall?.[0]
-    await wrapper.get('dialog').trigger('cancel')
+    await wrapper.get('[data-form-surface]').trigger('cancel')
+    await flushPromises()
     expect(signal?.aborted).toBe(true)
     done([])
     await flushPromises()
-    expect(wrapper.find('dialog').exists()).toBe(false)
+    expect(wrapper.find('[data-form-surface]').exists()).toBe(false)
   })
 })

@@ -13,7 +13,7 @@ import type { Warehouse } from '@/types/warehouse'
 import type { Item } from '@/types/item'
 import type { Unit } from '@/types/unit'
 
-const props = defineProps<{ stockIn?: StockIn | null }>()
+const props = defineProps<{ page?: boolean; stockIn?: StockIn | null }>()
 const emit = defineEmits<{ close: []; saved: [] }>()
 const statusOnly = computed(() => props.stockIn != null)
 const prefix = useId()
@@ -42,6 +42,7 @@ const items = ref<Item[]>([])
 const units = ref<Unit[]>([])
 const loading = ref(true)
 const saving = ref(false)
+defineExpose({ saving })
 const loadError = ref('')
 const saveError = ref('')
 const errors = ref<Record<string, string>>({})
@@ -89,14 +90,14 @@ async function load() {
 }
 onMounted(() => {
   previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null
-  dialog.value?.showModal()
+  if (!props.page) dialog.value?.showModal()
   void load()
 })
 onBeforeUnmount(() => {
   disposed = true
   controller?.abort()
-  dialog.value?.close()
-  previousFocus?.focus()
+  if (!props.page) dialog.value?.close()
+  if (!props.page) previousFocus?.focus()
 })
 function close() {
   if (!saving.value) emit('close')
@@ -148,7 +149,10 @@ async function submit() {
 }
 </script>
 <template>
-  <dialog
+  <component
+    :is="page ? 'section' : 'dialog'"
+    data-form-surface
+    :class="{ 'form-page': page }"
     ref="dialog"
     class="stock-in-modal"
     :aria-labelledby="`${prefix}-title`"
@@ -156,10 +160,15 @@ async function submit() {
   >
     <form novalidate :aria-busy="loading || saving" @submit.prevent="submit">
       <header>
-        <h2 :id="`${prefix}-title`">
+        <component :is="page ? 'h1' : 'h2'" :id="`${prefix}-title`">
           {{ statusOnly ? 'Update stock in status' : 'Add stock in' }}
-        </h2>
-        <button type="button" aria-label="Close dialog" :disabled="saving" @click="close">
+        </component>
+        <button
+          type="button"
+          :aria-label="page ? 'Back to list' : 'Close dialog'"
+          :disabled="saving"
+          @click="close"
+        >
           <AppIcon name="close" />
         </button>
       </header>
@@ -366,7 +375,7 @@ async function submit() {
         </button>
       </footer>
     </form>
-  </dialog>
+  </component>
 </template>
 <style scoped>
 .stock-in-modal {
@@ -482,5 +491,19 @@ h4 {
   .line-fields {
     grid-template-columns: 1fr;
   }
+}
+.form-page {
+  width: 100%;
+  max-width: 1100px;
+  max-height: none;
+  overflow: visible;
+  margin: 0;
+  box-shadow: none;
+  background: white;
+  box-sizing: border-box;
+}
+.form-page h1 {
+  margin: 0;
+  font-size: 1.5rem;
 }
 </style>

@@ -56,6 +56,13 @@ async function render() {
       { path: '/menu-categories', component: { template: '<p>Menu categories</p>' } },
       { path: '/menus', component: { template: '<p>Menus</p>' } },
       { path: '/inventory-ledgers', component: { template: '<p>Inventory Ledger</p>' } },
+      { path: '/inventory-stock-balances', component: { template: '<p>Stock Balances</p>' } },
+      { path: '/cashbook-transactions', component: { template: '<p>Transactions</p>' } },
+      { path: '/supplier-ap-balances', component: { template: '<p>Supplier AP</p>' } },
+      { path: '/fixed-assets', component: { template: '<p>Fixed Assets</p>' } },
+      { path: '/asset-categories', component: { template: '<p>Asset Categories</p>' } },
+      { path: '/suppliers', component: { template: '<p>Suppliers</p>' } },
+      { path: '/cashbooks', component: { template: '<p>Cashbooks</p>' } },
       { path: '/items', component: { template: '<p>Items</p>' } },
       { path: '/units', component: { template: '<p>Units</p>' } },
       { path: '/users', component: { template: '<p>Users</p>' } },
@@ -69,13 +76,13 @@ async function render() {
 }
 
 describe('admin navigation', () => {
-  it('shows the logo, current user and all fourteen destinations with icons', async () => {
+  it('shows the logo, current user and all twenty-one destinations with icons', async () => {
     const { wrapper } = await render()
     expect(wrapper.get('.brand').text()).toContain('SHWE PETIT')
     expect(wrapper.get('.user-profile').text()).toContain(user.name)
     expect(wrapper.get('.user-profile').text()).toContain('hotel administrator')
-    expect(wrapper.findAll('nav .nav-link')).toHaveLength(14)
-    expect(wrapper.findAll('nav .nav-link svg')).toHaveLength(14)
+    expect(wrapper.findAll('nav .nav-link')).toHaveLength(21)
+    expect(wrapper.findAll('nav .nav-link svg')).toHaveLength(21)
     expect(wrapper.get('nav [href="/users"]').attributes('aria-current')).toBe('page')
     expect(wrapper.get('nav [href="/users"]').classes()).toContain('is-active')
   })

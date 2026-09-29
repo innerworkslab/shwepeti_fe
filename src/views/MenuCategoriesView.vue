@@ -76,7 +76,7 @@ function saved() {
     >
       <template #toolbar
         ><button type="button" class="primary" @click="openForm()">
-          Add menu category
+          <AppIcon name="add" :size="16" />Add menu category
         </button></template
       >
       <template #cell-status="{ row }">
@@ -86,8 +86,13 @@ function saved() {
       </template>
       <template #cell-actions="{ row }">
         <div class="row-actions">
-          <button type="button" :aria-label="`Edit ${row.name}`" @click="openForm(row)">
-            Edit
+          <button
+            type="button"
+            :aria-label="`Edit ${row.name}`"
+            @click="openForm(row)"
+            :title="`Edit ${row.name}`"
+          >
+            <AppIcon name="pencil" :size="18" /><span class="action-label">Edit</span>
           </button>
           <button
             type="button"
@@ -96,7 +101,7 @@ function saved() {
             class="icon-button"
             @click="openForm(row, true)"
           >
-            <AppIcon name="pencil" :size="18" />
+            <AppIcon name="status" :size="18" />
           </button>
         </div>
       </template>

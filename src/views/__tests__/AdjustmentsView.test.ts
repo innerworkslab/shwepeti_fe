@@ -1,3 +1,4 @@
+import { mountLargeFormFlow } from './mountLargeFormFlow'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import AdjustmentsView from '../AdjustmentsView.vue'
@@ -15,8 +16,8 @@ vi.mock('@/services/item.service', () => ({ itemService: { listOptions: vi.fn() 
 vi.mock('@/services/unit.service', () => ({ unitService: { listOptions: vi.fn() } }))
 const descriptors = Object.getOwnPropertyDescriptors(HTMLDialogElement.prototype)
 const wrappers: ReturnType<typeof mount>[] = []
-function render() {
-  const wrapper = mount(AdjustmentsView)
+async function render() {
+  const wrapper = await mountLargeFormFlow(AdjustmentsView, 'inventory-adjustments')
   wrappers.push(wrapper)
   return wrapper
 }
@@ -63,7 +64,7 @@ afterEach(() => {
   }
 })
 it('applies dates from page one and retains them across pagination', async () => {
-  const wrapper = render()
+  const wrapper = await render()
   await flushPromises()
   await wrapper.get('[aria-label="Next page"]').trigger('click')
   await flushPromises()
@@ -89,7 +90,7 @@ it('applies dates from page one and retains them across pagination', async () =>
   )
 })
 it('rejects reversed dates without issuing a request and accepts a single date', async () => {
-  const wrapper = render()
+  const wrapper = await render()
   await flushPromises()
   await wrapper.get('[name="date_from"]').setValue('2026-09-15')
   await wrapper.get('[name="date_to"]').setValue('2026-09-01')
@@ -107,14 +108,14 @@ it('rejects reversed dates without issuing a request and accepts a single date',
 })
 
 it('creates through the confirmed transfer API flow and refreshes filtered adjustments', async () => {
-  const wrapper = render()
+  const wrapper = await render()
   await flushPromises()
   await wrapper.get('[name="date_from"]').setValue('2026-09-01')
   await wrapper.get('form').trigger('submit')
   await flushPromises()
   await wrapper.get('button.primary').trigger('click')
   await flushPromises()
-  expect(wrapper.get('dialog h2').text()).toBe('Add adjustment')
+  expect(wrapper.get('[data-form-surface] :is(h1, h2)').text()).toBe('Add adjustment')
   await wrapper.get('[name="from_warehouse_id"]').setValue('2')
   await wrapper.get('[name="to_warehouse_id"]').setValue('3')
   await wrapper.get('[name="transaction_date"]').setValue('2026-09-15T16:00')
@@ -123,7 +124,7 @@ it('creates through the confirmed transfer API flow and refreshes filtered adjus
   await wrapper.get('[name="items[0].unit_id"]').setValue('1')
   await wrapper.get('[name="items[0].quantity"]').setValue('3')
   await wrapper.get('[name="items[0].expiry_date"]').setValue('2026-12-31')
-  await wrapper.get('dialog form').trigger('submit')
+  await wrapper.get('[data-form-surface] form').trigger('submit')
   await flushPromises()
   expect(transferService.create).toHaveBeenCalledExactlyOnceWith({
     from_warehouse_id: 2,
@@ -136,21 +137,21 @@ it('creates through the confirmed transfer API flow and refreshes filtered adjus
     expect.objectContaining({ date_from: '2026-09-01' }),
     expect.any(AbortSignal),
   )
-  expect(wrapper.find('dialog').exists()).toBe(false)
+  expect(wrapper.find('[data-form-surface]').exists()).toBe(false)
 })
 it('posts the selected adjustment ID with only the Posted option', async () => {
-  const wrapper = render()
+  const wrapper = await render()
   await flushPromises()
   await wrapper.get('[aria-label="Update status for adjustment #1"]').trigger('click')
   await flushPromises()
-  expect(wrapper.get('dialog h2').text()).toBe('Update adjustment status')
+  expect(wrapper.get('[data-form-surface] :is(h1, h2)').text()).toBe('Update adjustment status')
   expect(
     wrapper
       .get('[name="status"]')
       .findAll('option')
       .map((option) => option.attributes('value')),
   ).toEqual(['', 'posted'])
-  await wrapper.get('dialog form').trigger('submit')
+  await wrapper.get('[data-form-surface] form').trigger('submit')
   await flushPromises()
   expect(transferService.updateStatus).toHaveBeenCalledExactlyOnceWith(1, { status: 'posted' })
   expect(adjustmentService.list).toHaveBeenCalledTimes(2)

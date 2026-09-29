@@ -48,3 +48,14 @@ describe('userService', () => {
     expect(post).toHaveBeenNthCalledWith(2, '/api/v1/admin/users', { ...input, id: 9 })
   })
 })
+
+it('unwraps the standard backend envelope for user details', async () => {
+  const user = {
+    id: 9,
+    name: 'Test',
+    email: 'test@example.com',
+    role: 'front_office_administrator',
+  }
+  vi.spyOn(apiClient, 'get').mockResolvedValue({ data: { success: true, data: user } })
+  expect(await userService.get(9)).toEqual(user)
+})

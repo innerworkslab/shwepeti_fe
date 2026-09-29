@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { useRoute, useRouter } from 'vue-router'
+const route = useRoute()
+const router = useRouter()
+
 import AppIcon from '@/components/common/AppIcon.vue'
 import { ref } from 'vue'
 import DataTable from '@/components/common/DataTable.vue'
@@ -51,6 +55,10 @@ function openForm(
   category: Menu | null = null,
   action: 'edit' | 'status' | 'availability' = 'edit',
 ) {
+  if (action === 'edit') {
+    void router.push(category ? `/menus/${category.id}/edit` : '/menus/create')
+    return
+  }
   mode.value = action
   selected.value = category
   notice.value = ''
@@ -68,10 +76,14 @@ function saved() {
   modalOpen.value = false
   void refresh()
 }
+function pageSaved() {
+  notice.value = 'Saved successfully.'
+  void refresh()
+}
 </script>
 
 <template>
-  <section>
+  <section v-show="route.path.replace(/\/+$/, '') === '/menus'">
     <h1>Menus</h1>
     <p>Manage menus, recipes, pricing, and availability.</p>
     <p v-if="notice" role="status" class="notice">{{ notice }}</p>
@@ -113,7 +125,9 @@ function saved() {
         ></template
       >
       <template #toolbar
-        ><button type="button" class="primary" @click="openForm()">Add menu</button></template
+        ><button type="button" class="primary" @click="openForm()">
+          <AppIcon name="add" :size="16" />Add menu
+        </button></template
       >
       <template #cell-status="{ row }">
         <span class="status" :class="{ active: row.is_active === true }">{{
@@ -122,8 +136,13 @@ function saved() {
       </template>
       <template #cell-actions="{ row }">
         <div class="row-actions">
-          <button type="button" :aria-label="`Edit ${row.name}`" @click="openForm(row)">
-            Edit
+          <button
+            type="button"
+            :aria-label="`Edit ${row.name}`"
+            @click="openForm(row)"
+            :title="`Edit ${row.name}`"
+          >
+            <AppIcon name="pencil" :size="18" /><span class="action-label">Edit</span>
           </button>
           <button
             type="button"
@@ -132,7 +151,7 @@ function saved() {
             class="icon-button"
             @click="openForm(row, 'status')"
           >
-            <AppIcon name="pencil" :size="18" />
+            <AppIcon name="status" :size="18" />
           </button>
           <button
             type="button"
@@ -154,6 +173,7 @@ function saved() {
       @saved="saved"
     />
   </section>
+  <RouterView @saved="pageSaved" />
 </template>
 
 <style scoped>

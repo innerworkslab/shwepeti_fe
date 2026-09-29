@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { useRoute, useRouter } from 'vue-router'
+const route = useRoute()
+const router = useRouter()
+
 import { reactive, ref, useId } from 'vue'
 import AppIcon from '@/components/common/AppIcon.vue'
 import TransferFormModal from '@/components/inventory-transfers/TransferFormModal.vue'
@@ -33,6 +37,10 @@ const modalOpen = ref(false)
 const selected = ref<Adjustment | null>(null)
 const notice = ref('')
 function openForm(adjustment: Adjustment | null = null) {
+  if (!adjustment) {
+    void router.push('/inventory-adjustments/create')
+    return
+  }
   selected.value = adjustment
   notice.value = ''
   modalOpen.value = true
@@ -59,9 +67,13 @@ function clearDates() {
   dateError.value = ''
   setFilters({ date_from: undefined, date_to: undefined })
 }
+function pageSaved() {
+  notice.value = 'Saved successfully.'
+  void refresh()
+}
 </script>
 <template>
-  <section>
+  <section v-show="route.path.replace(/\/+$/, '') === '/inventory-adjustments'">
     <h1>Adjustments</h1>
     <p>View inventory adjustments by transaction date.</p>
     <p v-if="notice" role="status" class="notice">{{ notice }}</p>
@@ -83,7 +95,9 @@ function clearDates() {
       @refresh="refresh"
     >
       <template #toolbar
-        ><button type="button" class="primary" @click="openForm()">Add adjustment</button></template
+        ><button type="button" class="primary" @click="openForm()">
+          <AppIcon name="add" :size="16" />Add adjustment
+        </button></template
       >
       <template #cell-actions="{ row }"
         ><button
@@ -92,7 +106,7 @@ function clearDates() {
           title="Update status"
           @click="openForm(row)"
         >
-          <AppIcon name="pencil" :size="18" /></button
+          <AppIcon name="status" :size="18" /></button
       ></template>
       <template #filters>
         <form class="date-filters" @submit.prevent="applyDates">
@@ -130,6 +144,7 @@ function clearDates() {
       @saved="saved"
     />
   </section>
+  <RouterView @saved="pageSaved" />
 </template>
 <style scoped>
 .date-filters {

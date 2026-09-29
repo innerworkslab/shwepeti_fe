@@ -1,0 +1,59 @@
+import { number, object, string } from 'yup'
+// Preserve the wall-clock time entered by the user; the API expects no timezone suffix.
+export function formatTransactionDate(value: string): string {
+  const normalized = value.replace('T', ' ').replace(/(\d{2}:\d{2}:\d{2})\.0+$/, '$1')
+  return normalized.length === 16 ? `${normalized}:00` : normalized
+}
+function validTransactionDate(value: string | undefined): boolean {
+  if (!value) return false
+  const match = /^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})$/.exec(value)
+  if (!match) return false
+  const [year, month, day, hour, minute, second] = match.slice(1).map(Number) as [
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+  ]
+  const days = new Date(Date.UTC(year, month, 0)).getUTCDate()
+  return (
+    year >= 1000 &&
+    month >= 1 &&
+    month <= 12 &&
+    day >= 1 &&
+    day <= days &&
+    hour <= 23 &&
+    minute <= 59 &&
+    second <= 59
+  )
+}
+
+const id = (label: string) =>
+  number()
+    .typeError(`Choose ${label}.`)
+    .integer()
+    .positive()
+    .max(Number.MAX_SAFE_INTEGER)
+    .required(`Choose ${label}.`)
+export const createSupplierApPaymentSchema = object({
+  supplier_id: id('a supplier'),
+  cashbook_id: id('a cashbook'),
+  amount: number()
+    .typeError('Enter an amount.')
+    .positive('Amount must be greater than zero.')
+    .test('finite', 'Amount must be finite.', (value) => value == null || Number.isFinite(value))
+    .required('Amount is required.'),
+  payment_date: string()
+    .transform((value) => (typeof value === 'string' ? formatTransactionDate(value) : value))
+    .required('Payment date is required.')
+    .test('date', 'Enter a valid payment date and time.', validTransactionDate),
+  remark: string().trim().defined(),
+})
+export const updateSupplierApPaymentSchema = createSupplierApPaymentSchema.shape({
+  id: id('a payment ID'),
+})
+export const supplierApPaymentStatusSchema = object({
+  id: id('a payment ID'),
+  status: string<'posted'>().oneOf(['posted']).required('Choose a status.'),
+})

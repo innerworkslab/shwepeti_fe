@@ -13,7 +13,7 @@ const amount = (label: string) =>
     .test('finite', `${label} must be finite.`, (value) => value == null || Number.isFinite(value))
     .required(`${label} is required.`)
 export const createItemSchema = object({
-  item_category_id: id('an item category'),
+  item_category_id: id('an item type'),
   name: string().trim().required('Name is required.'),
   code: string().trim().required('Code is required.'),
   stock_unit_id: id('a stock unit'),

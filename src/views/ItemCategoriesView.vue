@@ -67,7 +67,7 @@ function saved() {
       :loading="loading"
       :error="error"
       caption="Item categories"
-      search-placeholder="Search categoriesâ€¦"
+      search-placeholder="Search categories..."
       @update:page="setPage"
       @update:per-page="setPerPage"
       @update:search="setSearch"
@@ -75,18 +75,23 @@ function saved() {
     >
       <template #toolbar
         ><button type="button" class="primary" @click="openForm()">
-          Add item category
+          <AppIcon name="add" :size="16" />Add item category
         </button></template
       >
       <template #cell-status="{ row }">
         <span class="status" :class="{ active: row.is_active === true }">{{
-          row.is_active === undefined ? 'â€”' : row.is_active ? 'Active' : 'Inactive'
+          row.is_active === undefined ? '-' : row.is_active ? 'Active' : 'Inactive'
         }}</span>
       </template>
       <template #cell-actions="{ row }">
         <div class="row-actions">
-          <button type="button" :aria-label="`Edit ${row.name}`" @click="openForm(row)">
-            Edit
+          <button
+            type="button"
+            :aria-label="`Edit ${row.name}`"
+            @click="openForm(row)"
+            :title="`Edit ${row.name}`"
+          >
+            <AppIcon name="pencil" :size="18" /><span class="action-label">Edit</span>
           </button>
           <button
             type="button"
@@ -95,7 +100,7 @@ function saved() {
             class="icon-button"
             @click="openForm(row, true)"
           >
-            <AppIcon name="pencil" :size="18" />
+            <AppIcon name="status" :size="18" />
           </button>
         </div>
       </template>

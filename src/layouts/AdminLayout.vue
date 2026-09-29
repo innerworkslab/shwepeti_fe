@@ -12,6 +12,12 @@ const route = useRoute()
 const router = useRouter()
 const session = useSessionStore()
 const links: { to: string; label: string; icon: IconName }[] = [
+  { to: '/cashbook-transactions', label: 'Cashbook Transactions', icon: 'ledger' },
+  { to: '/supplier-ap-balances', label: 'Supplier AP', icon: 'ledger' },
+  { to: '/fixed-assets', label: 'Fixed Assets', icon: 'items' },
+  { to: '/asset-categories', label: 'Asset Categories', icon: 'categories' },
+  { to: '/suppliers', label: 'Suppliers', icon: 'users' },
+  { to: '/cashbooks', label: 'Cashbooks', icon: 'cashbooks' },
   { to: '/menus', label: 'Menus', icon: 'menus' },
   { to: '/menu-categories', label: 'Menu categories', icon: 'menuCategories' },
   { to: '/rooms', label: 'Rooms', icon: 'rooms' },
@@ -20,6 +26,7 @@ const links: { to: string; label: string; icon: IconName }[] = [
   { to: '/inventory-transfers', label: 'Transfers', icon: 'transfer' },
   { to: '/stock-ins', label: 'Stock In', icon: 'stockIn' },
   { to: '/warehouses', label: 'Warehouses', icon: 'warehouse' },
+  { to: '/inventory-stock-balances', label: 'Stock Balances', icon: 'items' },
   { to: '/inventory-ledgers', label: 'Inventory Ledger', icon: 'ledger' },
   { to: '/items', label: 'Items', icon: 'items' },
   { to: '/item-categories', label: 'Item categories', icon: 'items' },

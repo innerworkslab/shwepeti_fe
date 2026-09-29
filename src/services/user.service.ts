@@ -16,10 +16,13 @@ export const userService = {
     return normalizePagination(response.data)
   },
   async get(id: number, signal?: AbortSignal): Promise<User> {
-    const response = await apiClient.get<User>(`/api/v1/admin/users/${encodeURIComponent(id)}`, {
-      signal,
-    })
-    return response.data
+    const response = await apiClient.get<User | { data: User }>(
+      `/api/v1/admin/users/${encodeURIComponent(id)}`,
+      {
+        signal,
+      },
+    )
+    return 'data' in response.data ? response.data.data : response.data
   },
   async create(input: CreateUserInput): Promise<void> {
     await apiClient.post('/api/v1/admin/users', input)

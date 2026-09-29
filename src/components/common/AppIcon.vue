@@ -1,10 +1,16 @@
 <script setup lang="ts">
 import {
+  Search,
+  RefreshCw,
+  SlidersHorizontal,
+  CircleCheckBig,
+  FileText,
   LayoutDashboard,
   BedDouble,
   Folder,
   Utensils,
   BookOpen,
+  Wallet,
   ScrollText,
   Eye,
   Package,
@@ -25,11 +31,17 @@ import {
 } from '@lucide/vue'
 
 const icons = {
+  search: Search,
+  refresh: RefreshCw,
+  filters: SlidersHorizontal,
+  status: CircleCheckBig,
+  document: FileText,
   dashboard: LayoutDashboard,
   rooms: BedDouble,
   categories: Folder,
   menuCategories: Utensils,
   menus: BookOpen,
+  cashbooks: Wallet,
   ledger: ScrollText,
   availability: Eye,
   items: Package,

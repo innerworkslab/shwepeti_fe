@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { useRoute, useRouter } from 'vue-router'
+const route = useRoute()
+const router = useRouter()
+
 import AppIcon from '@/components/common/AppIcon.vue'
 import { ref } from 'vue'
 import DataTable from '@/components/common/DataTable.vue'
@@ -43,6 +47,10 @@ const selected = ref<Transfer | null>(null)
 const notice = ref('')
 
 function openForm(transfer: Transfer | null = null) {
+  if (!transfer) {
+    void router.push('/inventory-transfers/create')
+    return
+  }
   selected.value = transfer
   notice.value = ''
   modalOpen.value = true
@@ -52,10 +60,14 @@ function saved() {
   modalOpen.value = false
   void refresh()
 }
+function pageSaved() {
+  notice.value = 'Saved successfully.'
+  void refresh()
+}
 </script>
 
 <template>
-  <section>
+  <section v-show="route.path.replace(/\/+$/, '') === '/inventory-transfers'">
     <h1>Transfers</h1>
     <p>Transfer inventory between warehouses.</p>
     <p v-if="notice" role="status" class="notice">{{ notice }}</p>
@@ -77,7 +89,9 @@ function saved() {
       @refresh="refresh"
     >
       <template #toolbar
-        ><button type="button" class="primary" @click="openForm()">Add transfer</button></template
+        ><button type="button" class="primary" @click="openForm()">
+          <AppIcon name="add" :size="16" />Add transfer
+        </button></template
       >
       <template #cell-status="{ row }">
         <span class="status" :class="{ active: row.status === 'posted' }">{{
@@ -93,7 +107,7 @@ function saved() {
             class="icon-button"
             @click="openForm(row)"
           >
-            <AppIcon name="pencil" :size="18" />
+            <AppIcon name="status" :size="18" />
           </button>
         </div>
       </template>
@@ -105,6 +119,7 @@ function saved() {
       @saved="saved"
     />
   </section>
+  <RouterView @saved="pageSaved" />
 </template>
 
 <style scoped>

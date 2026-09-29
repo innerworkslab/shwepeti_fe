@@ -1,3 +1,4 @@
+import { mountLargeFormFlow } from './mountLargeFormFlow'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import TransfersView from '../TransfersView.vue'
@@ -26,8 +27,8 @@ const group = {
 }
 const wrappers: ReturnType<typeof mount>[] = []
 const dialogDescriptors = Object.getOwnPropertyDescriptors(HTMLDialogElement.prototype)
-function render() {
-  const wrapper = mount(TransfersView, { attachTo: document.body })
+async function render() {
+  const wrapper = await mountLargeFormFlow(TransfersView, 'inventory-transfers')
   wrappers.push(wrapper)
   return wrapper
 }
@@ -97,22 +98,26 @@ async function fill(wrapper: ReturnType<typeof mount>) {
 }
 describe('Transfers', () => {
   it('validates required fields and creates the supplied payload, then refreshes', async () => {
-    const wrapper = render()
+    const wrapper = await render()
     await flushPromises()
     expect(wrapper.get('tbody').text()).toContain('Kitchen Warehouse')
     await wrapper.get('button.primary').trigger('click')
     await flushPromises()
+    expect(wrapper.find('dialog').exists()).toBe(false)
+    expect(wrapper.get('[data-form-surface]').classes()).toContain('form-page')
     await wrapper.get('form').trigger('submit')
     await flushPromises()
     expect(transferService.create).not.toHaveBeenCalled()
-    expect(wrapper.get('dialog').text()).toContain('Choose a source warehouse.')
+    expect(wrapper.get('[data-form-surface]').text()).toContain('Choose a source warehouse.')
     await fill(wrapper)
     await wrapper.get('[name="items[0].quantity"]').setValue('0')
     await wrapper.get('[name="items[0].expiry_date"]').setValue('')
     await wrapper.get('form').trigger('submit')
     await flushPromises()
-    expect(wrapper.get('dialog').text()).toContain('Quantity must be greater than zero.')
-    expect(wrapper.get('dialog').text()).toContain('Expiry date is required.')
+    expect(wrapper.get('[data-form-surface]').text()).toContain(
+      'Quantity must be greater than zero.',
+    )
+    expect(wrapper.get('[data-form-surface]').text()).toContain('Expiry date is required.')
     await fill(wrapper)
     await wrapper.get('form').trigger('submit')
     await flushPromises()
@@ -124,10 +129,10 @@ describe('Transfers', () => {
       items: [{ item_id: 1, unit_id: 1, quantity: 10, expiry_date: '2026-12-31' }],
     })
     expect(transferService.list).toHaveBeenCalledTimes(2)
-    expect(wrapper.find('dialog').exists()).toBe(false)
+    expect(wrapper.find('[data-form-surface]').exists()).toBe(false)
   })
   it('supports adding and removing lines and requires at least one', async () => {
-    const wrapper = render()
+    const wrapper = await render()
     await flushPromises()
     await wrapper.get('button.primary').trigger('click')
     await flushPromises()
@@ -156,15 +161,15 @@ describe('Transfers', () => {
     await wrapper.get('[aria-label="Remove item 1"]').trigger('click')
     await wrapper.get('form').trigger('submit')
     await flushPromises()
-    expect(wrapper.get('dialog').text()).toContain('Add at least one item.')
+    expect(wrapper.get('[data-form-surface]').text()).toContain('Add at least one item.')
     expect(transferService.create).toHaveBeenCalledTimes(1)
   })
   it.each(['posted'])('updates status to %s without loading lookups', async (status) => {
-    const wrapper = render()
+    const wrapper = await render()
     await flushPromises()
     await wrapper.get('[aria-label="Update status for transfer #7"]').trigger('click')
     await flushPromises()
-    expect(wrapper.get('dialog').text()).toContain('Transfer #7')
+    expect(wrapper.get('[data-form-surface]').text()).toContain('Transfer #7')
     await wrapper.get('form').trigger('submit')
     await flushPromises()
     expect(transferService.updateStatus).not.toHaveBeenCalled()
@@ -184,7 +189,7 @@ describe('Transfers', () => {
     expect(transferService.list).toHaveBeenCalledTimes(2)
   })
   it('rejects matching source and destination warehouses', async () => {
-    const wrapper = render()
+    const wrapper = await render()
     await flushPromises()
     await wrapper.get('button.primary').trigger('click')
     await flushPromises()
@@ -192,30 +197,32 @@ describe('Transfers', () => {
     await wrapper.get('[name="to_warehouse_id"]').setValue('2')
     await wrapper.get('form').trigger('submit')
     await flushPromises()
-    expect(wrapper.get('dialog').text()).toContain('Choose a different destination warehouse.')
+    expect(wrapper.get('[data-form-surface]').text()).toContain(
+      'Choose a different destination warehouse.',
+    )
     expect(transferService.create).not.toHaveBeenCalled()
   })
   it('blocks submission after lookup failure and retries', async () => {
     vi.mocked(warehouseService.listOptions).mockRejectedValueOnce(new Error('Unavailable'))
-    const wrapper = render()
+    const wrapper = await render()
     await flushPromises()
     await wrapper.get('button.primary').trigger('click')
     await flushPromises()
     expect(wrapper.get('[type="submit"]').attributes('disabled')).toBeDefined()
-    await wrapper.get('dialog [role="alert"] button').trigger('click')
+    await wrapper.get('[data-form-surface] [role="alert"] button').trigger('click')
     await flushPromises()
     expect(wrapper.get('[name="from_warehouse_id"]').text()).toContain('Kitchen Warehouse')
   })
   it('preserves fields on save failure and prevents duplicate creation', async () => {
     vi.mocked(transferService.create).mockRejectedValueOnce(new Error('Save failed'))
-    const wrapper = render()
+    const wrapper = await render()
     await flushPromises()
     await wrapper.get('button.primary').trigger('click')
     await flushPromises()
     await fill(wrapper)
     await wrapper.get('form').trigger('submit')
     await flushPromises()
-    expect(wrapper.get('dialog [role="alert"]').text()).toBe('Save failed')
+    expect(wrapper.get('[data-form-surface] [role="alert"]').text()).toBe('Save failed')
     expect((wrapper.get('[name="items[0].quantity"]').element as HTMLInputElement).value).toBe('10')
     let done!: () => void
     vi.mocked(transferService.create).mockImplementationOnce(
@@ -227,12 +234,13 @@ describe('Transfers', () => {
     await wrapper.get('form').trigger('submit')
     await flushPromises()
     await wrapper.get('form').trigger('submit')
-    await wrapper.get('dialog').trigger('cancel')
+    await wrapper.get('[data-form-surface]').trigger('cancel')
+    await flushPromises()
     expect(transferService.create).toHaveBeenCalledTimes(2)
-    expect(wrapper.find('dialog').exists()).toBe(true)
+    expect(wrapper.find('[data-form-surface]').exists()).toBe(true)
     done()
     await flushPromises()
-    expect(wrapper.find('dialog').exists()).toBe(false)
+    expect(wrapper.find('[data-form-surface]').exists()).toBe(false)
   })
   it('aborts outstanding option requests when dismissed', async () => {
     let done!: (value: []) => void
@@ -242,14 +250,16 @@ describe('Transfers', () => {
           done = resolve
         }),
     )
-    const wrapper = render()
+    const wrapper = await render()
     await flushPromises()
     await wrapper.get('button.primary').trigger('click')
+    await flushPromises()
     const signal = vi.mocked(warehouseService.listOptions).mock.lastCall?.[0]
-    await wrapper.get('dialog').trigger('cancel')
+    await wrapper.get('[data-form-surface]').trigger('cancel')
+    await flushPromises()
     expect(signal?.aborted).toBe(true)
     done([])
     await flushPromises()
-    expect(wrapper.find('dialog').exists()).toBe(false)
+    expect(wrapper.find('[data-form-surface]').exists()).toBe(false)
   })
 })

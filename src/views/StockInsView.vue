@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { useRoute, useRouter } from 'vue-router'
+const route = useRoute()
+const router = useRouter()
+
 import AppIcon from '@/components/common/AppIcon.vue'
 import { ref } from 'vue'
 import DataTable from '@/components/common/DataTable.vue'
@@ -37,6 +41,10 @@ const selected = ref<StockIn | null>(null)
 const notice = ref('')
 
 function openForm(stockIn: StockIn | null = null) {
+  if (!stockIn) {
+    void router.push('/stock-ins/create')
+    return
+  }
   selected.value = stockIn
   notice.value = ''
   modalOpen.value = true
@@ -46,10 +54,14 @@ function saved() {
   modalOpen.value = false
   void refresh()
 }
+function pageSaved() {
+  notice.value = 'Saved successfully.'
+  void refresh()
+}
 </script>
 
 <template>
-  <section>
+  <section v-show="route.path.replace(/\/+$/, '') === '/stock-ins'">
     <h1>Stock In</h1>
     <p>Record incoming inventory and update transaction status.</p>
     <p v-if="notice" role="status" class="notice">{{ notice }}</p>
@@ -71,7 +83,9 @@ function saved() {
       @refresh="refresh"
     >
       <template #toolbar
-        ><button type="button" class="primary" @click="openForm()">Add stock in</button></template
+        ><button type="button" class="primary" @click="openForm()">
+          <AppIcon name="add" :size="16" />Add stock in
+        </button></template
       >
       <template #cell-status="{ row }">
         <span
@@ -89,7 +103,7 @@ function saved() {
             class="icon-button"
             @click="openForm(row)"
           >
-            <AppIcon name="pencil" :size="18" />
+            <AppIcon name="status" :size="18" />
           </button>
         </div>
       </template>
@@ -101,6 +115,7 @@ function saved() {
       @saved="saved"
     />
   </section>
+  <RouterView @saved="pageSaved" />
 </template>
 
 <style scoped>

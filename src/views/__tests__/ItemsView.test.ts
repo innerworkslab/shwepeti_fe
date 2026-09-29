@@ -1,3 +1,4 @@
+import { mountLargeFormFlow } from './mountLargeFormFlow'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import ItemsView from '../ItemsView.vue'
@@ -32,8 +33,8 @@ const group = {
 }
 const wrappers: ReturnType<typeof mount>[] = []
 const dialogDescriptors = Object.getOwnPropertyDescriptors(HTMLDialogElement.prototype)
-function render() {
-  const wrapper = mount(ItemsView, { attachTo: document.body })
+async function render() {
+  const wrapper = await mountLargeFormFlow(ItemsView, 'items')
   wrappers.push(wrapper)
   return wrapper
 }
@@ -84,14 +85,16 @@ afterEach(() => {
 
 describe('Items', () => {
   it('validates required fields and conversions, creates without ID, and refreshes', async () => {
-    const wrapper = render()
+    const wrapper = await render()
     await flushPromises()
     expect(wrapper.get('tbody').text()).toContain('Chicken')
     await wrapper.get('button.primary').trigger('click')
     await flushPromises()
+    expect(wrapper.find('dialog').exists()).toBe(false)
+    expect(wrapper.get('[data-form-surface]').classes()).toContain('form-page')
     await wrapper.get('form').trigger('submit')
     await flushPromises()
-    expect(wrapper.get('dialog').text()).toContain('Name is required.')
+    expect(wrapper.get('[data-form-surface]').text()).toContain('Name is required.')
     expect(itemService.create).not.toHaveBeenCalled()
     await wrapper.get('[name="name"]').setValue(' Chicken ')
     await wrapper.get('[name="code"]').setValue(' CHICKEN ')
@@ -109,18 +112,20 @@ describe('Items', () => {
     await wrapper.get('form').trigger('submit')
     await flushPromises()
     expect(itemService.create).not.toHaveBeenCalled()
-    expect(wrapper.get('dialog').text()).toContain('Conversion factor must be greater than zero.')
+    expect(wrapper.get('[data-form-surface]').text()).toContain(
+      'Conversion factor must be greater than zero.',
+    )
     await wrapper.get('[name="item_unit_conversions[0].conversion_factor"]').setValue('1000')
     await wrapper.get('form').trigger('submit')
     await flushPromises()
     const { id, price, is_active, ...input } = group
     expect(itemService.create).toHaveBeenCalledExactlyOnceWith(input)
     expect(itemService.list).toHaveBeenCalledTimes(2)
-    expect(wrapper.find('dialog').exists()).toBe(false)
+    expect(wrapper.find('[data-form-surface]').exists()).toBe(false)
   })
   it('loads fresh details and allows removing conversions on update', async () => {
     vi.mocked(itemService.get).mockResolvedValueOnce({ ...group, name: 'Fresh chicken' })
-    const wrapper = render()
+    const wrapper = await render()
     await flushPromises()
     await wrapper.get('[aria-label="Edit Chicken"]').trigger('click')
     await flushPromises()
@@ -140,11 +145,11 @@ describe('Items', () => {
   it.each([true, false])(
     'updates status with boolean %s without loading dropdowns',
     async (status) => {
-      const wrapper = render()
+      const wrapper = await render()
       await flushPromises()
       await wrapper.get('[aria-label="Update status for Chicken"]').trigger('click')
       await flushPromises()
-      expect(wrapper.get('dialog').text()).toContain('ID 1')
+      expect(wrapper.get('[data-form-surface]').text()).toContain('ID 1')
       await wrapper.get('[name="is_active"]').setValue(String(status))
       await wrapper.get('form').trigger('submit')
       await flushPromises()
@@ -154,7 +159,7 @@ describe('Items', () => {
     },
   )
   it('validates price and sends only item_id and price', async () => {
-    const wrapper = render()
+    const wrapper = await render()
     await flushPromises()
     await wrapper.get('[aria-label="Update price for Chicken"]').trigger('click')
     await flushPromises()
@@ -162,7 +167,7 @@ describe('Items', () => {
     await wrapper.get('form').trigger('submit')
     await flushPromises()
     expect(itemService.updatePrice).not.toHaveBeenCalled()
-    expect(wrapper.get('dialog').text()).toContain('Price cannot be negative.')
+    expect(wrapper.get('[data-form-surface]').text()).toContain('Price cannot be negative.')
     await wrapper.get('[name="price"]').setValue('2500')
     await wrapper.get('form').trigger('submit')
     await flushPromises()
@@ -175,12 +180,12 @@ describe('Items', () => {
     vi.mocked(unitService.listOptions)
       .mockRejectedValueOnce(new Error('Units unavailable'))
       .mockResolvedValueOnce([])
-    const wrapper = render()
+    const wrapper = await render()
     await flushPromises()
     await wrapper.get('[aria-label="Edit Chicken"]').trigger('click')
     await flushPromises()
     expect(wrapper.get('[type="submit"]').attributes('disabled')).toBeDefined()
-    await wrapper.get('dialog [role="alert"] button').trigger('click')
+    await wrapper.get('[data-form-surface] [role="alert"] button').trigger('click')
     await flushPromises()
     expect(wrapper.get('[name="stock_unit_id"]').text()).toContain('Unit #1 (not in list)')
     expect(wrapper.get('[name="item_unit_conversions[0].to_unit_id"]').text()).toContain(
@@ -189,14 +194,14 @@ describe('Items', () => {
   })
   it('preserves price on save failure and prevents duplicate submissions', async () => {
     vi.mocked(itemService.updatePrice).mockRejectedValueOnce(new Error('Save failed'))
-    const wrapper = render()
+    const wrapper = await render()
     await flushPromises()
     await wrapper.get('[aria-label="Update price for Chicken"]').trigger('click')
     await flushPromises()
     await wrapper.get('[name="price"]').setValue('2500')
     await wrapper.get('form').trigger('submit')
     await flushPromises()
-    expect(wrapper.get('dialog [role="alert"]').text()).toBe('Save failed')
+    expect(wrapper.get('[data-form-surface] [role="alert"]').text()).toBe('Save failed')
     expect((wrapper.get('[name="price"]').element as HTMLInputElement).value).toBe('2500')
     let done!: () => void
     vi.mocked(itemService.updatePrice).mockImplementationOnce(
@@ -208,12 +213,13 @@ describe('Items', () => {
     await wrapper.get('form').trigger('submit')
     await flushPromises()
     await wrapper.get('form').trigger('submit')
-    await wrapper.get('dialog').trigger('cancel')
+    await wrapper.get('[data-form-surface]').trigger('cancel')
+    await flushPromises()
     expect(itemService.updatePrice).toHaveBeenCalledTimes(2)
-    expect(wrapper.find('dialog').exists()).toBe(true)
+    expect(wrapper.find('[data-form-surface]').exists()).toBe(true)
     done()
     await flushPromises()
-    expect(wrapper.find('dialog').exists()).toBe(false)
+    expect(wrapper.find('[data-form-surface]').exists()).toBe(false)
   })
   it('aborts loading when dismissed', async () => {
     let done!: (value: typeof group) => void
@@ -223,14 +229,16 @@ describe('Items', () => {
           done = resolve
         }),
     )
-    const wrapper = render()
+    const wrapper = await render()
     await flushPromises()
     await wrapper.get('[aria-label="Edit Chicken"]').trigger('click')
+    await flushPromises()
     const signal = vi.mocked(itemService.get).mock.lastCall?.[1]
-    await wrapper.get('dialog').trigger('cancel')
+    await wrapper.get('[data-form-surface]').trigger('cancel')
+    await flushPromises()
     expect(signal?.aborted).toBe(true)
     done(group)
     await flushPromises()
-    expect(wrapper.find('dialog').exists()).toBe(false)
+    expect(wrapper.find('[data-form-surface]').exists()).toBe(false)
   })
 })

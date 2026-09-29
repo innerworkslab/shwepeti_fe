@@ -11,11 +11,92 @@ const router = createRouter({
       component: () => import('@/layouts/AdminLayout.vue'),
       children: [
         {
+          path: 'fixed-assets',
+          name: 'fixed-assets',
+          component: () => import('@/views/FixedAssetsView.vue'),
+        },
+        {
+          path: 'fixed-assets/create',
+          name: 'fixed-asset-create',
+          component: () => import('@/views/FixedAssetFormView.vue'),
+        },
+        {
+          path: 'fixed-assets/:id/edit',
+          name: 'fixed-asset-edit',
+          component: () => import('@/views/FixedAssetFormView.vue'),
+        },
+        {
+          path: 'asset-categories',
+          name: 'asset-categories',
+          component: () => import('@/views/AssetCategoriesView.vue'),
+        },
+        {
+          path: 'supplier-ap-balances',
+          name: 'supplier-ap-balances',
+          component: () => import('@/views/SupplierApBalancesView.vue'),
+        },
+        {
+          path: 'supplier-ap-payments/create',
+          name: 'supplier-ap-payment-create',
+          component: () => import('@/views/SupplierApPaymentFormView.vue'),
+        },
+        {
+          path: 'suppliers/:id/ap-ledgers',
+          name: 'supplier-ap-ledgers',
+          component: () => import('@/views/SupplierApLedgersView.vue'),
+        },
+        {
+          path: 'suppliers',
+          name: 'suppliers',
+          component: () => import('@/views/SuppliersView.vue'),
+        },
+        {
+          path: 'suppliers/create',
+          name: 'supplier-create',
+          component: () => import('@/views/SupplierFormView.vue'),
+        },
+        {
+          path: 'suppliers/:id/edit',
+          name: 'supplier-edit',
+          component: () => import('@/views/SupplierFormView.vue'),
+        },
+        {
+          path: 'cashbook-transactions',
+          name: 'cashbook-transactions',
+          component: () => import('@/views/CashbookTransactionsView.vue'),
+        },
+        {
+          path: 'cashbooks',
+          name: 'cashbooks',
+          component: () => import('@/views/CashbooksView.vue'),
+        },
+        {
+          path: 'inventory-stock-balances',
+          name: 'inventory-stock-balances',
+          component: () => import('@/views/StockBalancesView.vue'),
+        },
+        {
           path: 'inventory-ledgers',
           name: 'inventory-ledgers',
           component: () => import('@/views/InventoryLedgersView.vue'),
         },
-        { path: 'menus', name: 'menus', component: () => import('@/views/MenusView.vue') },
+        {
+          path: 'menus',
+          name: 'menus',
+          component: () => import('@/views/MenusView.vue'),
+          children: [
+            {
+              path: 'create',
+              component: () => import('@/views/LargeFormView.vue'),
+              props: { resource: 'menus' },
+            },
+            {
+              path: ':id/edit',
+              component: () => import('@/views/LargeFormView.vue'),
+              props: { resource: 'menus' },
+            },
+          ],
+        },
         {
           path: 'menu-categories',
           name: 'menu-categories',
@@ -25,23 +106,60 @@ const router = createRouter({
           path: 'inventory-adjustments',
           name: 'inventory-adjustments',
           component: () => import('@/views/AdjustmentsView.vue'),
+          children: [
+            {
+              path: 'create',
+              component: () => import('@/views/LargeFormView.vue'),
+              props: { resource: 'inventory-adjustments' },
+            },
+          ],
         },
         {
           path: 'inventory-transfers',
           name: 'inventory-transfers',
           component: () => import('@/views/TransfersView.vue'),
+          children: [
+            {
+              path: 'create',
+              component: () => import('@/views/LargeFormView.vue'),
+              props: { resource: 'inventory-transfers' },
+            },
+          ],
         },
         {
           path: 'stock-ins',
           name: 'stock-ins',
           component: () => import('@/views/StockInsView.vue'),
+          children: [
+            {
+              path: 'create',
+              component: () => import('@/views/LargeFormView.vue'),
+              props: { resource: 'stock-ins' },
+            },
+          ],
         },
         {
           path: 'warehouses',
           name: 'warehouses',
           component: () => import('@/views/WarehousesView.vue'),
         },
-        { path: 'items', name: 'items', component: () => import('@/views/ItemsView.vue') },
+        {
+          path: 'items',
+          name: 'items',
+          component: () => import('@/views/ItemsView.vue'),
+          children: [
+            {
+              path: 'create',
+              component: () => import('@/views/LargeFormView.vue'),
+              props: { resource: 'items' },
+            },
+            {
+              path: ':id/edit',
+              component: () => import('@/views/LargeFormView.vue'),
+              props: { resource: 'items' },
+            },
+          ],
+        },
         { path: 'units', name: 'units', component: () => import('@/views/UnitsView.vue') },
         {
           path: 'unit-groups',
@@ -55,7 +173,23 @@ const router = createRouter({
           component: () => import('@/views/ItemCategoriesView.vue'),
         },
         { path: '', name: 'dashboard', component: () => import('@/views/DashboardView.vue') },
-        { path: 'rooms', name: 'rooms', component: () => import('@/views/RoomsView.vue') },
+        {
+          path: 'rooms',
+          name: 'rooms',
+          component: () => import('@/views/RoomsView.vue'),
+          children: [
+            {
+              path: 'create',
+              component: () => import('@/views/LargeFormView.vue'),
+              props: { resource: 'rooms' },
+            },
+            {
+              path: ':id/edit',
+              component: () => import('@/views/LargeFormView.vue'),
+              props: { resource: 'rooms' },
+            },
+          ],
+        },
         {
           path: 'room-categories',
           name: 'room-categories',

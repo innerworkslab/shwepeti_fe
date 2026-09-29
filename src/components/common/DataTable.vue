@@ -1,5 +1,6 @@
 <script setup lang="ts" generic="Row extends object">
 import { computed } from 'vue'
+import AppIcon from './AppIcon.vue'
 import type { DataTableColumn } from '@/types/data-table'
 
 const props = withDefaults(
@@ -78,20 +79,30 @@ function updatePerPage(event: Event) {
     <div class="data-table__toolbar">
       <label v-if="searchable" class="data-table__search">
         <span>Search</span>
-        <input
-          type="search"
-          :value="search"
-          :placeholder="searchPlaceholder"
-          @input="updateSearch"
-        />
+        <div class="data-table__search-input">
+          <AppIcon name="search" :size="18" /><input
+            type="search"
+            :value="search"
+            :placeholder="searchPlaceholder"
+            @input="updateSearch"
+          />
+        </div>
       </label>
-      <slot name="filters" />
+
       <div class="data-table__actions">
         <slot name="toolbar" />
-        <button type="button" :disabled="loading" @click="emit('refresh')">Refresh</button>
+        <button type="button" :disabled="loading" @click="emit('refresh')">
+          <AppIcon name="refresh" :size="16" />Refresh
+        </button>
       </div>
     </div>
 
+    <div v-if="$slots.filters" class="data-table__filters">
+      <div class="data-table__filter-heading">
+        <AppIcon name="filters" :size="16" /><span>Filters</span>
+      </div>
+      <div class="data-table__filter-controls"><slot name="filters" /></div>
+    </div>
     <div v-if="error && !loading" class="data-table__error" role="alert">
       <slot name="error" :error="error" :retry="() => emit('refresh')">
         <span>{{ error.message }}</span>
@@ -150,9 +161,19 @@ function updatePerPage(event: Event) {
               <td
                 v-for="column in columns"
                 :key="column.key"
+                :class="{ 'data-table__action-cell': column.key === 'actions' }"
                 :style="{ textAlign: column.align ?? 'left' }"
               >
+                <div v-if="column.key === 'actions'" class="data-table__row-actions">
+                  <slot
+                    name="cell-actions"
+                    :row="row"
+                    :column="column"
+                    :value="cellValue(row, column)"
+                  />
+                </div>
                 <slot
+                  v-else
                   :name="`cell-${column.key}`"
                   :row="row"
                   :column="column"
@@ -326,6 +347,264 @@ th {
   }
   .data-table__actions {
     margin-left: 0;
+  }
+}
+/* Shared treatment also reaches controls supplied by page slots. */
+.data-table {
+  border-radius: 16px;
+  box-shadow: 0 4px 18px #0f172a05;
+}
+.data-table__toolbar {
+  padding: 1.25rem;
+  gap: 1rem;
+  background: #fff;
+}
+.data-table__search {
+  flex: 0 1 340px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #475569;
+}
+.data-table__search-input {
+  position: relative;
+}
+.data-table__search-input > .app-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+}
+.data-table__search-input input {
+  width: 100%;
+  padding-left: 2.5rem;
+}
+.data-table__filters {
+  padding: 1rem 1.25rem 1.25rem;
+  background: #f8fafc;
+  border-block: 1px solid #e8edf5;
+}
+.data-table__filter-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #64748b;
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin-bottom: 0.85rem;
+}
+.data-table__filter-controls,
+.data-table__filter-controls :deep(form) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  align-items: flex-end;
+  width: 100%;
+}
+.data-table__filter-controls :deep(label) {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex: 1 1 170px;
+  max-width: 280px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #475569;
+}
+.data-table__filter-controls :deep([role='alert']) {
+  flex-basis: 100%;
+  color: #b91c1c;
+  font-size: 0.875rem;
+}
+.data-table :deep(input),
+.data-table :deep(select) {
+  height: 40px;
+  min-width: 0;
+  border: 1px solid #d9e2ef;
+  border-radius: 9px;
+  background-color: white;
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: #334155;
+  box-shadow: 0 1px 2px #0f172a04;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+.data-table__filter-controls :deep(input),
+.data-table__filter-controls :deep(select) {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+}
+.data-table :deep(button),
+.data-table__actions :deep(a) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 38px;
+  padding: 0.5rem 0.85rem;
+  border: 1px solid #d9e2ef;
+  border-radius: 9px;
+  background: #fff;
+  color: #475569;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 1px 2px #0f172a06;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+.data-table :deep(button:hover:not(:disabled)),
+.data-table__actions :deep(a:hover) {
+  background: #eef2ff;
+  border-color: #a5b4fc;
+  color: #3730a3;
+}
+.data-table__actions :deep(.primary),
+.data-table__filter-controls :deep(button[type='submit']) {
+  background: #4f46e5;
+  border-color: #4f46e5;
+  color: white;
+  box-shadow: 0 2px 5px #4f46e526;
+}
+.data-table__actions :deep(.primary:hover),
+.data-table__filter-controls :deep(button[type='submit']:hover) {
+  background: #4338ca;
+  border-color: #4338ca;
+  color: white;
+}
+.data-table :deep(:is(button, a, input, select):focus-visible) {
+  outline: 3px solid #c7d2fe;
+  outline-offset: 2px;
+  border-color: #6366f1;
+}
+.data-table :deep(button:disabled) {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.data-table__action-cell {
+  width: 1%;
+  white-space: nowrap;
+}
+.data-table__row-actions,
+.data-table__row-actions :deep(.row-actions),
+.data-table__row-actions :deep(.actions) {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.data-table__row-actions :deep(button),
+.data-table__row-actions :deep(a) {
+  display: inline-flex;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #dbe3ff;
+  border-radius: 9px;
+  color: #4f46e5;
+  background: #eef2ff;
+  box-shadow: none;
+  text-decoration: none;
+}
+.data-table__row-actions :deep([aria-label^='Update status']) {
+  color: #b45309;
+  background: #fffbeb;
+  border-color: #fde68a;
+}
+.data-table__row-actions :deep([aria-label^='Update price']) {
+  color: #047857;
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+}
+.data-table__row-actions :deep(:is(button, a):hover) {
+  background: #e0e7ff;
+  border-color: #a5b4fc;
+  color: #3730a3;
+  box-shadow: 0 2px 4px #312e8112;
+}
+.data-table__row-actions :deep(.action-label) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.data-table__row-actions :deep(svg) {
+  width: 18px;
+  height: 18px;
+}
+caption {
+  color: #334155;
+  font-size: 0.875rem;
+  padding: 1rem 1.25rem;
+}
+th {
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.055em;
+  color: #64748b;
+  background: #f8fafc;
+}
+td {
+  vertical-align: middle;
+  border-color: #edf1f7;
+}
+tbody tr:hover {
+  background: #fafbff;
+}
+.data-table__footer {
+  background: #fcfdff;
+  color: #64748b;
+  gap: 1rem;
+}
+.data-table__footer label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.data-table__footer nav {
+  gap: 0.4rem;
+}
+@media (max-width: 600px) {
+  .data-table__toolbar,
+  .data-table__filters {
+    padding: 1rem;
+  }
+  .data-table__search {
+    flex-basis: 100%;
+  }
+  .data-table__actions {
+    width: 100%;
+  }
+  .data-table__filter-controls :deep(label) {
+    flex: 1 1 140px;
+    max-width: none;
+  }
+  .data-table__footer nav {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .data-table :deep(*) {
+    transition: none;
   }
 }
 </style>
