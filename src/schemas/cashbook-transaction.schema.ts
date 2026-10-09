@@ -4,7 +4,7 @@ export function formatTransactionDate(value: string): string {
   const normalized = value.replace('T', ' ').replace(/(\d{2}:\d{2}:\d{2})\.0+$/, '$1')
   return normalized.length === 16 ? `${normalized}:00` : normalized
 }
-function validTransactionDate(value: string | undefined): boolean {
+export function validTransactionDate(value: string | undefined): boolean {
   if (!value) return false
   const match = /^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})$/.exec(value)
   if (!match) return false

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { roomStatuses, statusLabel } from '@/constants/hotel-status'
 import AppIcon from '@/components/common/AppIcon.vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, useId } from 'vue'
 import { ValidationError } from 'yup'
@@ -195,18 +196,19 @@ async function submit() {
             <p>{{ form.name }} &middot; ID {{ roomId }}</p>
             <div class="field">
               <label :for="`${prefix}-status`">Status</label>
-              <input
+              <select
                 :id="`${prefix}-status`"
                 v-model="form.status"
                 name="status"
-                :list="`${prefix}-statuses`"
                 required
                 :aria-invalid="!!errors.status"
                 :aria-describedby="errors.status ? `${prefix}-status-error` : undefined"
-              />
-              <datalist :id="`${prefix}-statuses`">
-                <option value="cleaning">Cleaning</option>
-              </datalist>
+              >
+                <option value="" disabled>Select status</option>
+                <option v-for="status in roomStatuses" :key="status" :value="status">
+                  {{ statusLabel(status) }}
+                </option>
+              </select>
               <span v-if="errors.status" :id="`${prefix}-status-error`" class="error">{{
                 errors.status
               }}</span>

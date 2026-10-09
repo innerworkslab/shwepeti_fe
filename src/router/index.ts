@@ -1,9 +1,23 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useSessionStore } from '@/stores/session'
+import { usePosSessionStore } from '@/stores/pos-session'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
+    {
+      path: '/pos/bookings/create',
+      name: 'pos-booking-create',
+      meta: { requiresPosAuth: true },
+      component: () => import('@/views/PosBookingFormView.vue'),
+    },
+    {
+      path: '/pos',
+      name: 'pos',
+      meta: { requiresPosAuth: true },
+      component: () => import('@/views/PosView.vue'),
+    },
+    { path: '/pos/login', name: 'pos-login', component: () => import('@/views/PosLoginView.vue') },
     { path: '/login', name: 'login', component: () => import('@/views/LoginView.vue') },
     {
       path: '/',
@@ -205,6 +219,8 @@ const router = createRouter({
   ],
 })
 router.beforeEach((to) => {
+  if (to.meta.requiresPosAuth && !usePosSessionStore().user)
+    return { name: 'pos-login', query: { redirect: to.fullPath } }
   if (to.meta.requiresAuth && !useSessionStore().user) {
     return { name: 'login', query: { redirect: to.fullPath } }
   }

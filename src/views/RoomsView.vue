@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { roomStatuses, statusLabel, statusStyle } from '@/constants/hotel-status'
 import { useRoute, useRouter } from 'vue-router'
 const route = useRoute()
 const router = useRouter()
@@ -107,20 +108,24 @@ function pageSaved() {
       <template #filters>
         <label class="room-filter"
           >Status
-          <input
-            :value="filters.status ?? ''"
-            list="room-status-filters"
-            placeholder="All statuses"
-            @change="changeStatus"
-          />
+          <select :value="filters.status ?? ''" @change="changeStatus">
+            <option value="">All statuses</option>
+            <option v-for="status in roomStatuses" :key="status" :value="status">
+              {{ statusLabel(status) }}
+            </option>
+          </select>
         </label>
-        <datalist id="room-status-filters"><option value="cleaning">Cleaning</option></datalist>
       </template>
       <template #toolbar
         ><button type="button" @click="reset">Reset</button
         ><button type="button" class="primary" @click="openForm()">
           <AppIcon name="add" :size="16" />Add room
         </button></template
+      >
+      <template #cell-status="{ row }"
+        ><span class="status-badge" :style="statusStyle(row.status || '')">{{
+          row.status ? statusLabel(row.status) : '-'
+        }}</span></template
       >
       <template #cell-actions="{ row }">
         <div class="row-actions">
@@ -156,6 +161,12 @@ function pageSaved() {
 </template>
 
 <style scoped>
+.status-badge {
+  padding: 5px 9px;
+  border-radius: 20px;
+  font-size: 12px;
+  white-space: nowrap;
+}
 .room-filter {
   display: grid;
   gap: 0.375rem;

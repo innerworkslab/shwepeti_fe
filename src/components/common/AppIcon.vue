@@ -1,5 +1,10 @@
 <script setup lang="ts">
 import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  MoreHorizontal,
+  CalendarDays,
   Search,
   RefreshCw,
   SlidersHorizontal,
@@ -31,6 +36,11 @@ import {
 } from '@lucide/vue'
 
 const icons = {
+  chevronLeft: ChevronLeft,
+  chevronRight: ChevronRight,
+  chevronDown: ChevronDown,
+  more: MoreHorizontal,
+  calendar: CalendarDays,
   search: Search,
   refresh: RefreshCw,
   filters: SlidersHorizontal,

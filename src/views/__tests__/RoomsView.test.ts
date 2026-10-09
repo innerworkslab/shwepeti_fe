@@ -159,17 +159,22 @@ describe('Rooms page', () => {
     )
   })
 
-  it('uses the status-only endpoint and allows other status values', async () => {
+  it('uses the status-only endpoint with the supported room status options', async () => {
     const wrapper = await render()
     await wrapper.get('[aria-label="Update status for Room 101"]').trigger('click')
     await flushPromises()
     expect(roomCategoryService.listOptions).not.toHaveBeenCalled()
     expect(wrapper.find('[name="price"]').exists()).toBe(false)
     expect((wrapper.get('[name="status"]').element as HTMLInputElement).value).toBe('cleaning')
-    await wrapper.get('[name="status"]').setValue('other_status')
+    expect(
+      wrapper.findAll('[name="status"] option').map((option) => option.attributes('value')),
+    ).toContain('dirty')
+    await wrapper.get('[name="status"]').setValue('out_of_service')
     await wrapper.get('form').trigger('submit')
     await flushPromises()
-    expect(roomService.updateStatus).toHaveBeenCalledExactlyOnceWith(1, { status: 'other_status' })
+    expect(roomService.updateStatus).toHaveBeenCalledExactlyOnceWith(1, {
+      status: 'out_of_service',
+    })
     expect(roomService.update).not.toHaveBeenCalled()
     expect(roomService.list).toHaveBeenCalledTimes(2)
   })

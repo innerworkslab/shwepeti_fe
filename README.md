@@ -326,3 +326,17 @@ The new nested form routes preserve table filters and pagination on return and r
 ### Session persistence
 
 Login persists the bearer token and basic user profile in `sessionStorage` for the current tab. The session store restores both synchronously before route guards and protected API calls, so refreshing a page retains its URL and login. Logout clears storage, the user, and the Axios authorization header. Malformed saved sessions are discarded. Passwords are never stored. Closing the tab ends this browser session; persistence across browser restarts is not enabled.
+
+### POS login
+
+Visit `/pos/login` for the separate POS login page. Set `VITE_POS_API_BASE_URL` to the POS backend base URL, including its prefix, and restart Vite. The configured POS prefix is `/api/v1/pos` on the backend host. Requests are blocked if the base URL is empty. Login POSTs `{ email, password }` to that base plus `/login`, parsing the confirmed bearer-token envelope. POS uses a separate Axios client and `shwe-petit.pos-session` sessionStorage key, preserving login on reload without replacing the admin session. No example credentials are prefilled. Successful login redirects to the POS calendar at `/pos`.
+
+### POS calendar
+
+`/pos` is a POS-session-protected room reservation calendar based on the supplied reference. It includes grouped/collapsible room types, availability counts, reservation bars, guest/booking search, date/year/month controls, room readiness and reservation detail dialogs. Booking/check-in forms add local previews only; the screen is clearly marked sample data. Booking, housekeeping and facility APIs have not been supplied, so the page makes no backend booking writes.
+
+### POS rooms integration
+
+The POS calendar now groups real rooms from GET `{VITE_POS_API_BASE_URL}/rooms` by `room_category_id`. Available-only mode uses GET `/rooms/available`. Both use the nonpaginated `{success,data,meta: []}` envelope. Selecting a room opens an accessible right-hand drawer that fetches GET `/rooms/:id`, showing category, description, price, current status, update time and whether a current booking exists. Lists and details include cancellation, stale-response protection, loading/error/empty states and retry.
+
+Sample room/booking records have been removed. Current availability counts are shown only for today; future date counts and reservation bars await booking/date-availability data. No guest/order/payment fields are inferred from the supplied null `current_booking`.

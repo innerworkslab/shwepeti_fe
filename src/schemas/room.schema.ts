@@ -1,3 +1,4 @@
+import { roomStatuses } from '@/constants/hotel-status'
 import { array, number, object, string } from 'yup'
 
 const positiveId = number()
@@ -36,4 +37,9 @@ export const createRoomSchema = object({
 export const updateRoomSchema = createRoomSchema.shape({
   id: number().integer().positive().required(),
 })
-export const roomStatusSchema = object({ status: string().trim().required('Status is required.') })
+export const roomStatusSchema = object({
+  status: string()
+    .trim()
+    .oneOf(roomStatuses, 'Choose a valid room status.')
+    .required('Status is required.'),
+})
