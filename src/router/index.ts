@@ -6,16 +6,27 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
-      path: '/pos/bookings/create',
-      name: 'pos-booking-create',
-      meta: { requiresPosAuth: true },
-      component: () => import('@/views/PosBookingFormView.vue'),
-    },
-    {
       path: '/pos',
-      name: 'pos',
       meta: { requiresPosAuth: true },
-      component: () => import('@/views/PosView.vue'),
+      component: () => import('@/layouts/PosLayout.vue'),
+      children: [
+        { path: '', name: 'pos', component: () => import('@/views/PosView.vue') },
+        {
+          path: 'bookings',
+          name: 'pos-bookings',
+          component: () => import('@/views/PosBookingsView.vue'),
+        },
+        {
+          path: 'bookings/create',
+          name: 'pos-booking-create',
+          component: () => import('@/views/PosBookingFormView.vue'),
+        },
+        {
+          path: 'bookings/:id',
+          name: 'pos-booking-detail',
+          component: () => import('@/views/PosBookingDetailView.vue'),
+        },
+      ],
     },
     { path: '/pos/login', name: 'pos-login', component: () => import('@/views/PosLoginView.vue') },
     { path: '/login', name: 'login', component: () => import('@/views/LoginView.vue') },
