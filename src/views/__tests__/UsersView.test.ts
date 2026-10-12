@@ -11,6 +11,7 @@ const user = {
   name: 'Test User',
   email: 'test@example.com',
   role: 'front_office_administrator',
+  portal_access: 'admin',
 }
 const wrappers: ReturnType<typeof mount>[] = []
 const dialogDescriptors = Object.getOwnPropertyDescriptors(HTMLDialogElement.prototype)
@@ -89,6 +90,7 @@ describe('Users page', () => {
       email: user.email,
       password: ' password ',
       role: user.role,
+      portal_access: 'admin',
     })
     expect(wrapper.find('dialog').exists()).toBe(false)
     expect(wrapper.text()).toContain('User created.')

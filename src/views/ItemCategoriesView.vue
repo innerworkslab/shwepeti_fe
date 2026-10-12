@@ -28,7 +28,11 @@ const {
   setPerPage,
   setSearch,
   refresh,
-} = useDataTable(itemCategoryService.list)
+  filters,
+  setFilters,
+} = useDataTable<ItemCategory, { parent_id: number | undefined }>(itemCategoryService.list, {
+  initialFilters: { parent_id: undefined },
+})
 const modalOpen = ref(false)
 const statusOnly = ref(false)
 const selected = ref<ItemCategory | null>(null)
@@ -73,6 +77,20 @@ function saved() {
       @update:search="setSearch"
       @refresh="refresh"
     >
+      <template #filters
+        ><label
+          >Parent category ID<input
+            type="number"
+            min="1"
+            step="1"
+            :value="filters.parent_id"
+            placeholder="All parents"
+            @change="
+              setFilters({
+                parent_id: Number(($event.target as HTMLInputElement).value) || undefined,
+              })
+            " /></label
+      ></template>
       <template #toolbar
         ><button type="button" class="primary" @click="openForm()">
           <AppIcon name="add" :size="16" />Add item category

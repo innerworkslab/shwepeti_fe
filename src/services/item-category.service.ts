@@ -8,6 +8,7 @@ import type {
 } from '@/types/item-category'
 
 export interface ItemCategoryListParams extends PaginationParams {
+  parent_id?: number | null
   search?: string
 }
 

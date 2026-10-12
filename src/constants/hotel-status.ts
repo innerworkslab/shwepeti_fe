@@ -1,12 +1,4 @@
-export const roomStatuses = [
-  'available',
-  'occupied',
-  'reserved',
-  'dirty',
-  'cleaning',
-  'maintenance',
-  'out_of_service',
-] as const
+export const roomStatuses = ['available', 'cleaning', 'maintenance', 'out_of_service'] as const
 export const bookingStatuses = ['reserved', 'checked_in', 'checked_out', 'cancelled'] as const
 export type KnownRoomStatus = (typeof roomStatuses)[number]
 export type BookingStatus = (typeof bookingStatuses)[number]

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { userRoles, portalAccessOptions } from '@/constants/admin-options'
+import { statusLabel } from '@/constants/hotel-status'
 import AppIcon from '@/components/common/AppIcon.vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, useId } from 'vue'
 import { ValidationError } from 'yup'
@@ -11,12 +13,13 @@ const emit = defineEmits<{ close: []; saved: [] }>()
 const editing = computed(() => props.userId != null)
 const prefix = useId()
 const dialog = ref<HTMLDialogElement | null>(null)
-const form = reactive({ name: '', email: '', password: '', role: '' })
+const form = reactive({ name: '', email: '', password: '', role: '', portal_access: 'admin' })
 const fields = [
   { key: 'name', label: 'Name', type: 'text', autocomplete: 'name' },
   { key: 'email', label: 'Email', type: 'email', autocomplete: 'email' },
   { key: 'password', label: 'Password', type: 'password', autocomplete: 'new-password' },
   { key: 'role', label: 'Role', type: 'text', autocomplete: 'off' },
+  { key: 'portal_access', label: 'Portal access', type: 'text', autocomplete: 'off' },
 ] as const
 const loading = ref(editing.value)
 const saving = ref(false)
@@ -41,6 +44,7 @@ async function loadUser() {
     form.name = user.name
     form.email = user.email
     form.role = user.role
+    form.portal_access = user.portal_access || ''
     form.password = ''
   } catch (cause) {
     if (!disposed && !active.signal.aborted) loadError.value = toApiError(cause).message
@@ -138,7 +142,25 @@ async function submit() {
         <fieldset :disabled="saving">
           <div v-for="field in fields" :key="field.key" class="field">
             <label :for="`${prefix}-${field.key}`">{{ field.label }}</label>
+            <select
+              v-if="field.key === 'role' || field.key === 'portal_access'"
+              :id="`${prefix}-${field.key}`"
+              v-model="form[field.key]"
+              :name="field.key"
+              required
+              :aria-invalid="!!errors[field.key]"
+            >
+              <option value="" disabled>Select {{ field.label.toLowerCase() }}</option>
+              <option
+                v-for="option in field.key === 'role' ? userRoles : portalAccessOptions"
+                :key="option"
+                :value="option"
+              >
+                {{ statusLabel(option) }}
+              </option>
+            </select>
             <input
+              v-else
               :id="`${prefix}-${field.key}`"
               v-model="form[field.key]"
               :name="field.key"
@@ -147,15 +169,11 @@ async function submit() {
               required
               :aria-invalid="!!errors[field.key]"
               :aria-describedby="errors[field.key] ? `${prefix}-${field.key}-error` : undefined"
-              :list="field.key === 'role' ? `${prefix}-roles` : undefined"
             />
             <span v-if="errors[field.key]" :id="`${prefix}-${field.key}-error`" class="error">{{
               errors[field.key]
             }}</span>
           </div>
-          <datalist :id="`${prefix}-roles`">
-            <option value="front_office_administrator">Front office administrator</option>
-          </datalist>
         </fieldset>
       </template>
       <footer>
@@ -210,6 +228,7 @@ label {
   font-size: 0.875rem;
 }
 input,
+select,
 button {
   font: inherit;
   color: inherit;
@@ -218,7 +237,8 @@ button {
   padding: 0.6rem 0.75rem;
   background: white;
 }
-input {
+input,
+select {
   width: 100%;
   box-sizing: border-box;
 }
@@ -245,7 +265,7 @@ footer {
 [aria-invalid='true'] {
   border-color: #b91c1c;
 }
-:is(input, button):focus-visible {
+:is(input, select, button):focus-visible {
   outline: 2px solid #2563eb;
   outline-offset: 2px;
 }

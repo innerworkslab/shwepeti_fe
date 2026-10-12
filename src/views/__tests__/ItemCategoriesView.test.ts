@@ -4,7 +4,13 @@ import ItemCategoriesView from '../ItemCategoriesView.vue'
 import { itemCategoryService } from '@/services/item-category.service'
 
 vi.mock('@/services/item-category.service', () => ({
-  itemCategoryService: { list: vi.fn(), create: vi.fn(), update: vi.fn(), toggleActive: vi.fn() },
+  itemCategoryService: {
+    list: vi.fn(),
+    listOptions: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    toggleActive: vi.fn(),
+  },
 }))
 
 const category = {
@@ -29,6 +35,9 @@ async function openCreate(wrapper: ReturnType<typeof mount>) {
 
 beforeEach(() => {
   vi.resetAllMocks()
+  vi.mocked(itemCategoryService.listOptions).mockResolvedValue([
+    { ...category, id: 2, parent_id: null },
+  ])
   // jsdom has no native dialog top layer; browsers supply focus containment.
   Object.defineProperties(HTMLDialogElement.prototype, {
     showModal: {
@@ -71,11 +80,9 @@ describe('item categories', () => {
     await openCreate(wrapper)
     await wrapper.get('[name="name"]').setValue('Category One')
     await wrapper.get('[name="code"]').setValue('category_one')
-    await wrapper.get('[name="parent_id"]').setValue('-1')
-    await wrapper.get('form').trigger('submit')
-    await flushPromises()
-    expect(itemCategoryService.create).not.toHaveBeenCalled()
-    expect(wrapper.get('dialog').text()).toContain('greater than zero')
+    expect(
+      wrapper.findAll('[name="parent_id"] option').map((option) => option.attributes('value')),
+    ).toEqual(['', '2'])
     await wrapper.get('[name="parent_id"]').setValue('')
     await wrapper.get('[name="description"]').setValue('   ')
     await wrapper.get('form').trigger('submit')
@@ -93,11 +100,10 @@ describe('item categories', () => {
     await flushPromises()
     await wrapper.get('[aria-label="Edit Category One"]').trigger('click')
     expect(wrapper.find('[name="is_active"]').exists()).toBe(false)
-    await wrapper.get('[name="parent_id"]').setValue('1')
-    await wrapper.get('form').trigger('submit')
     await flushPromises()
-    expect(itemCategoryService.update).not.toHaveBeenCalled()
-    expect(wrapper.get('dialog').text()).toContain('cannot be its own parent')
+    expect(
+      wrapper.findAll('[name="parent_id"] option').map((option) => option.attributes('value')),
+    ).not.toContain('1')
     await wrapper.get('[name="parent_id"]').setValue('')
     await wrapper.get('form').trigger('submit')
     await flushPromises()

@@ -27,15 +27,46 @@ const form = reactive({
   // Missing status is left unselected rather than silently activating a record.
   is_active: props.category?.is_active,
 })
+const parents = ref<ItemCategory[]>([])
+const parentError = ref('')
+const parentsLoading = ref(false)
+const parentController = new AbortController()
+const parentOptions = computed(() => {
+  const excluded = new Set<number>(props.category ? [props.category.id] : [])
+  let changed = true
+  while (changed) {
+    changed = false
+    for (const item of parents.value)
+      if (item.parent_id != null && excluded.has(item.parent_id) && !excluded.has(item.id)) {
+        excluded.add(item.id)
+        changed = true
+      }
+  }
+  return parents.value.filter((item) => !excluded.has(item.id))
+})
+async function loadParents() {
+  parentsLoading.value = true
+  parentError.value = ''
+  try {
+    const result = await itemCategoryService.listOptions(parentController.signal)
+    if (!disposed) parents.value = result
+  } catch (cause) {
+    if (!disposed) parentError.value = toApiError(cause).message
+  } finally {
+    if (!disposed) parentsLoading.value = false
+  }
+}
 let disposed = false
 let previousFocus: HTMLElement | null = null
 
 onMounted(() => {
   previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null
   dialog.value?.showModal()
+  if (!props.statusOnly) void loadParents()
 })
 onBeforeUnmount(() => {
   disposed = true
+  parentController.abort()
   dialog.value?.close()
   previousFocus?.focus()
 })
@@ -45,7 +76,7 @@ function close() {
 }
 
 async function submit() {
-  if (saving.value) return
+  if (saving.value || (!props.statusOnly && (parentsLoading.value || parentError.value))) return
   saving.value = true
   errors.value = {}
   saveError.value = ''
@@ -147,17 +178,23 @@ async function submit() {
           }}</span>
         </div>
         <div v-if="!statusOnly" class="field">
-          <label :for="`${prefix}-parent`">Parent category ID (optional)</label>
-          <input
+          <label :for="`${prefix}-parent`">Parent category (optional)</label>
+          <select
             :id="`${prefix}-parent`"
             v-model="form.parent_id"
             name="parent_id"
-            type="number"
-            min="1"
-            step="1"
+            :disabled="parentsLoading"
             :aria-invalid="!!errors.parent_id"
-            :aria-describedby="`${prefix}-parent-help${errors.parent_id ? ` ${prefix}-parent-error` : ''}`"
-          />
+          >
+            <option value="">No parent (top-level)</option>
+            <option v-for="parent in parentOptions" :key="parent.id" :value="parent.id">
+              {{ parent.name }}
+            </option>
+          </select>
+          <p v-if="parentError" role="alert" class="error">
+            {{ parentError }}
+            <button type="button" @click="loadParents">Retry parent categories</button>
+          </p>
           <small :id="`${prefix}-parent-help`">Leave blank for a top-level category.</small>
           <span v-if="errors.parent_id" :id="`${prefix}-parent-error`" class="error">{{
             errors.parent_id

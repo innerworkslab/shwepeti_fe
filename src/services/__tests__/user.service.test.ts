@@ -10,6 +10,7 @@ describe('userService', () => {
       name: 'Test',
       email: 'test@example.com',
       role: 'front_office_administrator',
+      portal_access: 'admin',
     }
     const list = { data: [user], total: 1, page: 1, perPage: 20 }
     const get = vi
@@ -41,6 +42,7 @@ describe('userService', () => {
       email: 'tests@example.com',
       password: 'password',
       role: 'front_office_administrator',
+      portal_access: 'admin',
     }
     await userService.create(input)
     await userService.update({ ...input, id: 9 })
@@ -55,6 +57,7 @@ it('unwraps the standard backend envelope for user details', async () => {
     name: 'Test',
     email: 'test@example.com',
     role: 'front_office_administrator',
+    portal_access: 'admin',
   }
   vi.spyOn(apiClient, 'get').mockResolvedValue({ data: { success: true, data: user } })
   expect(await userService.get(9)).toEqual(user)

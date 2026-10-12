@@ -1,3 +1,4 @@
+import { supplierTypes } from '@/constants/admin-options'
 import { boolean, number, object, string } from 'yup'
 export const createSupplierSchema = object({
   supplier_code: string().trim().required('Supplier code is required.'),
@@ -15,7 +16,7 @@ export const createSupplierSchema = object({
       (value) => value == null || Number.isFinite(value),
     )
     .required('Credit limit is required.'),
-  supplier_type: string().trim().required('Supplier type is required.'),
+  supplier_type: string().oneOf(supplierTypes).required('Supplier type is required.'),
   is_active: boolean().required('Choose a status.'),
 })
 export const updateSupplierSchema = createSupplierSchema.shape({

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { supplierTypes } from '@/constants/admin-options'
 import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import { onBeforeRouteLeave, onBeforeRouteUpdate, useRoute, useRouter } from 'vue-router'
 import { ValidationError } from 'yup'
@@ -229,19 +230,22 @@ async function submit() {
         </div>
         <div class="field">
           <label for="supplier-supplier_type">Supplier type *</label
-          ><input
+          ><select
             id="supplier-supplier_type"
             name="supplier_type"
             v-model="form.supplier_type"
-            list="supplier-types"
             required
             :aria-invalid="!!errors.supplier_type"
             :aria-describedby="errors.supplier_type ? 'supplier-supplier_type-error' : undefined"
-          /><span v-if="errors.supplier_type" id="supplier-supplier_type-error" class="error">{{
+          >
+            <option v-for="type in supplierTypes" :key="type" :value="type">
+              {{ type }}
+            </option></select
+          ><span v-if="errors.supplier_type" id="supplier-supplier_type-error" class="error">{{
             errors.supplier_type
           }}</span>
         </div>
-        <datalist id="supplier-types"><option value="wholesale" /></datalist>
+
         <div class="field">
           <label for="supplier-status">Status *</label
           ><select

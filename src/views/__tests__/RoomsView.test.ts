@@ -168,7 +168,7 @@ describe('Rooms page', () => {
     expect((wrapper.get('[name="status"]').element as HTMLInputElement).value).toBe('cleaning')
     expect(
       wrapper.findAll('[name="status"] option').map((option) => option.attributes('value')),
-    ).toContain('dirty')
+    ).not.toContain('dirty')
     await wrapper.get('[name="status"]').setValue('out_of_service')
     await wrapper.get('form').trigger('submit')
     await flushPromises()

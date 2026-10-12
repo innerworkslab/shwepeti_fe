@@ -12,6 +12,7 @@ const columns: DataTableColumn<User>[] = [
   { key: 'name', label: 'Name', field: 'name' },
   { key: 'email', label: 'Email', field: 'email' },
   { key: 'role', label: 'Role', field: 'role' },
+  { key: 'portal_access', label: 'Portal access', field: 'portal_access' },
   { key: 'actions', label: 'Actions', align: 'right' },
 ]
 const {
