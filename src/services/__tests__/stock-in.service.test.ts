@@ -5,6 +5,10 @@ import { warehouseService } from '../warehouse.service'
 import { itemService } from '../item.service'
 import { createStockInSchema, stockInStatusSchema } from '@/schemas/stock-in.schema'
 const input = {
+  supplier_id: 1,
+  cashbook_id: 3,
+  total_amount: 80000,
+  paid_amount: 40000,
   warehouse_id: 2,
   transaction_date: '2026-09-15 14:47:41',
   items: [{ item_id: 1, unit_id: 1, quantity: 10, unit_cost: 5000 }],
@@ -103,4 +107,12 @@ describe('stock in API', () => {
     ).rejects.toThrow()
     await expect(stockInStatusSchema.validate({ status: 'draft' })).rejects.toThrow()
   })
+})
+
+it('rejects overpayment and invalid settlement amounts', async () => {
+  await expect(createStockInSchema.validate({ ...input, paid_amount: 80001 })).rejects.toThrow(
+    'Paid amount cannot exceed total amount.',
+  )
+  await expect(createStockInSchema.validate({ ...input, total_amount: Infinity })).rejects.toThrow()
+  await expect(createStockInSchema.validate({ ...input, paid_amount: -1 })).rejects.toThrow()
 })

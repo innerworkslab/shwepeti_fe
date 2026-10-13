@@ -44,6 +44,14 @@ const amount = (label: string) =>
     .required(`${label} is required.`)
 export const createStockInSchema = object({
   warehouse_id: id('a warehouse'),
+  supplier_id: id('a supplier'),
+  cashbook_id: id('a cashbook'),
+  total_amount: amount('Total amount').min(0),
+  paid_amount: amount('Paid amount')
+    .min(0)
+    .test('within-total', 'Paid amount cannot exceed total amount.', function (value) {
+      return value == null || this.parent.total_amount == null || value <= this.parent.total_amount
+    }),
   transaction_date: string()
     .transform((value) => (typeof value === 'string' ? formatTransactionDate(value) : value))
     .required('Transaction date is required.')

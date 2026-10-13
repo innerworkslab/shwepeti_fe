@@ -1,3 +1,7 @@
+import { supplierService } from '@/services/supplier.service'
+import { cashbookService } from '@/services/cashbook.service'
+vi.mock('@/services/supplier.service', () => ({ supplierService: { listOptions: vi.fn() } }))
+vi.mock('@/services/cashbook.service', () => ({ cashbookService: { listOptions: vi.fn() } }))
 import { mountLargeFormFlow } from './mountLargeFormFlow'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
@@ -32,6 +36,8 @@ async function render() {
 }
 beforeEach(() => {
   vi.resetAllMocks()
+  vi.mocked(supplierService.listOptions).mockResolvedValue([{ id: 1, name: 'Supplier' }] as never)
+  vi.mocked(cashbookService.listOptions).mockResolvedValue([{ id: 3, name: 'Cashbook' }] as never)
   vi.mocked(warehouseService.listOptions).mockResolvedValue([
     { id: 2, name: 'Kitchen Warehouse', code: 'KITCHEN' },
   ])
@@ -84,6 +90,10 @@ afterEach(() => {
 })
 
 async function fill(wrapper: ReturnType<typeof mount>) {
+  await wrapper.get('[name="supplier_id"]').setValue('1')
+  await wrapper.get('[name="cashbook_id"]').setValue('3')
+  await wrapper.get('[name="total_amount"]').setValue('50000')
+  await wrapper.get('[name="paid_amount"]').setValue('40000')
   await wrapper.get('[name="warehouse_id"]').setValue('2')
   await wrapper.get('[name="transaction_date"]').setValue('2026-09-15T14:47:41')
   await wrapper.get('[name="items[0].item_id"]').setValue('1')
@@ -118,6 +128,10 @@ describe('Stock In', () => {
     await flushPromises()
     expect(stockInService.create).toHaveBeenCalledExactlyOnceWith({
       warehouse_id: 2,
+      supplier_id: 1,
+      cashbook_id: 3,
+      total_amount: 50000,
+      paid_amount: 40000,
       transaction_date: '2026-09-15 14:47:41',
       items: [{ item_id: 1, unit_id: 1, quantity: 10, unit_cost: 5000 }],
     })

@@ -6,6 +6,10 @@ export interface StockInLineInput {
   unit_cost: number
 }
 export interface CreateStockInInput {
+  supplier_id: number
+  cashbook_id: number
+  total_amount: number
+  paid_amount: number
   warehouse_id: number
   transaction_date: string
   items: StockInLineInput[]

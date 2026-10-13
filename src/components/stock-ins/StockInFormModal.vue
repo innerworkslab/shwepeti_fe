@@ -2,6 +2,10 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, useId } from 'vue'
 import { ValidationError } from 'yup'
 import AppIcon from '@/components/common/AppIcon.vue'
+import { supplierService } from '@/services/supplier.service'
+import { cashbookService } from '@/services/cashbook.service'
+import type { Supplier } from '@/types/supplier'
+import type { Cashbook } from '@/types/cashbook'
 import { stockInService } from '@/services/stock-in.service'
 import { warehouseService } from '@/services/warehouse.service'
 import { itemService } from '@/services/item.service'
@@ -29,6 +33,10 @@ function newRow() {
   }
 }
 const form = reactive({
+  supplier_id: '' as number | string,
+  cashbook_id: '' as number | string,
+  total_amount: '' as number | string,
+  paid_amount: 0 as number | string,
   warehouse_id: '' as number | string,
   transaction_date: '',
   status:
@@ -37,6 +45,8 @@ const form = reactive({
       : '',
   items: [newRow()],
 })
+const suppliers = ref<Supplier[]>([])
+const cashbooks = ref<Cashbook[]>([])
 const warehouses = ref<Warehouse[]>([])
 const items = ref<Item[]>([])
 const units = ref<Unit[]>([])
@@ -65,15 +75,20 @@ async function load() {
   loadError.value = ''
   try {
     if (!statusOnly.value) {
-      const [warehouseOptions, itemOptions, unitOptions] = await Promise.all([
-        warehouseService.listOptions(active.signal),
-        itemService.listOptions(active.signal),
-        unitService.listOptions(active.signal),
-      ])
+      const [warehouseOptions, itemOptions, unitOptions, supplierOptions, cashbookOptions] =
+        await Promise.all([
+          warehouseService.listOptions(active.signal),
+          itemService.listOptions(active.signal),
+          unitService.listOptions(active.signal),
+          supplierService.listOptions(active.signal),
+          cashbookService.listOptions(active.signal),
+        ])
       if (disposed || active.signal.aborted) return
       warehouses.value = warehouseOptions
       items.value = itemOptions
       units.value = unitOptions
+      suppliers.value = supplierOptions
+      cashbooks.value = cashbookOptions
     }
   } catch (cause) {
     if (!disposed) {
@@ -119,6 +134,10 @@ async function submit() {
       const payload = await createStockInSchema.validate(
         {
           warehouse_id: form.warehouse_id,
+          supplier_id: form.supplier_id,
+          cashbook_id: form.cashbook_id,
+          total_amount: form.total_amount,
+          paid_amount: form.paid_amount,
           transaction_date: form.transaction_date,
           items: form.items.map(({ item_id, unit_id, quantity, unit_cost }) => ({
             item_id,
@@ -226,6 +245,53 @@ async function submit() {
                 class="error"
                 >{{ errors.warehouse_id }}</span
               >
+            </div>
+            <div
+              v-for="field in ['supplier_id', 'cashbook_id'] as const"
+              :key="field"
+              class="field"
+            >
+              <label :for="`${prefix}-${field}`">{{
+                field === 'supplier_id' ? 'Supplier' : 'Cashbook'
+              }}</label>
+              <select
+                :id="`${prefix}-${field}`"
+                v-model="form[field]"
+                :name="field"
+                required
+                :aria-invalid="!!errors[field]"
+              >
+                <option value="">
+                  Select {{ field === 'supplier_id' ? 'supplier' : 'cashbook' }}
+                </option>
+                <option
+                  v-for="option in field === 'supplier_id' ? suppliers : cashbooks"
+                  :key="option.id"
+                  :value="option.id"
+                >
+                  {{ option.name }}
+                </option></select
+              ><span v-if="errors[field]" class="error">{{ errors[field] }}</span>
+            </div>
+            <div
+              v-for="field in ['total_amount', 'paid_amount'] as const"
+              :key="field"
+              class="field"
+            >
+              <label :for="`${prefix}-${field}`">{{
+                field === 'total_amount' ? 'Total amount' : 'Paid amount'
+              }}</label>
+              <input
+                :id="`${prefix}-${field}`"
+                v-model="form[field]"
+                :name="field"
+                type="number"
+                min="0"
+                step="any"
+                required
+                :aria-invalid="!!errors[field]"
+              />
+              <span v-if="errors[field]" class="error">{{ errors[field] }}</span>
             </div>
             <div class="field">
               <label :for="`${prefix}-transaction_date`">Transaction date and time</label
