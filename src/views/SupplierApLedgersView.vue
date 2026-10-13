@@ -12,12 +12,18 @@ const columns: DataTableColumn<SupplierApLedger>[] = [
   { key: 'id', label: 'ID', field: 'id' },
   { key: 'transaction_date', label: 'Date', field: 'transaction_date' },
   { key: 'transaction_type', label: 'Type', field: 'transaction_type' },
-  { key: 'debit_amount', label: 'Debit', field: 'debit_amount', align: 'right' },
-  { key: 'credit_amount', label: 'Credit', field: 'credit_amount', align: 'right' },
-  { key: 'balance_amount', label: 'Balance', field: 'balance_amount', align: 'right' },
+  { key: 'amount', label: 'Amount', field: 'amount', align: 'right' },
+  {
+    key: 'balance_after',
+    label: 'Balance after',
+    format: (row) => row.balance_after ?? row.balance_amount,
+    align: 'right',
+  },
   { key: 'reference_type', label: 'Reference type', field: 'reference_type' },
   { key: 'reference_id', label: 'Reference ID', field: 'reference_id' },
   { key: 'remark', label: 'Remark', field: 'remark' },
+  { key: 'creator', label: 'Created by', format: (row) => row.creator?.name },
+  { key: 'created_at', label: 'Created at', field: 'created_at' },
 ]
 const { rows, total, page, perPage, loading, error, setPage, setPerPage, setFilters, refresh } =
   useDataTable<SupplierApLedger, { supplier_id: number }>(

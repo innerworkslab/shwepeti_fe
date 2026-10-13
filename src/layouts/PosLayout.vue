@@ -1,7 +1,36 @@
 <script setup lang="ts">
-import { onBeforeUnmount, ref, watch } from 'vue'
-import { useRoute, RouterLink, RouterView } from 'vue-router'
+import { nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import { useRouter, useRoute, RouterLink, RouterView } from 'vue-router'
 import AppIcon from '@/components/common/AppIcon.vue'
+import { posAuthService } from '@/services/pos-auth.service'
+import { usePosSessionStore } from '@/stores/pos-session'
+import { toApiError } from '@/services/api/api-error'
+const router = useRouter()
+const session = usePosSessionStore()
+const loggingOut = ref(false)
+const signedOut = ref(false)
+const logoutError = ref('')
+async function logout() {
+  if (loggingOut.value) return
+  loggingOut.value = true
+  logoutError.value = ''
+  try {
+    try {
+      await posAuthService.logout()
+    } catch (cause) {
+      if (toApiError(cause).status !== 401) throw cause
+    }
+    session.clearSession()
+    signedOut.value = true
+    close()
+    await nextTick()
+    await router.replace('/pos/login')
+  } catch (cause) {
+    logoutError.value = toApiError(cause).message
+  } finally {
+    loggingOut.value = false
+  }
+}
 const route = useRoute()
 const drawer = ref<HTMLDialogElement | null>(null)
 const opened = ref(false)
@@ -42,7 +71,11 @@ onBeforeUnmount(() => drawer.value?.close())
       >
         <AppIcon name="expand" :size="20" /> Menu</button
       ><span>SHWE PETIT <strong>POS</strong></span>
+      <button class="logout" type="button" :disabled="loggingOut" @click="logout">
+        <AppIcon name="logout" :size="18" />{{ loggingOut ? 'Logging out…' : 'Log out' }}
+      </button>
     </div>
+    <p v-if="logoutError" class="logout-error" role="alert">{{ logoutError }}</p>
     <dialog
       id="pos-navigation-drawer"
       ref="drawer"
@@ -69,12 +102,31 @@ onBeforeUnmount(() => drawer.value?.close())
           @click="close"
           ><AppIcon name="calendar" />Bookings</RouterLink
         >
+        <RouterLink
+          to="/pos/cashbooks"
+          :class="{ active: route.path === '/pos/cashbooks' }"
+          @click="close"
+          ><AppIcon name="cashbooks" />Cashbooks</RouterLink
+        >
       </nav>
     </dialog>
-    <RouterView />
+    <RouterView v-if="!signedOut" />
   </div>
 </template>
 <style scoped>
+.logout {
+  margin-left: auto;
+}
+.logout-error {
+  color: #b91c1c;
+  padding: 10px 20px;
+  margin: 0;
+  background: #fff1f2;
+}
+button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
 .pos-navigation {
   display: flex;
   align-items: center;

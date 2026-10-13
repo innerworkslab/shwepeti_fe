@@ -38,6 +38,7 @@ it('posts the exact day reservation payload with no optional deposit or UI field
 })
 it('includes a validated reservation deposit but strips it for walk-ins', async () => {
   const deposit = {
+    cashbook_id: 1,
     amount: '20000',
     payment_method: 'ayapay',
     paid_at: '2026-10-07T20:00',
@@ -78,5 +79,27 @@ it('surfaces application failures', async () => {
   })
   await expect(posBookingService.create(await bookingPayload(form))).rejects.toThrow(
     'Room already reserved.',
+  )
+})
+
+it('uses bodyless check-in and exact checkout/partial payment payloads', async () => {
+  const post = vi.spyOn(posApiClient, 'post').mockResolvedValue({ data: { success: true } })
+  const payload = {
+    cashbook_id: 1,
+    payment_method: 'kpay' as const,
+    amount: 15000,
+    paid_at: '2026-10-08 12:00:00',
+    note: 'Final payment',
+  }
+  await posBookingService.checkIn(1)
+  await posBookingService.checkout(1, payload)
+  await posBookingService.partialPayment(1, { ...payload, cashbook_id: 1 })
+  expect(post).toHaveBeenNthCalledWith(1, '/bookings/1/check-in', undefined, { signal: undefined })
+  expect(post).toHaveBeenNthCalledWith(2, '/bookings/1/checkout', payload, { signal: undefined })
+  expect(post).toHaveBeenNthCalledWith(
+    3,
+    '/bookings/1/payments',
+    { ...payload, cashbook_id: 1, payment_type: 'partial' },
+    { signal: undefined },
   )
 })

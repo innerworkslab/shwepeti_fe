@@ -21,6 +21,19 @@ export const supplierApService = {
       `${base}/supplier-ap-ledgers`,
       { params, signal },
     )
+    if (Array.isArray(response.data.meta)) {
+      if (!response.data.success)
+        throw new Error(response.data.message || 'Could not load supplier history.')
+      if (!Array.isArray(response.data.data)) throw new Error('Invalid supplier history response.')
+      const page = params.page ?? 1
+      const perPage = params.perPage ?? 20
+      return {
+        data: response.data.data.slice((page - 1) * perPage, page * perPage),
+        total: response.data.data.length,
+        page,
+        perPage,
+      }
+    }
     return normalizePagination(response.data)
   },
   async createPayment(input: CreateSupplierApPaymentInput): Promise<void> {

@@ -1,3 +1,4 @@
+import type { BookingPaymentInput, PartialPaymentInput } from '@/schemas/pos-payment.schema'
 import type { PosBookingDetail } from '@/types/pos-booking'
 import { posApiClient } from './api/pos-client'
 import type { PosBookingInput } from '@/schemas/pos-booking.schema'
@@ -10,7 +11,20 @@ export interface PosBooking {
   paid_amount: string
   balance_amount: string
 }
+async function bookingAction(id: number, action: string, payload: unknown, signal?: AbortSignal) {
+  const { data } = await posApiClient.post<{ success: boolean; message?: string }>(
+    `/bookings/${encodeURIComponent(id)}/${action}`,
+    payload,
+    { signal },
+  )
+  if (data?.success !== true) throw new Error(data?.message || 'Booking action failed.')
+}
 export const posBookingService = {
+  checkIn: (id: number, signal?: AbortSignal) => bookingAction(id, 'check-in', undefined, signal),
+  checkout: (id: number, payload: BookingPaymentInput, signal?: AbortSignal) =>
+    bookingAction(id, 'checkout', payload, signal),
+  partialPayment: (id: number, payload: PartialPaymentInput, signal?: AbortSignal) =>
+    bookingAction(id, 'payments', { ...payload, payment_type: 'partial' }, signal),
   async list(signal?: AbortSignal): Promise<PosBookingDetail[]> {
     const { data } = await posApiClient.get<{
       success: boolean

@@ -44,6 +44,10 @@ export const posBookingSchema = object({
   note: string().trim().defined(),
   include_deposit: boolean().default(false),
   deposit: object({
+    cashbook_id: positive()
+      .integer()
+      .max(Number.MAX_SAFE_INTEGER)
+      .required('Choose a deposit cashbook.'),
     amount: positive().required('Deposit amount is required.'),
     payment_method: string()
       .oneOf(['cash', 'kpay', 'wavepay', 'ayapay'] as const)

@@ -27,7 +27,7 @@ const columns: DataTableColumn<StockBalance>[] = [
     key: 'unit',
     label: 'Unit',
     format: (row) =>
-      row.unit?.symbol ?? row.unit?.name ?? (row.unit_id == null ? null : `Unit #${row.unit_id}`),
+      row.unit?.name ?? row.unit?.symbol ?? (row.unit_id == null ? null : `Unit #${row.unit_id}`),
   },
   { key: 'quantity', label: 'Quantity', field: 'quantity', align: 'right' },
 ]

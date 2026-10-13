@@ -1,3 +1,4 @@
+import { loadOptions } from './api/options'
 import { normalizePagination } from './api/pagination'
 import { apiClient } from './api/client'
 import type { ApiPaginatedResponse, PaginatedResponse, PaginationParams } from '@/types/api'
@@ -13,6 +14,9 @@ export interface ItemCategoryListParams extends PaginationParams {
 }
 
 export const itemCategoryService = {
+  async parentOptions(signal?: AbortSignal): Promise<ItemCategory[]> {
+    return loadOptions<ItemCategory>('/api/v1/admin/item-categories?parentId', signal)
+  },
   async list(
     params: ItemCategoryListParams = {},
     signal?: AbortSignal,
@@ -27,29 +31,7 @@ export const itemCategoryService = {
     return normalizePagination(response.data)
   },
   async listOptions(signal?: AbortSignal): Promise<ItemCategory[]> {
-    const categories = new Map<number, ItemCategory>()
-    let page = 1
-    let totalPages = 1
-    do {
-      signal?.throwIfAborted()
-      const result = await itemCategoryService.list({ page, perPage: 100 }, signal)
-      if (
-        !Array.isArray(result.data) ||
-        result.page !== page ||
-        !Number.isSafeInteger(result.total) ||
-        result.total < 0 ||
-        !Number.isSafeInteger(result.perPage) ||
-        result.perPage < 1
-      ) {
-        throw new Error('Could not load item categories: invalid pagination response.')
-      }
-      totalPages = Math.max(1, Math.ceil(result.total / result.perPage))
-      if (!result.data.length && page < totalPages)
-        throw new Error('Could not load all item categories. Please retry.')
-      for (const category of result.data) categories.set(category.id, category)
-      page++
-    } while (page <= totalPages)
-    return [...categories.values()]
+    return loadOptions<ItemCategory>('/api/v1/admin/item-categories', signal)
   },
   async create(input: CreateItemCategoryInput): Promise<void> {
     await apiClient.post('/api/v1/admin/item-categories', input)

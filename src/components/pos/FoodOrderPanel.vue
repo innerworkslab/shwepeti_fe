@@ -174,7 +174,13 @@ async function submit() {
 }
 async function update(order: FoodOrder) {
   const status = statuses[order.id]
-  if (busy.value || !status || !foodOrderStatuses.includes(status) || status === order.status)
+  if (
+    order.status === 'served' ||
+    busy.value ||
+    !status ||
+    !foodOrderStatuses.includes(status) ||
+    status === order.status
+  )
     return
   setBusy(true)
   error.value = ''
@@ -378,7 +384,7 @@ onBeforeUnmount(() => {
               >Status<select
                 v-model="statuses[order.id]"
                 :aria-label="`Status for order ${order.id}`"
-                :disabled="busy"
+                :disabled="busy || order.status === 'served'"
               >
                 <option v-for="status in foodOrderStatuses" :key="status" :value="status">
                   {{ statusLabel(status) }}
@@ -386,7 +392,12 @@ onBeforeUnmount(() => {
               </select></label
             ><button
               type="button"
-              :disabled="busy || !statuses[order.id] || statuses[order.id] === order.status"
+              :disabled="
+                busy ||
+                order.status === 'served' ||
+                !statuses[order.id] ||
+                statuses[order.id] === order.status
+              "
               @click="update(order)"
             >
               Update

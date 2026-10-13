@@ -11,10 +11,37 @@ const columns: DataTableColumn<SupplierApBalance>[] = [
   {
     key: 'supplier',
     label: 'Supplier',
-    format: (row) => row.supplier?.name ?? `Supplier #${row.supplier_id}`,
+    format: (row) => row.supplier_name ?? row.supplier?.name ?? `Supplier #${row.supplier_id}`,
   },
-  { key: 'supplier_code', label: 'Supplier code', format: (row) => row.supplier?.supplier_code },
-  { key: 'balance_amount', label: 'Balance', field: 'balance_amount', align: 'right' },
+  {
+    key: 'supplier_code',
+    label: 'Supplier code',
+    format: (row) => row.supplier_code ?? row.supplier?.supplier_code,
+  },
+  { key: 'supplier_type', label: 'Supplier type', field: 'supplier_type' },
+  {
+    key: 'credit_limit_amount',
+    label: 'Credit limit',
+    field: 'credit_limit_amount',
+    align: 'right',
+  },
+  {
+    key: 'payable_balance',
+    label: 'Payable balance',
+    format: (row) => row.payable_balance ?? row.balance_amount,
+    align: 'right',
+  },
+  {
+    key: 'available_credit_amount',
+    label: 'Available credit',
+    field: 'available_credit_amount',
+    align: 'right',
+  },
+  {
+    key: 'is_active',
+    label: 'Status',
+    format: (row) => (row.is_active == null ? null : row.is_active ? 'Active' : 'Inactive'),
+  },
   { key: 'actions', label: 'Actions', align: 'right' },
 ]
 const { rows, total, page, perPage, loading, error, setPage, setPerPage, refresh } =

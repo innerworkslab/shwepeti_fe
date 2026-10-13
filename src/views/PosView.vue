@@ -371,6 +371,7 @@ onBeforeUnmount(() => {
       </p>
     </dialog>
     <RoomDrawer
+      @updated="loadRooms"
       v-if="selectedRoomId != null"
       :room-id="selectedRoomId"
       @close="selectedRoomId = null"

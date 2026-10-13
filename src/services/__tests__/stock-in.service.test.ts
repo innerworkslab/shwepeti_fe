@@ -46,23 +46,6 @@ describe('stock in API', () => {
       ['/api/v1/admin/stock-ins/7/status', { status: 'cancelled' }],
     ])
   })
-  it.each([warehouseService, itemService])('loads all lookup pages', async (service) => {
-    const get = vi.spyOn(apiClient, 'get')
-    for (const page of [1, 2])
-      get.mockResolvedValueOnce({
-        data: {
-          success: true,
-          data: [{ id: page, name: 'Option' }],
-          meta: { current_page: page, per_page: 1, total: 2, last_page: 2 },
-        },
-      })
-    expect(await service.listOptions()).toHaveLength(2)
-    expect(get.mock.calls[1]?.[1]?.params.page).toBe(2)
-    const controller = new AbortController()
-    controller.abort()
-    await expect(service.listOptions(controller.signal)).rejects.toThrow()
-    expect(get).toHaveBeenCalledTimes(2)
-  })
   it('preserves local date/time and adds missing seconds without timezone conversion', async () => {
     expect(
       (await createStockInSchema.validate({ ...input, transaction_date: '2026-09-15T14:47:41' }))

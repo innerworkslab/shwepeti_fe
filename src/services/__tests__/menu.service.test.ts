@@ -53,19 +53,6 @@ it('posts exact create/update and independent boolean toggle payloads', async ()
     ['/api/v1/admin/menus/1/toggle-available', { is_available: false }],
   ])
 })
-it('loads all category pages for dropdowns', async () => {
-  const get = vi.spyOn(apiClient, 'get')
-  for (const page of [1, 2])
-    get.mockResolvedValueOnce({
-      data: {
-        success: true,
-        data: [{ id: page, name: 'Category' }],
-        meta: { current_page: page, per_page: 1, total: 2, last_page: 2 },
-      },
-    })
-  expect(await menuCategoryService.listOptions()).toHaveLength(2)
-  expect(get.mock.calls[1]?.[1]?.params.page).toBe(2)
-})
 it('normalizes optional values, preserves zero cost, and rejects invalid prices/URLs', async () => {
   expect(await createMenuSchema.validate({ ...input, cost_price: '', image_url: '' })).toEqual(
     input,

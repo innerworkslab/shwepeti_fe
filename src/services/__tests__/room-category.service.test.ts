@@ -14,21 +14,19 @@ describe('roomCategoryService', () => {
   })
   it('GETs the list with pagination, search, and cancellation', async () => {
     const data = { data: [], total: 0, page: 2, perPage: 10 }
-    const get = vi
-      .spyOn(apiClient, 'get')
-      .mockResolvedValue({
-        data: {
-          success: true,
-          message: 'Loaded',
-          data: data.data,
-          meta: {
-            current_page: data.page,
-            per_page: data.perPage,
-            total: data.total,
-            last_page: 1,
-          },
+    const get = vi.spyOn(apiClient, 'get').mockResolvedValue({
+      data: {
+        success: true,
+        message: 'Loaded',
+        data: data.data,
+        meta: {
+          current_page: data.page,
+          per_page: data.perPage,
+          total: data.total,
+          last_page: 1,
         },
-      })
+      },
+    })
     const signal = new AbortController().signal
     const params = { page: 2, perPage: 10, search: 'suite' }
     expect(await roomCategoryService.list(params, signal)).toEqual(data)

@@ -12,6 +12,11 @@ const router = createRouter({
       children: [
         { path: '', name: 'pos', component: () => import('@/views/PosView.vue') },
         {
+          path: 'cashbooks',
+          name: 'pos-cashbooks',
+          component: () => import('@/views/PosCashbooksView.vue'),
+        },
+        {
           path: 'bookings',
           name: 'pos-bookings',
           component: () => import('@/views/PosBookingsView.vue'),

@@ -1,11 +1,23 @@
 import type { Supplier } from './supplier'
 export interface SupplierApBalance {
   id?: number
+  supplier_code?: string
+  supplier_name?: string
+  supplier_type?: string
+  credit_limit_amount?: string | number
+  payable_balance?: string | number
+  available_credit_amount?: string | number
+  is_active?: boolean
   supplier_id: number
   supplier?: Supplier | null
   balance_amount?: number | string | null
 }
 export interface SupplierApLedger {
+  amount?: string | number | null
+  supplier?: Supplier | null
+  creator?: { id: number; name: string } | null
+  created_at?: string
+  balance_after?: string | number | null
   id: number
   supplier_id: number
   transaction_date?: string

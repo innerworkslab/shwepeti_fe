@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { statusLabel, statusStyle } from '@/constants/hotel-status'
 import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
+import BookingActions from './BookingActions.vue'
 import ServiceOrderPanel from './ServiceOrderPanel.vue'
 import FoodOrderPanel from './FoodOrderPanel.vue'
 import AppIcon from '@/components/common/AppIcon.vue'
@@ -8,7 +9,7 @@ import { posRoomService } from '@/services/pos-room.service'
 import { toApiError } from '@/services/api/api-error'
 import type { PosRoom } from '@/types/pos-room'
 const props = defineProps<{ roomId: number }>()
-const emit = defineEmits<{ close: [] }>()
+const emit = defineEmits<{ close: []; updated: [] }>()
 const dialog = ref<HTMLDialogElement | null>(null)
 const room = ref<PosRoom | null>(null)
 const busy = ref(false)
@@ -35,6 +36,10 @@ const error = ref('')
 let controller: AbortController | undefined
 let disposed = false
 let previousFocus: HTMLElement | null = null
+async function bookingSaved() {
+  emit('updated')
+  await load()
+}
 async function load() {
   controller?.abort()
   const active = new AbortController()
@@ -141,6 +146,14 @@ function backdrop(event: MouseEvent) {
             </p>
           </div>
         </section>
+        <BookingActions
+          v-if="bookingId"
+          :key="`booking-${room.id}-${bookingId}`"
+          :booking-id="bookingId"
+          :disabled="busy"
+          @busy="busy = $event"
+          @saved="bookingSaved"
+        />
         <nav v-if="bookingId" class="service-tabs" aria-label="Room services">
           <button
             v-for="tab in ['food', 'amenity', 'laundry'] as const"

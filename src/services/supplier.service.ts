@@ -1,3 +1,4 @@
+import { loadOptions } from './api/options'
 import { normalizePagination } from './api/pagination'
 import { apiClient } from './api/client'
 import type { ApiPaginatedResponse, PaginatedResponse, PaginationParams } from '@/types/api'
@@ -23,29 +24,7 @@ export const supplierService = {
     return normalizePagination(response.data)
   },
   async listOptions(signal?: AbortSignal): Promise<Supplier[]> {
-    const categories = new Map<number, Supplier>()
-    let page = 1
-    let totalPages = 1
-    do {
-      signal?.throwIfAborted()
-      const result = await supplierService.list({ page, perPage: 100 }, signal)
-      if (
-        !Array.isArray(result.data) ||
-        result.page !== page ||
-        !Number.isSafeInteger(result.total) ||
-        result.total < 0 ||
-        !Number.isSafeInteger(result.perPage) ||
-        result.perPage < 1
-      ) {
-        throw new Error('Could not load suppliers: invalid pagination response.')
-      }
-      totalPages = Math.max(1, Math.ceil(result.total / result.perPage))
-      if (!result.data.length && page < totalPages)
-        throw new Error('Could not load all suppliers. Please retry.')
-      for (const category of result.data) categories.set(category.id, category)
-      page++
-    } while (page <= totalPages)
-    return [...categories.values()]
+    return loadOptions<Supplier>('/api/v1/admin/suppliers', signal)
   },
   async get(id: number, signal?: AbortSignal): Promise<Supplier> {
     const response = await apiClient.get<Supplier | { data: Supplier }>(path(id), { signal })

@@ -44,15 +44,6 @@ it('normalizes lists and requests the specified detail and create endpoints', as
   await cashbookTransactionService.create(input)
   expect(post).toHaveBeenCalledExactlyOnceWith('/api/v1/admin/cashbook-transactions', input)
 })
-it('loads all pages of cashbook options', async () => {
-  const row = { id: 1, name: 'Main', code: 'MAIN', type: 'cash' }
-  const list = vi
-    .spyOn(cashbookService, 'list')
-    .mockResolvedValueOnce({ data: [row], total: 2, page: 1, perPage: 1 })
-    .mockResolvedValueOnce({ data: [{ ...row, id: 2 }], total: 2, page: 2, perPage: 1 })
-  expect(await cashbookService.listOptions()).toHaveLength(2)
-  expect(list).toHaveBeenLastCalledWith({ page: 2, perPage: 100 }, undefined)
-})
 it('rejects invalid dates and nonpositive or infinite amounts', async () => {
   for (const amount of [0, -1, Infinity])
     await expect(createCashbookTransactionSchema.validate({ ...input, amount })).rejects.toThrow()

@@ -4,7 +4,7 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 import PosBookingFormView from '../PosBookingFormView.vue'
 import { posRoomService } from '@/services/pos-room.service'
 import { posBookingService } from '@/services/pos-booking.service'
-vi.mock('@/services/pos-room.service', () => ({ posRoomService: { available: vi.fn() } }))
+vi.mock('@/services/pos-room.service', () => ({ posRoomService: { list: vi.fn() } }))
 vi.mock('@/services/pos-booking.service', () => ({ posBookingService: { create: vi.fn() } }))
 const wrappers: ReturnType<typeof mount>[] = []
 afterEach(() => {
@@ -12,7 +12,7 @@ afterEach(() => {
   vi.resetAllMocks()
 })
 async function render(type = 'reservation') {
-  vi.mocked(posRoomService.available).mockResolvedValue([
+  vi.mocked(posRoomService.list).mockResolvedValue([
     { id: 5, name: 'Room 301', price: '95000.00', room_category: { name: 'Suite' } },
   ] as never)
   const router = createRouter({

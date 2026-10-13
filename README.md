@@ -113,7 +113,7 @@ Visit `/units` from the sidebar. GET `/api/v1/admin/units` uses the shared table
 - Update: first GET `/api/v1/admin/units/:id`, then POST `/api/v1/admin/units` with those fields plus the existing `id`.
 - Status pencil action: POST `/api/v1/admin/units/:id/toggle-active` with `{ is_active: true | false }`.
 
-The validated form requires a unit group, name, and symbol. The base-unit checkbox sends a boolean, including `false`. The unit-group dropdown loads every page of the existing group list and preserves an existing group ID when it is absent from the options. Status is edited separately with a boolean select. Failed loads offer retry and block submission; failed saves retain input; successful saves refresh the table. List responses follow `{ success, message, data, meta: { current_page, per_page, total, last_page } }`; details can be direct or wrapped in `data`. The backend enforces any restriction on the number of base units per group.
+The validated form requires a unit group, name, and symbol. The base-unit checkbox sends a boolean, including `false`. The unit-group dropdown loads the existing group list without pagination parameters and preserves an existing group ID when it is absent from the options. Status is edited separately with a boolean select. Failed loads offer retry and block submission; failed saves retain input; successful saves refresh the table. List responses follow `{ success, message, data, meta: { current_page, per_page, total, last_page } }`; details can be direct or wrapped in `data`. The backend enforces any restriction on the number of base units per group.
 
 ### Unit groups
 
@@ -133,7 +133,7 @@ Visit `/rooms` for the searchable, paginated list (GET `/api/v1/admin/rooms`, st
 - Update: POST `/api/v1/admin/rooms` with the same fields plus `id`. The editor first loads GET `/api/v1/admin/rooms/:id` and sends the complete edited bed array.
 - Status pencil action: loads the selected room, then POSTs `/api/v1/admin/rooms/:id/status` with only `{ status }`.
 
-The category dropdown uses the existing room-category list, loading all pages with cancellation and pagination checks. If an existing category is absent from the results, its ID remains visible instead of silently selecting another category. The form blocks saving while details/options are unavailable and provides retry.
+The category dropdown uses the existing room-category list, using one request without pagination parameters, with cancellation and response validation. If an existing category is absent from the results, its ID remains visible instead of silently selecting another category. The form blocks saving while details/options are unavailable and provides retry.
 
 Yup requires a name, category, nonnegative finite price, and at least one bed. Every bed needs a type and positive whole-number quantity. Bed rows can be added and removed. `king_bed` and `single_bed` are suggestions; custom bed types remain allowed. `cleaning` is a status suggestion; other statuses can be entered until the full backend enums are supplied. The table's status filter applies when the value is committed (Enter or leaving the field). No currency or additional enum values are assumed.
 
@@ -204,7 +204,7 @@ Tests cover requests, debounce, cancellation, pagination correction, filters, re
 
 References: [Vite environment variables](https://vite.dev/guide/env-and-mode), [Axios instances](https://axios-http.com/docs/instance).
 
-Table services normalize the backend collection envelope into `{ data, total, page, perPage }` for the shared composable and dropdown loaders. Pagination uses the page size returned by the backend.
+Table services normalize the backend collection envelope into `{ data, total, page, perPage }` for the shared table composable. Pagination uses the page size returned by the backend.
 
 ## Items
 
@@ -215,7 +215,7 @@ Visit `/items` from the sidebar. The shared table lists GET `/api/v1/admin/items
 - Status: POST `/api/v1/admin/items/:id/toggle-active` with boolean `is_active`.
 - Price: POST `/api/v1/admin/items/price` with only `{ item_id, price }`. No currency is assumed.
 
-Category and unit dropdowns load all pages from the existing services. Conversions can be added or removed; each row requires source/destination unit IDs and a positive, finite factor. An empty conversion array is allowed. Price and minimum stock accept zero and decimal values. Edit, status, and price dialogs load fresh details, support retry, and prevent duplicate submissions. All requests use the shared bearer token.
+Category and unit dropdowns load all options without pagination parameters. Conversions can be added or removed; each row requires source/destination unit IDs and a positive, finite factor. An empty conversion array is allowed. Price and minimum stock accept zero and decimal values. Edit, status, and price dialogs load fresh details, support retry, and prevent duplicate submissions. All requests use the shared bearer token.
 
 ## Warehouses
 
@@ -279,7 +279,7 @@ Columns match the supplied response: transaction date/type, warehouse, item, uni
 
 ## Inventory Stock Balances
 
-Visit `/inventory-stock-balances` for a read-only list from GET `/api/v1/admin/inventory-stock-balances`. Warehouse and item dropdowns load all existing option pages and send numeric `warehouse_id` and `item_id` filters. Filters are initially unset, reset pagination when changed, and persist across page changes. Clear filters returns to all balances. No create/edit/status actions are provided. The standard paginated envelope is normalized; provisional columns are warehouse, item, unit, and quantity pending a sample row response.
+Visit `/inventory-stock-balances` for a read-only list from GET `/api/v1/admin/inventory-stock-balances`. Warehouse and item dropdowns load options without pagination parameters and send numeric `warehouse_id` and `item_id` filters. Filters are initially unset, reset pagination when changed, and persist across page changes. Clear filters returns to all balances. No create/edit/status actions are provided. The standard paginated envelope is normalized; provisional columns are warehouse, item, unit, and quantity pending a sample row response.
 
 ## Cashbooks
 
@@ -340,3 +340,5 @@ Visit `/pos/login` for the separate POS login page. Set `VITE_POS_API_BASE_URL` 
 The POS calendar now groups real rooms from GET `{VITE_POS_API_BASE_URL}/rooms` by `room_category_id`. Available-only mode uses GET `/rooms/available`. Both use the nonpaginated `{success,data,meta: []}` envelope. Selecting a room opens an accessible right-hand drawer that fetches GET `/rooms/:id`, showing category, description, price, current status, update time and whether a current booking exists. Lists and details include cancellation, stale-response protection, loading/error/empty states and retry.
 
 Sample room/booking records have been removed. Current availability counts are shown only for today; future date counts and reservation bars await booking/date-availability data. No guest/order/payment fields are inferred from the supplied null `current_booking`.
+
+Admin dropdown requests omit `page`, `perPage`, and `per_page`. Item-category parent choices use GET `/api/v1/admin/item-categories?parentId` (bare query flag); general item-category choices use the collection URL without that flag. Table requests retain pagination.

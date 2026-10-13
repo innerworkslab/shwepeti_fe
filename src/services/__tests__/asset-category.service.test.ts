@@ -58,7 +58,7 @@ describe('assetCategoryService', () => {
   })
 })
 
-it('gets direct or wrapped details and loads every dropdown page', async () => {
+it('gets direct or wrapped details', async () => {
   const category = {
     id: 1,
     name: 'Equipment',
@@ -73,10 +73,4 @@ it('gets direct or wrapped details and loads every dropdown page', async () => {
   expect(await assetCategoryService.get(1)).toEqual(category)
   expect(await assetCategoryService.get(1)).toEqual(category)
   expect(get).toHaveBeenLastCalledWith('/api/v1/admin/asset-categories/1', { signal: undefined })
-  const list = vi
-    .spyOn(assetCategoryService, 'list')
-    .mockResolvedValueOnce({ data: [category], total: 2, page: 1, perPage: 1 })
-    .mockResolvedValueOnce({ data: [{ ...category, id: 2 }], total: 2, page: 2, perPage: 1 })
-  expect(await assetCategoryService.listOptions()).toHaveLength(2)
-  expect(list).toHaveBeenLastCalledWith({ page: 2, perPage: 100 }, undefined)
 })

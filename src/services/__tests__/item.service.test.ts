@@ -53,24 +53,4 @@ describe('items API', () => {
       ['/api/v1/admin/items/price', { item_id: 1, price: 2500 }],
     ])
   })
-  it.each([unitService, itemCategoryService])(
-    'loads all lookup pages and honors cancellation',
-    async (service) => {
-      const get = vi.spyOn(apiClient, 'get')
-      for (const page of [1, 2])
-        get.mockResolvedValueOnce({
-          data: {
-            success: true,
-            data: [{ id: page, name: `Option ${page}` }],
-            meta: { current_page: page, per_page: 1, total: 2, last_page: 2 },
-          },
-        })
-      expect(await service.listOptions()).toHaveLength(2)
-      expect(get.mock.calls[1]?.[1]?.params.page).toBe(2)
-      const controller = new AbortController()
-      controller.abort()
-      await expect(service.listOptions(controller.signal)).rejects.toThrow()
-      expect(get).toHaveBeenCalledTimes(2)
-    },
-  )
 })

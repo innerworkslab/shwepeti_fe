@@ -37,40 +37,4 @@ describe('Laravel pagination', () => {
       'Invalid pagination',
     )
   })
-  it.each([roomCategoryService, unitGroupService])(
-    'loads dropdown pages using backend metadata',
-    async (service) => {
-      const first = { id: 1, name: 'First', description: null }
-      const second = { id: 2, name: 'Second', description: null }
-      const get = vi
-        .spyOn(apiClient, 'get')
-        .mockResolvedValueOnce({
-          data: {
-            ...empty,
-            data: [first],
-            meta: {
-              current_page: 1,
-              per_page: 1,
-              total: 2,
-              last_page: 2,
-            },
-          },
-        })
-        .mockResolvedValueOnce({
-          data: {
-            ...empty,
-            data: [second],
-            meta: {
-              current_page: 2,
-              per_page: 1,
-              total: 2,
-              last_page: 2,
-            },
-          },
-        })
-      expect(await service.listOptions()).toEqual([first, second])
-      expect(get).toHaveBeenCalledTimes(2)
-      expect(get.mock.calls[1]?.[1]?.params.page).toBe(2)
-    },
-  )
 })

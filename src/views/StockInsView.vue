@@ -14,11 +14,46 @@ import type { StockIn } from '@/types/stock-in'
 
 const columns: DataTableColumn<StockIn>[] = [
   { key: 'id', label: 'ID', field: 'id' },
+  { key: 'reference_no', label: 'Reference', field: 'reference_no' },
   {
     key: 'warehouse',
     label: 'Warehouse',
     format: (row) => row.warehouse?.name ?? `Warehouse #${row.warehouse_id}`,
   },
+  {
+    key: 'supplier',
+    label: 'Supplier',
+    format: (row) =>
+      row.supplier?.name ?? (row.supplier_id ? `Supplier #${row.supplier_id}` : null),
+  },
+  {
+    key: 'cashbook',
+    label: 'Cashbook',
+    format: (row) =>
+      row.cashbook?.name ?? (row.cashbook_id ? `Cashbook #${row.cashbook_id}` : null),
+  },
+  {
+    key: 'items',
+    label: 'Items',
+    format: (row) =>
+      row.items?.map((item) => item.item?.name ?? `Item #${item.item_id}`).join(' / '),
+  },
+  {
+    key: 'unit',
+    label: 'Unit',
+    format: (row) =>
+      row.items?.map((item) => item.unit?.name ?? `Unit #${item.unit_id}`).join(' / '),
+  },
+  {
+    key: 'quantity',
+    label: 'Quantity',
+    format: (row) => row.items?.map((item) => item.quantity).join(' / '),
+  },
+  { key: 'total_amount', label: 'Total amount', field: 'total_amount', align: 'right' },
+  { key: 'paid_amount', label: 'Paid amount', field: 'paid_amount', align: 'right' },
+  { key: 'payable_amount', label: 'Payable amount', field: 'payable_amount', align: 'right' },
+  { key: 'creator', label: 'Created by', format: (row) => row.creator?.name },
+  { key: 'remark', label: 'Remark', field: 'remark' },
   { key: 'transaction_date', label: 'Transaction date', field: 'transaction_date' },
   { key: 'status', label: 'Status' },
   { key: 'actions', label: 'Actions', align: 'right' },

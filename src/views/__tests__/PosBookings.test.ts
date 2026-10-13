@@ -1,3 +1,4 @@
+import { createPinia } from 'pinia'
 import { afterEach, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createMemoryHistory, createRouter } from 'vue-router'
@@ -72,7 +73,7 @@ async function render(path: string) {
     ],
   })
   await router.push(path)
-  const w = mount({ template: '<RouterView />' }, { global: { plugins: [router] } })
+  const w = mount({ template: '<RouterView />' }, { global: { plugins: [router, createPinia()] } })
   wrappers.push(w)
   await flushPromises()
   return { w, router }

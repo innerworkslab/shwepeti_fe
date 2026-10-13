@@ -6,7 +6,7 @@ import { itemCategoryService } from '@/services/item-category.service'
 vi.mock('@/services/item-category.service', () => ({
   itemCategoryService: {
     list: vi.fn(),
-    listOptions: vi.fn(),
+    parentOptions: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
     toggleActive: vi.fn(),
@@ -35,7 +35,7 @@ async function openCreate(wrapper: ReturnType<typeof mount>) {
 
 beforeEach(() => {
   vi.resetAllMocks()
-  vi.mocked(itemCategoryService.listOptions).mockResolvedValue([
+  vi.mocked(itemCategoryService.parentOptions).mockResolvedValue([
     { ...category, id: 2, parent_id: null },
   ])
   // jsdom has no native dialog top layer; browsers supply focus containment.

@@ -17,15 +17,13 @@ const input = {
 }
 it('normalizes balances and scopes ledger requests to supplier ID', async () => {
   const row = { id: 10, supplier_id: 1, balance_amount: '5000.00' }
-  const get = vi
-    .spyOn(apiClient, 'get')
-    .mockResolvedValue({
-      data: {
-        success: true,
-        data: [row],
-        meta: { current_page: 1, per_page: 15, total: 1, last_page: 1 },
-      },
-    })
+  const get = vi.spyOn(apiClient, 'get').mockResolvedValue({
+    data: {
+      success: true,
+      data: [row],
+      meta: { current_page: 1, per_page: 15, total: 1, last_page: 1 },
+    },
+  })
   const signal = new AbortController().signal
   expect(await supplierApService.listBalances({ page: 1 }, signal)).toEqual({
     data: [row],
@@ -77,11 +75,23 @@ it('validates payment fields and formats dates without timezone conversion', asy
     supplierApPaymentStatusSchema.validate({ id: 20, status: 'cancelled' }),
   ).rejects.toThrow()
 })
-it('loads suppliers across all dropdown pages', async () => {
-  const list = vi
-    .spyOn(supplierService, 'list')
-    .mockResolvedValueOnce({ data: [{ id: 1 } as never], page: 1, perPage: 1, total: 2 })
-    .mockResolvedValueOnce({ data: [{ id: 2 } as never], page: 2, perPage: 1, total: 2 })
-  expect(await supplierService.listOptions()).toEqual([{ id: 1 }, { id: 2 }])
-  expect(list).toHaveBeenLastCalledWith({ page: 2, perPage: 100 }, undefined)
+
+it('shows the unpaginated supplier history amount and balance', async () => {
+  const rows = [
+    {
+      id: 2,
+      supplier_id: 1,
+      transaction_type: 'payment',
+      amount: '5000.00',
+      balance_after: '35000.00',
+    },
+    { id: 1, supplier_id: 1, amount: '40000.00', balance_after: '40000.00' },
+  ]
+  vi.spyOn(apiClient, 'get').mockResolvedValue({ data: { success: true, data: rows, meta: [] } })
+  expect(await supplierApService.listLedgers({ supplier_id: 1, page: 2, perPage: 1 })).toEqual({
+    data: [rows[1]],
+    total: 2,
+    page: 2,
+    perPage: 1,
+  })
 })

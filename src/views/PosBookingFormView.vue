@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { statusLabel, statusStyle } from '@/constants/hotel-status'
-import { onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { computed, watch, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { onBeforeRouteLeave, useRoute, RouterLink } from 'vue-router'
 import { ValidationError } from 'yup'
 import AppIcon from '@/components/common/AppIcon.vue'
+import { posCashbookService, type PosCashbook } from '@/services/pos-cashbook.service'
 import { posRoomService } from '@/services/pos-room.service'
 import { posBookingService, type PosBooking } from '@/services/pos-booking.service'
 import { bookingPayload } from '@/schemas/pos-booking.schema'
@@ -21,7 +22,7 @@ const form = reactive({
   session_rate: '',
   note: '',
   include_deposit: false,
-  deposit: { amount: '', payment_method: 'cash', paid_at: '', note: '' },
+  deposit: { cashbook_id: '', amount: '', payment_method: 'cash', paid_at: '', note: '' },
 })
 const rooms = ref<PosRoom[]>([])
 const loading = ref(false)
@@ -33,6 +34,27 @@ const saved = ref<PosBooking | null>(null)
 let loadController: AbortController | undefined
 const saveController = new AbortController()
 let disposed = false
+const needsDeposit = computed(() => form.booking_type === 'reservation' && form.include_deposit)
+const cashbooks = ref<PosCashbook[]>([])
+const cashbooksLoading = ref(false)
+const cashbookError = ref('')
+async function loadCashbooks() {
+  if (cashbooksLoading.value) return
+  cashbooksLoading.value = true
+  cashbookError.value = ''
+  try {
+    const result = await posCashbookService.list(saveController.signal)
+    if (!disposed) cashbooks.value = result
+  } catch (cause) {
+    if (!disposed) cashbookError.value = toApiError(cause).message
+  } finally {
+    if (!disposed) cashbooksLoading.value = false
+  }
+}
+watch(needsDeposit, (needed) => {
+  if (needed) void loadCashbooks()
+})
+
 async function loadRooms() {
   loadController?.abort()
   const active = new AbortController()
@@ -40,7 +62,7 @@ async function loadRooms() {
   loading.value = true
   loadError.value = ''
   try {
-    const result = await posRoomService.available(active.signal)
+    const result = await posRoomService.list(active.signal)
     if (!disposed && !active.signal.aborted) rooms.value = result
   } catch (cause) {
     if (!disposed && !active.signal.aborted) loadError.value = toApiError(cause).message
@@ -57,13 +79,19 @@ onBeforeUnmount(() => {
 onBeforeRouteLeave(() => !saving.value)
 async function submit() {
   if (saving.value || saved.value || loading.value || loadError.value) return
+  if (needsDeposit.value && (cashbooksLoading.value || cashbookError.value)) return
   saving.value = true
   error.value = ''
   errors.value = {}
   try {
     const payload = await bookingPayload(form)
+    if (
+      payload.deposit &&
+      !cashbooks.value.some((cashbook) => cashbook.id === payload.deposit?.cashbook_id)
+    )
+      throw new Error('Choose a deposit cashbook from the list.')
     if (!rooms.value.some((room) => room.id === payload.room_id)) {
-      errors.value.room_id = 'Choose an available room.'
+      errors.value.room_id = 'Choose a room.'
       return
     }
     if (disposed) return
@@ -140,9 +168,7 @@ async function submit() {
               <option v-for="room in rooms" :key="room.id" :value="room.id">
                 {{ room.name }} · {{ room.room_category?.name }} · {{ room.price }}
               </option></select
-            ><small v-if="!loading && !loadError && !rooms.length"
-              >No available rooms.</small
-            ></label
+            ><small v-if="!loading && !loadError && !rooms.length">No rooms found.</small></label
           >
           <label
             >Guest name<input
@@ -201,6 +227,26 @@ async function submit() {
           deposit (optional)</label
         >
         <div v-if="form.include_deposit" class="fields deposit">
+          <label
+            >Deposit cashbook<select
+              v-model="form.deposit.cashbook_id"
+              name="deposit.cashbook_id"
+              :disabled="cashbooksLoading"
+              required
+            >
+              <option value="">
+                {{ cashbooksLoading ? 'Loading cashbooks…' : 'Choose a cashbook' }}
+              </option>
+              <option v-for="cashbook in cashbooks" :key="cashbook.id" :value="cashbook.id">
+                {{ cashbook.name }} ({{ cashbook.code }})
+              </option>
+            </select></label
+          >
+          <p v-if="cashbookError" role="alert" class="error">
+            {{ cashbookError }}
+            <button type="button" @click="loadCashbooks">Retry cashbooks</button>
+          </p>
+          <p v-else-if="!cashbooksLoading && !cashbooks.length">No cashbooks found.</p>
           <label
             >Deposit amount<input
               v-model="form.deposit.amount"

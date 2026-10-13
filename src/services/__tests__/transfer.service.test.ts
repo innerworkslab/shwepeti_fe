@@ -13,15 +13,13 @@ afterEach(() => vi.restoreAllMocks())
 describe('inventory transfers', () => {
   it('maps list metadata and forwards pagination and cancellation', async () => {
     const record = { id: 7, ...input, status: 'draft' }
-    const get = vi
-      .spyOn(apiClient, 'get')
-      .mockResolvedValue({
-        data: {
-          success: true,
-          data: [record],
-          meta: { current_page: 1, per_page: 15, total: 1, last_page: 1 },
-        },
-      })
+    const get = vi.spyOn(apiClient, 'get').mockResolvedValue({
+      data: {
+        success: true,
+        data: [record],
+        meta: { current_page: 1, per_page: 15, total: 1, last_page: 1 },
+      },
+    })
     const signal = new AbortController().signal
     expect(await transferService.list({ page: 1 }, signal)).toEqual({
       data: [record],

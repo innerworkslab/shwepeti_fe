@@ -48,7 +48,7 @@ async function loadParents() {
   parentsLoading.value = true
   parentError.value = ''
   try {
-    const result = await itemCategoryService.listOptions(parentController.signal)
+    const result = await itemCategoryService.parentOptions(parentController.signal)
     if (!disposed) parents.value = result
   } catch (cause) {
     if (!disposed) parentError.value = toApiError(cause).message
