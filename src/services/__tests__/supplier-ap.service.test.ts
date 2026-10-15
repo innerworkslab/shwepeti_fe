@@ -95,3 +95,16 @@ it('shows the unpaginated supplier history amount and balance', async () => {
     perPage: 1,
   })
 })
+
+it('loads supplier payment history and paginates an empty-meta response locally', async () => {
+  const rows = [
+    { id: 1, amount: '12000.00' },
+    { id: 2, amount: '5000.00' },
+  ]
+  const get = vi
+    .spyOn(apiClient, 'get')
+    .mockResolvedValue({ data: { success: true, data: rows, meta: [] } })
+  const result = await supplierApService.listPayments({ supplier_id: 7, page: 2, perPage: 1 })
+  expect(get).toHaveBeenCalledWith('/api/v1/admin/suppliers/7/ap-payments', expect.any(Object))
+  expect(result).toEqual({ data: [rows[1]], page: 2, perPage: 1, total: 2 })
+})

@@ -39,3 +39,19 @@ export interface CreateSupplierApPaymentInput {
 export interface UpdateSupplierApPaymentInput extends CreateSupplierApPaymentInput {
   id: number
 }
+
+export interface SupplierApPayment {
+  id: number
+  reference_no: string
+  supplier_id: number
+  cashbook_id: number
+  amount: number | string
+  payment_date: string
+  status: string
+  remark: string | null
+  supplier?: Supplier | null
+  cashbook?: import('./cashbook').Cashbook | null
+  creator?: { id: number; name: string; email?: string } | null
+  created_at?: string
+  updated_at?: string
+}

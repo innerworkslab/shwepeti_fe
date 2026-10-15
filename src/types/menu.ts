@@ -5,6 +5,7 @@ export interface MenuRecipe {
   remark: string
 }
 export interface CreateMenuInput {
+  warehouse_id: number
   menu_category_id: number
   name: string
   code: string

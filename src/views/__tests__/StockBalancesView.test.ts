@@ -43,16 +43,18 @@ it('combines filters, resets pagination, preserves filters across pages and clea
   await flushPromises()
   await wrapper.get('[name="warehouse_id"]').setValue('2')
   await flushPromises()
-  await wrapper.get('[name="item_id"]').setValue('1')
+  await wrapper.get('[name="date_from"]').setValue('2026-10-14')
+  await wrapper.get('[name="date_to"]').setValue('2026-10-15')
+  await wrapper.get('form').trigger('submit')
   await flushPromises()
   expect(stockBalanceService.list).toHaveBeenLastCalledWith(
-    { page: 1, perPage: 15, warehouse_id: 2, item_id: 1 },
+    { page: 1, perPage: 15, warehouse_id: 2, date_from: '2026-10-14', date_to: '2026-10-15' },
     expect.any(AbortSignal),
   )
   await wrapper.get('[aria-label="Next page"]').trigger('click')
   await flushPromises()
   expect(stockBalanceService.list).toHaveBeenLastCalledWith(
-    { page: 2, perPage: 15, warehouse_id: 2, item_id: 1 },
+    { page: 2, perPage: 15, warehouse_id: 2, date_from: '2026-10-14', date_to: '2026-10-15' },
     expect.any(AbortSignal),
   )
   await wrapper
@@ -61,7 +63,7 @@ it('combines filters, resets pagination, preserves filters across pages and clea
     .trigger('click')
   await flushPromises()
   expect(stockBalanceService.list).toHaveBeenLastCalledWith(
-    { page: 1, perPage: 15, warehouse_id: undefined, item_id: undefined },
+    { page: 1, perPage: 15, warehouse_id: undefined, date_from: undefined, date_to: undefined },
     expect.any(AbortSignal),
   )
   expect(wrapper.get('tbody').text()).toContain('0.000000')
@@ -80,17 +82,43 @@ it('retries dropdown failures independently of the table', async () => {
 })
 it('aborts lookup loading on unmount', async () => {
   let done!: (value: []) => void
-  vi.mocked(itemService.listOptions).mockImplementationOnce(
+  vi.mocked(warehouseService.listOptions).mockImplementationOnce(
     () =>
       new Promise((resolve) => {
         done = resolve
       }),
   )
   const wrapper = render()
-  const signal = vi.mocked(itemService.listOptions).mock.lastCall?.[0]
+  const signal = vi.mocked(warehouseService.listOptions).mock.lastCall?.[0]
   wrapper.unmount()
   wrappers.splice(0)
   expect(signal?.aborted).toBe(true)
   done([])
   await flushPromises()
+})
+
+it('uses nested stock units and preserves zero balances', async () => {
+  vi.mocked(stockBalanceService.list).mockResolvedValue({
+    data: [
+      {
+        id: 1,
+        opening_balance: 0,
+        closing_balance: '7.000000',
+        item: { id: 1, name: 'Chicken', stock_unit: { name: 'kg' } },
+      },
+    ],
+    page: 1,
+    perPage: 20,
+    total: 1,
+  })
+  const wrapper = render()
+  await flushPromises()
+  expect(wrapper.get('tbody').text()).toContain('kg')
+  expect(wrapper.get('tbody').text()).toContain('7.000000')
+  expect(wrapper.get('thead').text()).toContain('opening balance')
+  await wrapper.get('[name="date_from"]').setValue('2026-10-15')
+  await wrapper.get('[name="date_to"]').setValue('2026-10-14')
+  await wrapper.get('form').trigger('submit')
+  expect(stockBalanceService.list).toHaveBeenCalledTimes(1)
+  expect(wrapper.get('[role="alert"]').text()).toContain('From date')
 })

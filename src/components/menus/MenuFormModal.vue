@@ -2,6 +2,8 @@
 import AppIcon from '@/components/common/AppIcon.vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, useId } from 'vue'
 import { ValidationError } from 'yup'
+import { warehouseService } from '@/services/warehouse.service'
+import type { Warehouse } from '@/types/warehouse'
 import { menuCategoryService } from '@/services/menu-category.service'
 import { unitService } from '@/services/unit.service'
 import type { MenuCategory } from '@/types/menu-category'
@@ -40,6 +42,7 @@ const form = reactive({
   name: '',
   code: '',
   description: '',
+  warehouse_id: '' as number | string,
   menu_category_id: '' as number | string,
   price: '' as number | string,
   cost_price: '' as number | string,
@@ -48,6 +51,7 @@ const form = reactive({
   is_available: undefined as boolean | undefined,
   recipes: [] as ReturnType<typeof newRecipe>[],
 })
+const warehouses = ref<Warehouse[]>([])
 const categories = ref<MenuCategory[]>([])
 const items = ref<Item[]>([])
 const units = ref<Unit[]>([])
@@ -82,13 +86,15 @@ async function load() {
   loading.value = true
   loadError.value = ''
   try {
-    const [categoryOptions, unitOptions, itemOptions, menu] = await Promise.all([
+    const [categoryOptions, unitOptions, itemOptions, menu, warehouseOptions] = await Promise.all([
       detailsOnly.value ? Promise.resolve([]) : menuCategoryService.listOptions(active.signal),
       detailsOnly.value ? Promise.resolve([]) : unitService.listOptions(active.signal),
       detailsOnly.value ? Promise.resolve([]) : itemService.listOptions(active.signal),
       props.menuId != null ? menuService.get(props.menuId, active.signal) : Promise.resolve(null),
+      detailsOnly.value ? Promise.resolve([]) : warehouseService.listOptions(active.signal),
     ])
     if (disposed || active.signal.aborted) return
+    warehouses.value = warehouseOptions
     categories.value = categoryOptions
     units.value = unitOptions
     items.value = itemOptions
@@ -98,6 +104,7 @@ async function load() {
       form.name = menu.name
       form.code = menu.code
       form.description = menu.description ?? ''
+      form.warehouse_id = menu.warehouse_id ?? ''
       form.menu_category_id = menu.menu_category_id
       form.price = menu.price
       form.cost_price = menu.cost_price ?? ''
@@ -167,6 +174,7 @@ async function submit() {
         name: form.name,
         code: form.code,
         description: form.description,
+        warehouse_id: form.warehouse_id,
         menu_category_id: form.menu_category_id,
         price: form.price,
         cost_price: form.cost_price,
@@ -294,6 +302,25 @@ async function submit() {
             </div></template
           ><template v-else
             ><div class="field">
+              <label :for="`${prefix}-warehouse`">Warehouse</label>
+              <select
+                :id="`${prefix}-warehouse`"
+                name="warehouse_id"
+                v-model="form.warehouse_id"
+                required
+                :aria-invalid="!!errors.warehouse_id"
+              >
+                <option value="" disabled>Choose a warehouse</option>
+                <option v-if="missing(warehouses, form.warehouse_id)" :value="form.warehouse_id">
+                  Warehouse #{{ form.warehouse_id }} (not in list)
+                </option>
+                <option v-for="warehouse in warehouses" :key="warehouse.id" :value="warehouse.id">
+                  {{ warehouse.name }}
+                </option>
+              </select>
+              <span v-if="errors.warehouse_id" class="error">{{ errors.warehouse_id }}</span>
+            </div>
+            <div class="field">
               <label :for="`${prefix}-menu_category_id`">Menu category</label
               ><select
                 :id="`${prefix}-menu_category_id`"

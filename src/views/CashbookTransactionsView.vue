@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import { useRoute } from 'vue-router'
 import AppIcon from '@/components/common/AppIcon.vue'
-import { reactive, ref, useId } from 'vue'
+import { computed, watch, reactive, ref, useId } from 'vue'
 import CashbookTransactionModal from '@/components/cashbook-transactions/CashbookTransactionModal.vue'
 import DataTable from '@/components/common/DataTable.vue'
 import { useDataTable } from '@/composables/useDataTable'
@@ -8,6 +9,11 @@ import { cashbookTransactionService } from '@/services/cashbook-transaction.serv
 import type { CashbookTransaction, CashbookTransactionFilters } from '@/types/cashbook-transaction'
 import type { DataTableColumn } from '@/types/data-table'
 
+const route = useRoute()
+const cashbookId = computed(() => {
+  const id = Number(route.query.cashbook_id)
+  return Number.isSafeInteger(id) && id > 0 ? id : undefined
+})
 const columns: DataTableColumn<CashbookTransaction>[] = [
   { key: 'id', label: 'ID', field: 'id' },
   { key: 'transaction_date', label: 'Transaction date', field: 'transaction_date' },
@@ -19,6 +25,15 @@ const columns: DataTableColumn<CashbookTransaction>[] = [
   },
   { key: 'transaction_type', label: 'Type', field: 'transaction_type' },
   { key: 'amount', label: 'Amount', field: 'amount' },
+  { key: 'reference_no', label: 'Reference', field: 'reference_no' },
+  { key: 'balance_after', label: 'Balance after', field: 'balance_after' },
+  { key: 'cashbook_code', label: 'Cashbook code', format: (row) => row.cashbook?.code },
+  { key: 'cashbook_type', label: 'Cashbook type', format: (row) => row.cashbook?.type },
+  { key: 'reference_type', label: 'Reference type', field: 'reference_type' },
+  { key: 'reference_id', label: 'Reference ID', field: 'reference_id' },
+  { key: 'creator', label: 'Created by', format: (row) => row.creator?.name },
+  { key: 'created_at', label: 'Created at', field: 'created_at' },
+  { key: 'updated_at', label: 'Updated at', field: 'updated_at' },
   { key: 'actions', label: 'Actions', align: 'right' },
 ]
 const {
@@ -36,7 +51,9 @@ const {
   refresh,
 } = useDataTable<CashbookTransaction, CashbookTransactionFilters>(
   ({ search: _search, ...params }, signal) => cashbookTransactionService.list(params, signal),
+  { initialFilters: { cashbook_id: cashbookId.value } },
 )
+watch(cashbookId, (id) => setFilters({ cashbook_id: id }))
 const modalOpen = ref(false)
 const selected = ref<CashbookTransaction | null>(null)
 const notice = ref('')
@@ -71,7 +88,13 @@ function clearDates() {
 <template>
   <section>
     <h1>Cashbook Transactions</h1>
-    <p>View cashbook transactions by date.</p>
+    <p>
+      {{
+        cashbookId
+          ? `Transactions for cashbook #${cashbookId}.`
+          : 'View cashbook transactions by date.'
+      }}
+    </p>
     <p v-if="notice" role="status" class="notice">{{ notice }}</p>
     <DataTable
       :rows="rows"

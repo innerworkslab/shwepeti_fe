@@ -3,7 +3,10 @@ import { boolean, number, object, string } from 'yup'
 export const createCashbookSchema = object({
   name: string().trim().required('Name is required.'),
   code: string().trim().required('Code is required.'),
-  type: string().trim().required('Type is required.'),
+  type: string()
+    .trim()
+    .oneOf(['cash', 'bank', 'pos_cash', 'pos_bank'], 'Choose a valid cashbook type.')
+    .required('Type is required.'),
   description: string().trim().defined(),
 })
 export const updateCashbookSchema = createCashbookSchema.omit(['description']).shape({

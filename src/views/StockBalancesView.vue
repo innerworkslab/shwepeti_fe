@@ -1,14 +1,12 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import DataTable from '@/components/common/DataTable.vue'
 import { useDataTable } from '@/composables/useDataTable'
 import { stockBalanceService } from '@/services/stock-balance.service'
 import { warehouseService } from '@/services/warehouse.service'
-import { itemService } from '@/services/item.service'
 import { toApiError } from '@/services/api/api-error'
 import type { StockBalance, StockBalanceFilters } from '@/types/stock-balance'
 import type { Warehouse } from '@/types/warehouse'
-import type { Item } from '@/types/item'
 import type { DataTableColumn } from '@/types/data-table'
 const columns: DataTableColumn<StockBalance>[] = [
   { key: 'id', label: 'ID', field: 'id' },
@@ -27,8 +25,25 @@ const columns: DataTableColumn<StockBalance>[] = [
     key: 'unit',
     label: 'Unit',
     format: (row) =>
-      row.unit?.name ?? row.unit?.symbol ?? (row.unit_id == null ? null : `Unit #${row.unit_id}`),
+      row.item?.stock_unit?.name ??
+      row.unit?.name ??
+      row.unit?.symbol ??
+      (row.unit_id == null ? null : `Unit #${row.unit_id}`),
   },
+  ...(
+    [
+      'opening_balance',
+      'in_balance',
+      'out_balance',
+      'closing_balance',
+      'reserved_quantity',
+      'available_quantity',
+    ] as const
+  ).map((key) => ({ key, label: key.replaceAll('_', ' '), field: key, align: 'right' as const })),
+  { key: 'code', label: 'Item code', format: (row: StockBalance) => row.item?.code },
+  { key: 'sku', label: 'SKU', format: (row: StockBalance) => row.item?.sku },
+  { key: 'min_stock', label: 'Minimum stock', format: (row: StockBalance) => row.item?.min_stock },
+  { key: 'updated_at', label: 'Updated at', field: 'updated_at' },
   { key: 'quantity', label: 'Quantity', field: 'quantity', align: 'right' },
 ]
 const {
@@ -47,7 +62,6 @@ const {
   stockBalanceService.list(params, signal),
 )
 const warehouses = ref<Warehouse[]>([])
-const items = ref<Item[]>([])
 const optionsLoading = ref(false)
 const optionsError = ref('')
 let controller: AbortController | undefined
@@ -59,13 +73,9 @@ async function loadOptions() {
   optionsLoading.value = true
   optionsError.value = ''
   try {
-    const [warehouseOptions, itemOptions] = await Promise.all([
-      warehouseService.listOptions(active.signal),
-      itemService.listOptions(active.signal),
-    ])
+    const warehouseOptions = await warehouseService.listOptions(active.signal)
     if (disposed || active.signal.aborted) return
     warehouses.value = warehouseOptions
-    items.value = itemOptions
   } catch (cause) {
     if (!disposed) {
       optionsError.value = toApiError(cause).message
@@ -74,6 +84,22 @@ async function loadOptions() {
   } finally {
     if (!disposed) optionsLoading.value = false
   }
+}
+const dates = reactive({ date_from: '', date_to: '' })
+const dateError = ref('')
+function applyDates() {
+  dateError.value = ''
+  if (dates.date_from && dates.date_to && dates.date_from > dates.date_to) {
+    dateError.value = 'From date must be on or before to date.'
+    return
+  }
+  setFilters({ date_from: dates.date_from || undefined, date_to: dates.date_to || undefined })
+}
+function clearFilters() {
+  dates.date_from = ''
+  dates.date_to = ''
+  dateError.value = ''
+  setFilters({ warehouse_id: undefined, date_from: undefined, date_to: undefined })
 }
 function changeFilter(key: keyof StockBalanceFilters, event: Event) {
   const value = (event.target as HTMLSelectElement).value
@@ -88,7 +114,7 @@ onBeforeUnmount(() => {
 <template>
   <section>
     <h1>Inventory Stock Balances</h1>
-    <p>View stock balances by warehouse and item.</p>
+    <p>View stock balances by warehouse and date.</p>
     <p v-if="optionsLoading" role="status">Loading filter options...</p>
     <div v-if="optionsError" role="alert" class="error">
       {{ optionsError }} <button type="button" @click="loadOptions">Retry filters</button>
@@ -122,27 +148,30 @@ onBeforeUnmount(() => {
             </option>
           </select></label
         >
-        <label
-          >Item<select
-            name="item_id"
-            :value="filters.item_id ?? ''"
-            :disabled="optionsLoading || !!optionsError"
-            @change="changeFilter('item_id', $event)"
-          >
-            <option value="">All items</option>
-            <option v-for="item in items" :key="item.id" :value="item.id">
-              {{ item.name }} ({{ item.code }})
-            </option>
-          </select></label
-        >
-        <button type="button" @click="setFilters({ warehouse_id: undefined, item_id: undefined })">
-          Clear filters
-        </button>
+        <form @submit.prevent="applyDates" class="date-filters">
+          <label>From date<input type="date" name="date_from" v-model="dates.date_from" /></label>
+          <label>To date<input type="date" name="date_to" v-model="dates.date_to" /></label>
+          <button type="submit">Apply dates</button
+          ><button type="button" @click="clearFilters">Clear filters</button>
+          <p v-if="dateError" role="alert">{{ dateError }}</p>
+        </form>
       </template></DataTable
     >
   </section>
 </template>
 <style scoped>
+.date-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: end;
+}
+input {
+  font: inherit;
+  padding: 0.5rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+}
 label {
   display: grid;
   gap: 0.375rem;

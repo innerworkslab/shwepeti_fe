@@ -1,3 +1,5 @@
+import { warehouseService } from '@/services/warehouse.service'
+vi.mock('@/services/warehouse.service', () => ({ warehouseService: { listOptions: vi.fn() } }))
 import { mountLargeFormFlow } from './mountLargeFormFlow'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
@@ -23,6 +25,7 @@ import { itemService } from '@/services/item.service'
 vi.mock('@/services/item.service', () => ({ itemService: { listOptions: vi.fn() } }))
 const group = {
   id: 1,
+  warehouse_id: 2,
   menu_category_id: 1,
   name: 'Fried Rice',
   code: 'RICE',
@@ -43,6 +46,9 @@ async function render() {
 }
 beforeEach(() => {
   vi.resetAllMocks()
+  vi.mocked(warehouseService.listOptions).mockResolvedValue([
+    { id: 2, name: 'Kitchen', code: 'KITCHEN' },
+  ])
   vi.mocked(itemService.listOptions).mockResolvedValue([
     {
       id: 1,
@@ -101,6 +107,7 @@ afterEach(() => {
 async function openCreate(wrapper: ReturnType<typeof mount>) {
   await wrapper.get('button.primary').trigger('click')
   await flushPromises()
+  await wrapper.get('[name="warehouse_id"]').setValue('2')
   await wrapper.get('[name="menu_category_id"]').setValue('1')
   await wrapper.get('[name="name"]').setValue('Fried Rice')
   await wrapper.get('[name="code"]').setValue('RICE')

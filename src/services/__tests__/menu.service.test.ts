@@ -4,6 +4,7 @@ import { menuService } from '../menu.service'
 import { menuCategoryService } from '../menu-category.service'
 import { createMenuSchema } from '@/schemas/menu.schema'
 const input = {
+  warehouse_id: 2,
   menu_category_id: 1,
   name: 'Chicken Fried Rice',
   code: 'RICE',

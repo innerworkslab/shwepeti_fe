@@ -208,16 +208,18 @@ async function submit() {
             </div>
             <div class="field">
               <label :for="`${prefix}-type`">Type</label>
-              <input
+              <select
                 :id="`${prefix}-type`"
                 v-model="form.type"
                 name="type"
-                :list="`${prefix}-types`"
                 required
                 :aria-invalid="!!errors.type"
-                :aria-describedby="errors.type ? `${prefix}-type-error` : undefined"
-              />
-              <datalist :id="`${prefix}-types`"><option value="cash" /></datalist>
+              >
+                <option value="cash">Cash</option>
+                <option value="bank">Bank</option>
+                <option value="pos_cash">POS cash</option>
+                <option value="pos_bank">POS bank</option>
+              </select>
               <span v-if="errors.type" :id="`${prefix}-type-error`" class="error">{{
                 errors.type
               }}</span>

@@ -83,7 +83,7 @@ describe('Rooms page', () => {
   it('loads the list and category dropdown and creates the exact nested payload', async () => {
     const wrapper = await render()
     expect(roomService.list).toHaveBeenCalledWith(
-      { page: 1, perPage: 20, search: '', status: undefined },
+      { page: 1, perPage: 20, search: '', status: 'available' },
       expect.any(AbortSignal),
     )
     await openCreate(wrapper)

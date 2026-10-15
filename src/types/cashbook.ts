@@ -1,4 +1,8 @@
 export interface Cashbook {
+  opening_balance?: number | string
+  current_balance?: number | string
+  created_at?: string
+  updated_at?: string
   id: number
   code: string
   name: string

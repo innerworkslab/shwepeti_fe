@@ -1,3 +1,4 @@
+import { createCashbookSchema } from '@/schemas/cashbook.schema'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { apiClient } from '../api/client'
 import { cashbookService } from '../cashbook.service'
@@ -67,4 +68,12 @@ describe('cashbookService', () => {
       is_active: false,
     })
   })
+})
+
+it('accepts all four cashbook types and rejects unsupported types', async () => {
+  const input = { name: 'Main', code: 'MAIN', description: '' }
+  for (const type of ['cash', 'bank', 'pos_cash', 'pos_bank']) {
+    expect((await createCashbookSchema.validate({ ...input, type })).type).toBe(type)
+  }
+  await expect(createCashbookSchema.validate({ ...input, type: 'other' })).rejects.toThrow()
 })

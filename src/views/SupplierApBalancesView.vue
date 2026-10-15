@@ -82,6 +82,15 @@ const { rows, total, page, perPage, loading, error, setPage, setPerPage, refresh
           ><AppIcon name="ledger" :size="18" /><span class="action-label"
             >AP ledger</span
           ></RouterLink
+        >
+        <RouterLink
+          class="action"
+          :to="`/suppliers/${row.supplier_id}/ap-payments`"
+          title="View AP payment history"
+          aria-label="View AP payment history"
+          ><AppIcon name="cashbooks" :size="18" /><span class="action-label"
+            >AP payment history</span
+          ></RouterLink
         ></template
       >
     </DataTable>

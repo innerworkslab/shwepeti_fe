@@ -1,3 +1,6 @@
+import { reactive } from 'vue'
+const routeState = reactive({ query: {} as Record<string, string> })
+vi.mock('vue-router', () => ({ useRoute: () => routeState }))
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import CashbookTransactionsView from '../CashbookTransactionsView.vue'
@@ -24,6 +27,7 @@ function render() {
 }
 beforeEach(() => {
   vi.resetAllMocks()
+  routeState.query = {}
   Object.defineProperties(HTMLDialogElement.prototype, {
     showModal: {
       configurable: true,
@@ -118,4 +122,23 @@ describe('Cashbook transactions', () => {
     expect(wrapper.find('dialog button[type="submit"]').exists()).toBe(false)
     expect(cashbookService.listOptions).not.toHaveBeenCalled()
   })
+})
+
+it('filters by cashbook and keeps dates when switching cashbooks', async () => {
+  routeState.query = { cashbook_id: '3' }
+  const wrapper = render()
+  await flushPromises()
+  expect(cashbookTransactionService.list).toHaveBeenLastCalledWith(
+    expect.objectContaining({ cashbook_id: 3 }),
+    expect.any(AbortSignal),
+  )
+  await wrapper.get('[name="date_from"]').setValue('2026-10-13')
+  await wrapper.get('form.date-filters').trigger('submit')
+  await flushPromises()
+  routeState.query = { cashbook_id: '4' }
+  await flushPromises()
+  expect(cashbookTransactionService.list).toHaveBeenLastCalledWith(
+    expect.objectContaining({ cashbook_id: 4, date_from: '2026-10-13', page: 1 }),
+    expect.any(AbortSignal),
+  )
 })

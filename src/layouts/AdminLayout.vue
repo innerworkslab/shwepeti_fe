@@ -3,6 +3,8 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppIcon from '@/components/common/AppIcon.vue'
 import type { IconName } from '@/components/common/AppIcon.vue'
+import { cashbookService } from '@/services/cashbook.service'
+import type { Cashbook } from '@/types/cashbook'
 import { env } from '@/config/env'
 import { useSessionStore } from '@/stores/session'
 import { authService } from '@/services/auth.service'
@@ -12,12 +14,10 @@ const route = useRoute()
 const router = useRouter()
 const session = useSessionStore()
 const links: { to: string; label: string; icon: IconName }[] = [
-  { to: '/cashbook-transactions', label: 'Cashbook Transactions', icon: 'ledger' },
   { to: '/supplier-ap-balances', label: 'Supplier AP', icon: 'ledger' },
   { to: '/fixed-assets', label: 'Fixed Assets', icon: 'items' },
   { to: '/asset-categories', label: 'Asset Categories', icon: 'categories' },
   { to: '/suppliers', label: 'Suppliers', icon: 'users' },
-  { to: '/cashbooks', label: 'Cashbooks', icon: 'cashbooks' },
   { to: '/menus', label: 'Menus', icon: 'menus' },
   { to: '/menu-categories', label: 'Menu categories', icon: 'menuCategories' },
   { to: '/rooms', label: 'Rooms', icon: 'rooms' },
@@ -34,6 +34,27 @@ const links: { to: string; label: string; icon: IconName }[] = [
   { to: '/units', label: 'Units', icon: 'items' },
   { to: '/users', label: 'Users', icon: 'users' },
 ]
+const cashbooks = ref<Cashbook[]>([])
+const cashbooksOpen = ref(false)
+const cashbooksLoading = ref(false)
+const cashbooksError = ref('')
+const cashbookController = new AbortController()
+async function loadCashbooks() {
+  cashbooksLoading.value = true
+  cashbooksError.value = ''
+  try {
+    cashbooks.value = await cashbookService.listOptions(cashbookController.signal)
+  } catch (error) {
+    if (!cashbookController.signal.aborted) cashbooksError.value = toApiError(error).message
+  } finally {
+    cashbooksLoading.value = false
+  }
+}
+function toggleCashbooks() {
+  if (!expanded.value) toggleSidebar()
+  cashbooksOpen.value = !cashbooksOpen.value
+  if (cashbooksOpen.value) void loadCashbooks()
+}
 const media = window.matchMedia('(max-width: 760px)')
 const mobile = ref(media.matches)
 const mobileOpen = ref(false)
@@ -48,7 +69,9 @@ try {
 }
 const expanded = computed(() => (mobile.value ? mobileOpen.value : !desktopCollapsed.value))
 const currentPage = computed(
-  () => links.find((link) => link.to === route.path)?.label ?? 'Overview',
+  () =>
+    links.find((link) => link.to === route.path)?.label ??
+    (route.path.startsWith('/cashbook') ? 'Cashbooks' : 'Overview'),
 )
 const displayName = computed(() => session.user?.name || 'User')
 const displayRole = computed(
@@ -78,7 +101,7 @@ function handleEscape(event: KeyboardEvent) {
   if (event.key === 'Escape' && mobile.value && mobileOpen.value) closeMobile()
 }
 watch(
-  () => route.path,
+  () => route.fullPath,
   () => {
     if (mobile.value && mobileOpen.value) closeMobile()
   },
@@ -88,6 +111,7 @@ onMounted(() => {
   window.addEventListener('keydown', handleEscape)
 })
 onBeforeUnmount(() => {
+  cashbookController.abort()
   media.removeEventListener('change', updateViewport)
   window.removeEventListener('keydown', handleEscape)
 })
@@ -155,6 +179,67 @@ async function logout() {
         </button>
       </div>
       <nav id="sidebar-navigation" aria-label="Main navigation">
+        <button
+          class="nav-link cashbook-toggle"
+          :class="{
+            'cashbook-toggle--open': cashbooksOpen && expanded,
+            'is-active': route.path.startsWith('/cashbook'),
+          }"
+          type="button"
+          aria-label="Cashbooks"
+          title="Cashbooks"
+          :aria-expanded="cashbooksOpen"
+          aria-controls="cashbook-links"
+          @click="toggleCashbooks"
+        >
+          <AppIcon name="cashbooks" :size="20" /><span v-if="expanded">Cashbooks</span
+          ><AppIcon
+            v-if="expanded"
+            name="chevronDown"
+            class="cashbook-chevron"
+            :size="16"
+            :style="{ transform: cashbooksOpen ? 'rotate(180deg)' : undefined }"
+          />
+        </button>
+        <div v-if="cashbooksOpen && expanded" id="cashbook-links" class="cashbook-links">
+          <RouterLink
+            class="cashbook-manage"
+            :class="{ 'is-active': route.path === '/cashbooks' }"
+            to="/cashbooks"
+          >
+            <AppIcon name="cashbooks" :size="15" /><span>Manage cashbooks</span
+            ><AppIcon name="chevronRight" :size="14" />
+          </RouterLink>
+          <p v-if="cashbooksLoading" class="cashbook-message" role="status">Loading cashbooks…</p>
+          <div
+            v-else-if="cashbooksError"
+            class="cashbook-message cashbook-message--error"
+            role="alert"
+          >
+            {{ cashbooksError
+            }}<button type="button" class="cashbook-retry" @click="loadCashbooks">Retry</button>
+          </div>
+          <template v-else>
+            <RouterLink
+              v-for="book in cashbooks"
+              :key="book.id"
+              class="cashbook-link"
+              :title="book.name"
+              :class="{
+                'is-active':
+                  route.path === '/cashbook-transactions' &&
+                  String(route.query.cashbook_id) === String(book.id),
+              }"
+              :to="{ path: '/cashbook-transactions', query: { cashbook_id: book.id } }"
+              ><span class="cashbook-marker" aria-hidden="true"></span
+              ><span class="cashbook-label"
+                ><span>{{ book.name }}</span
+                ><small>{{ book.code }}</small></span
+              ></RouterLink
+            >
+            <p v-if="!cashbooks.length" class="cashbook-message">No cashbooks found.</p>
+          </template>
+        </div>
         <RouterLink
           v-for="link in links"
           :key="link.to"
@@ -197,6 +282,137 @@ async function logout() {
 </template>
 
 <style scoped>
+/* Cashbook group follows the sidebar's navy and warm gold palette. */
+.nav-link.cashbook-toggle {
+  width: 100%;
+  border: 1px solid transparent;
+  background: transparent;
+  font-family: inherit;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+.nav-link.cashbook-toggle:hover,
+.nav-link.cashbook-toggle--open {
+  background: #24394a;
+  border-color: #384d5d;
+  color: #f1e1c5;
+}
+.nav-link.cashbook-toggle.is-active {
+  background: #34434a;
+  color: #ebce9c;
+}
+.cashbook-chevron {
+  margin-left: auto;
+  color: #97aaba;
+  transition: transform 180ms ease;
+}
+.cashbook-links {
+  display: grid;
+  gap: 4px;
+  margin: -1px 0 5px 23px;
+  padding: 4px 0 4px 12px;
+  border-left: 1px solid #3a4c5b;
+  min-width: 0;
+}
+.cashbook-manage,
+.cashbook-link {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  border-radius: 6px;
+  padding: 9px 10px;
+  color: #b6c3cf;
+  text-decoration: none;
+  font-size: 12px;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
+}
+.cashbook-manage {
+  min-height: 38px;
+  margin-bottom: 4px;
+  background: #ffffff05;
+}
+.cashbook-manage svg {
+  flex-shrink: 0;
+}
+.cashbook-manage svg:last-child {
+  margin-left: auto;
+}
+.cashbook-link {
+  min-height: 48px;
+}
+.cashbook-manage:hover,
+.cashbook-link:hover {
+  background: #283e50;
+  color: #fff;
+}
+.cashbook-manage.is-active,
+.cashbook-link.is-active {
+  background: #d5b07318;
+  color: #f0d4a7;
+  box-shadow: inset 2px 0 #d5b073;
+}
+.cashbook-marker {
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+  border: 1px solid #8399aa;
+  border-radius: 50%;
+}
+.is-active > .cashbook-marker {
+  background: #d5b073;
+  border-color: #d5b073;
+  box-shadow: 0 0 0 3px #d5b07312;
+}
+.cashbook-label {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.cashbook-label > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cashbook-label small {
+  color: #91a5b6;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  overflow-wrap: anywhere;
+}
+.cashbook-link.is-active small {
+  color: #c8b797;
+}
+.cashbook-message {
+  margin: 0;
+  padding: 10px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #a6b7c5;
+  overflow-wrap: anywhere;
+}
+.cashbook-message--error {
+  color: #f1b8ad;
+}
+.cashbook-retry {
+  display: block;
+  margin-top: 8px;
+  border: 1px solid #506170;
+  border-radius: 5px;
+  padding: 4px 10px;
+  background: #24394a;
+  color: #f1e1c5;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cashbook-chevron,
+  .cashbook-manage,
+  .cashbook-link {
+    transition: none;
+  }
+}
 .admin-layout {
   --sidebar-width: 76px;
   --topbar-height: 80px;

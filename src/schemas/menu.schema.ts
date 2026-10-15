@@ -12,6 +12,7 @@ const amount = (label: string) =>
     .min(0, `${label} cannot be negative.`)
     .test('finite', `${label} must be finite.`, (value) => value == null || Number.isFinite(value))
 export const createMenuSchema = object({
+  warehouse_id: id('a warehouse'),
   menu_category_id: id('a menu category'),
   name: string().trim().required('Name is required.'),
   code: string().trim().required('Code is required.'),

@@ -71,6 +71,11 @@ const router = createRouter({
           component: () => import('@/views/SupplierApPaymentFormView.vue'),
         },
         {
+          path: 'suppliers/:id/ap-payments',
+          name: 'supplier-ap-payments',
+          component: () => import('@/views/SupplierApPaymentsView.vue'),
+        },
+        {
           path: 'suppliers/:id/ap-ledgers',
           name: 'supplier-ap-ledgers',
           component: () => import('@/views/SupplierApLedgersView.vue'),

@@ -131,6 +131,24 @@ async function submit() {
         <dd>{{ detail.amount }}</dd>
         <dt>Transaction date</dt>
         <dd>{{ detail.transaction_date }}</dd>
+        <dt>Reference</dt>
+        <dd>{{ detail.reference_no ?? '-' }}</dd>
+        <dt>Balance after</dt>
+        <dd>{{ detail.balance_after ?? '-' }}</dd>
+        <dt>Reference type / ID</dt>
+        <dd>{{ detail.reference_type ?? '-' }} / {{ detail.reference_id ?? '-' }}</dd>
+        <dt>Cashbook code / type</dt>
+        <dd>{{ detail.cashbook?.code }} / {{ detail.cashbook?.type }}</dd>
+        <dt>Opening balance</dt>
+        <dd>{{ detail.cashbook?.opening_balance ?? '-' }}</dd>
+        <dt>Current balance</dt>
+        <dd>{{ detail.cashbook?.current_balance ?? '-' }}</dd>
+        <dt>Created by</dt>
+        <dd>{{ detail.creator?.name ?? '-' }} {{ detail.creator?.email }}</dd>
+        <dt>Created at</dt>
+        <dd>{{ detail.created_at ?? '-' }}</dd>
+        <dt>Updated at</dt>
+        <dd>{{ detail.updated_at ?? '-' }}</dd>
         <dt>Remark</dt>
         <dd>{{ detail.remark || '-' }}</dd>
       </dl>

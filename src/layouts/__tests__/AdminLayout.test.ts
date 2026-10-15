@@ -1,3 +1,5 @@
+import { cashbookService } from '@/services/cashbook.service'
+vi.mock('@/services/cashbook.service', () => ({ cashbookService: { listOptions: vi.fn() } }))
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
@@ -18,6 +20,9 @@ const wrappers: ReturnType<typeof mount>[] = []
 let smallScreen = false
 
 beforeEach(() => {
+  vi.mocked(cashbookService.listOptions)
+    .mockReset()
+    .mockResolvedValue([{ id: 3, name: 'Main Cash', code: 'MAIN', type: 'cash' }])
   localStorage.clear()
   smallScreen = false
   vi.mocked(authService.logout).mockReset().mockResolvedValue(undefined)
@@ -76,12 +81,12 @@ async function render() {
 }
 
 describe('admin navigation', () => {
-  it('shows the logo, current user and all twenty-one destinations with icons', async () => {
+  it('shows the logo, current user and navigation destinations with icons', async () => {
     const { wrapper } = await render()
     expect(wrapper.get('.brand').text()).toContain('SHWE PETIT')
     expect(wrapper.get('.user-profile').text()).toContain(user.name)
     expect(wrapper.get('.user-profile').text()).toContain('hotel administrator')
-    expect(wrapper.findAll('nav .nav-link')).toHaveLength(21)
+    expect(wrapper.findAll('nav .nav-link')).toHaveLength(20)
     expect(wrapper.findAll('nav .nav-link svg')).toHaveLength(21)
     expect(wrapper.get('nav [href="/users"]').attributes('aria-current')).toBe('page')
     expect(wrapper.get('nav [href="/users"]').classes()).toContain('is-active')
@@ -132,4 +137,18 @@ describe('admin navigation', () => {
     expect(apiClient.defaults.headers.common.Authorization).toBe('Bearer test-token')
     expect(wrapper.get('.logout-button').attributes('disabled')).toBeUndefined()
   })
+})
+
+it('loads cashbooks on expand and links to the selected cashbook ledger', async () => {
+  const { wrapper, router } = await render()
+  expect(cashbookService.listOptions).not.toHaveBeenCalled()
+  await wrapper.get('[aria-controls="cashbook-links"]').trigger('click')
+  await flushPromises()
+  expect(cashbookService.listOptions).toHaveBeenCalledWith(expect.any(AbortSignal))
+  expect(wrapper.get('#cashbook-links').text()).toContain('Main Cash')
+  await wrapper
+    .get('#cashbook-links a[href="/cashbook-transactions?cashbook_id=3"]')
+    .trigger('click')
+  await flushPromises()
+  expect(router.currentRoute.value.query.cashbook_id).toBe('3')
 })

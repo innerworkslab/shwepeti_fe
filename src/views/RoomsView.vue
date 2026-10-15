@@ -49,7 +49,7 @@ const {
   reset,
   refresh,
 } = useDataTable<Room, Pick<RoomListParams, 'status'>>(roomService.list, {
-  initialFilters: { status: undefined },
+  initialFilters: { status: 'available' },
 })
 const modalOpen = ref(false)
 const selectedId = ref<number | null>(null)
