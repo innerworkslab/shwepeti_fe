@@ -43,7 +43,8 @@ const dashboard: BookingDashboard = {
     id: room.room_category_id,
     name: room.room_category.name,
     availability: [{ date: '2026-10-08', total_count: 1, booked_count: 0, available_count: 1 }],
-    rooms: [{ ...room, bookings: [] }],
+    rooms: [room],
+    bookings: [],
   })),
 }
 const wrappers: ReturnType<typeof mount>[] = []
@@ -150,30 +151,27 @@ it('ignores outdated dashboard responses after changing dates', async () => {
 })
 it('renders booking bars and daily counts and selects a single start date', async () => {
   const booking = {
-    id: 8,
-    booking_no: 'BK-008',
-    guest_name: 'Mg Mg',
-    guest_phone: null,
-    booking_type: 'reservation',
-    charge_type: 'day',
+    roomId: '1',
+    guestName: 'Mg Mg',
+    start_date_time: '2026-10-08 13:00',
+    end_date_time: '2026-10-09 12:00',
     status: 'reserved',
-    expected_check_in_at: '2026-10-08 13:00:00',
-    expected_check_out_at: '2026-10-09 12:00:00',
-    checked_in_at: null,
-    checked_out_at: null,
-    total_amount: '65000',
-    paid_amount: '20000',
-    balance_amount: '45000',
+    totalGuests: 2,
+    colorCode: '#10b981',
   }
   vi.mocked(posDashboardService.get).mockResolvedValue({
     ...dashboard,
     room_categories: [
       {
         ...dashboard.room_categories[0]!,
+        bookings: [
+          booking,
+          { ...booking, guestName: 'Second guest' },
+          { ...booking, roomId: '99', guestName: 'Other room' },
+        ],
         rooms: [
           {
             ...dashboard.room_categories[0]!.rooms[0]!,
-            bookings: [booking, { ...booking, id: 9, booking_no: 'BK-009' }],
           },
         ],
       },
@@ -181,10 +179,18 @@ it('renders booking bars and daily counts and selects a single start date', asyn
   })
   const w = await render()
   expect(w.findAll('.day')).toHaveLength(31)
-  expect(w.findAll('a.booking')).toHaveLength(2)
-  expect(w.get('a.booking').attributes('href')).toBe('/pos/bookings/8')
-  expect(w.get('a.booking').attributes('style')).toContain('22.5806')
-  expect(w.findAll('a.booking')[1]!.attributes('style')).toContain('top: 42px')
+  expect(w.findAll('button.booking')).toHaveLength(2)
+  expect(w.get('button.booking').text()).toContain('Mg Mg')
+  expect(w.get('button.booking').text()).toContain('2 guest(s)')
+  expect(w.get('button.booking').attributes('style')).toContain(
+    'border-left-color: rgb(16, 185, 129)',
+  )
+  await w.get('button.booking').trigger('click')
+  await flushPromises()
+  expect(posRoomService.get).toHaveBeenCalledWith(1, expect.any(AbortSignal))
+  await w.get('[aria-label="Close room details"]').trigger('click')
+  expect(w.get('button.booking').attributes('style')).toContain('22.5806')
+  expect(w.findAll('button.booking')[1]!.attributes('style')).toContain('top: 42px')
   expect(w.get('.room-timeline').attributes('style')).toContain('84px')
   expect(w.find('[title="2026-10-08: 1 available, 0 booked, 1 total"]').exists()).toBe(true)
   expect(w.find('.dashboard-date-filters').exists()).toBe(false)

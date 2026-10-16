@@ -1,25 +1,17 @@
 export interface DashboardBooking {
-  id: number
-  booking_no: string
-  guest_name: string
-  guest_phone: string | null
-  booking_type: string
-  charge_type: string
+  roomId: string | number
+  guestName: string
+  start_date_time: string
+  end_date_time: string
   status: string
-  expected_check_in_at: string
-  expected_check_out_at: string
-  checked_in_at: string | null
-  checked_out_at: string | null
-  total_amount: string
-  paid_amount: string
-  balance_amount: string
+  totalGuests: number
+  colorCode: string
 }
 export interface DashboardRoom {
   id: number
   name: string
   status: string
   price: string
-  bookings: DashboardBooking[]
 }
 export interface DashboardCategory {
   id: number
@@ -31,6 +23,7 @@ export interface DashboardCategory {
     available_count: number
   }[]
   rooms: DashboardRoom[]
+  bookings: DashboardBooking[]
 }
 export interface BookingDashboard {
   start_date: string

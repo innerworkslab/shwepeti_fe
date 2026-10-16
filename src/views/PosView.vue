@@ -7,7 +7,7 @@ import RoomDrawer from '@/components/pos/RoomDrawer.vue'
 import { usePosSessionStore } from '@/stores/pos-session'
 import { posDashboardService } from '@/services/pos-dashboard.service'
 import { toApiError } from '@/services/api/api-error'
-import type { BookingDashboard, DashboardRoom } from '@/types/pos-dashboard'
+import type { BookingDashboard, DashboardRoom, DashboardBooking } from '@/types/pos-dashboard'
 const session = usePosSessionStore()
 const today = new Date()
 today.setHours(0, 0, 0, 0)
@@ -51,6 +51,12 @@ const groups = computed(() =>
     ...group,
     id: String(group.id),
     description: '',
+    rooms: group.rooms.map((room) => ({
+      ...room,
+      bookings: (group.bookings ?? []).filter(
+        (booking) => String(booking.roomId) === String(room.id),
+      ),
+    })),
   })),
 )
 type RoomGroup = (typeof groups.value)[number]
@@ -87,7 +93,7 @@ const visibleGroups = computed(() =>
       rooms: g.rooms.filter(
         (room) =>
           (!availableOnly.value || room.status === 'available') &&
-          `${room.name} ${room.id} ${room.bookings.map((b) => `${b.guest_name} ${b.booking_no}`).join(' ')}`
+          `${room.name} ${room.id} ${room.bookings.map((b) => b.guestName).join(' ')}`
             .toLowerCase()
             .includes(query.value.trim().toLowerCase()),
       ),
@@ -107,16 +113,17 @@ function availabilityTitle(group: RoomGroup, day: Date) {
 function dayNumber(value: string) {
   return Date.parse(`${value.slice(0, 10)}T00:00:00Z`) / 86400000
 }
-function bookingBars(room: DashboardRoom) {
+function bookingBars(room: DashboardRoom & { bookings: DashboardBooking[] }) {
   const first = days.value[0]
   if (!first || !dayCount.value) return []
   const firstDay = dayNumber(dateKey(first))
   const lanes: number[] = []
   return room.bookings
-    .map((booking) => ({
+    .map((booking, index) => ({
       booking,
-      from: dayNumber(booking.checked_in_at ?? booking.expected_check_in_at) - firstDay,
-      to: dayNumber(booking.checked_out_at ?? booking.expected_check_out_at) - firstDay,
+      key: `${booking.roomId}-${booking.start_date_time}-${booking.end_date_time}-${index}`,
+      from: dayNumber(booking.start_date_time) - firstDay,
+      to: dayNumber(booking.end_date_time) - firstDay,
     }))
     .filter(
       (bar) =>
@@ -126,7 +133,7 @@ function bookingBars(room: DashboardRoom) {
         bar.to >= 0 &&
         bar.from < dayCount.value,
     )
-    .sort((a, b) => a.from - b.from || a.booking.id - b.booking.id)
+    .sort((a, b) => a.from - b.from || a.key.localeCompare(b.key))
     .map((bar) => {
       const from = Math.max(0, bar.from),
         to = Math.min(dayCount.value - 1, bar.to)
@@ -141,11 +148,14 @@ function bookingBars(room: DashboardRoom) {
           width: `${((to - from + 1) / dayCount.value) * 100}%`,
           top: `${6 + lane * 36}px`,
           ...statusStyle(bar.booking.status),
+          borderLeftColor: /^#[0-9a-f]{6}$/i.test(bar.booking.colorCode)
+            ? bar.booking.colorCode
+            : statusStyle(bar.booking.status).color,
         },
       }
     })
 }
-function timelineHeight(room: DashboardRoom) {
+function timelineHeight(room: DashboardRoom & { bookings: DashboardBooking[] }) {
   return `${Math.max(44, ...bookingBars(room).map((bar) => (bar.lane + 1) * 36 + 12))}px`
 }
 
@@ -250,7 +260,7 @@ onBeforeUnmount(() => {
               v-model="query"
               type="search"
               aria-label="Search rooms"
-              placeholder="Search rooms, guests or bookings" /></label
+              placeholder="Search rooms or guests" /></label
           ><button
             class="icon-button"
             title="Calendar display options"
@@ -398,16 +408,18 @@ onBeforeUnmount(() => {
                     :class="{ weekend: day.getDay() === 0 || day.getDay() === 6 }"
                   />
                 </div>
-                <RouterLink
+                <button
                   v-for="bar in bookingBars(room)"
-                  :key="bar.booking.id"
+                  :key="bar.key"
                   class="booking"
                   :style="bar.style"
-                  :to="`/pos/bookings/${bar.booking.id}`"
-                  :aria-label="`View booking ${bar.booking.booking_no} for ${bar.booking.guest_name}`"
-                  :title="`${bar.booking.guest_name} · ${bar.booking.booking_no} · ${statusLabel(bar.booking.status)} · ${bar.booking.expected_check_in_at} to ${bar.booking.expected_check_out_at} · Balance: ${bar.booking.balance_amount}`"
-                  >{{ bar.booking.guest_name }} · {{ bar.booking.booking_no }}</RouterLink
+                  type="button"
+                  @click="selectedRoomId = room.id"
+                  :aria-label="`View ${room.name} for ${bar.booking.guestName}`"
+                  :title="`${bar.booking.guestName} · ${statusLabel(bar.booking.status)} · ${bar.booking.start_date_time} to ${bar.booking.end_date_time} · ${bar.booking.totalGuests} guest(s)`"
                 >
+                  {{ bar.booking.guestName }} · {{ bar.booking.totalGuests }} guest(s)
+                </button>
               </div>
             </div>
           </section>
