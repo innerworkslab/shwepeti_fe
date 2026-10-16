@@ -32,6 +32,9 @@ export interface PosBookingDetail {
   session_rate: string | null
   subtotal: string
   discount_amount: string
+  tax_percentage?: number | string
+  service_charge_percentage?: number | string
+  service_charge_amount?: number | string
   tax_amount: string
   total_amount: string
   paid_amount: string

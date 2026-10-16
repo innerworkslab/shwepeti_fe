@@ -1,3 +1,4 @@
+import { posChargeFields } from './pos-charges.schema'
 import { array, number, object, string } from 'yup'
 const amount = () =>
   number()
@@ -17,6 +18,6 @@ export const serviceOrderSchema = object({
     .min(1, 'Add at least one service item.')
     .required(),
   discount_amount: amount(),
-  tax_amount: amount(),
+  ...posChargeFields,
   note: string().trim().defined(),
 })

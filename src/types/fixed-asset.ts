@@ -30,3 +30,13 @@ export type FixedAssetFilters = {
   date_from?: string
   date_to?: string
 }
+
+export interface FixedAssetDepreciation {
+  id: number
+  fixed_asset_id: number
+  period: string
+  amount: string | number
+  opening_book_value: string | number
+  closing_book_value: string | number
+  created_at: string
+}

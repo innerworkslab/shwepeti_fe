@@ -1,3 +1,6 @@
+import { posDashboardService } from '@/services/pos-dashboard.service'
+import type { BookingDashboard } from '@/types/pos-dashboard'
+vi.mock('@/services/pos-dashboard.service', () => ({ posDashboardService: { get: vi.fn() } }))
 import { beforeEach, afterEach, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createMemoryHistory, createRouter } from 'vue-router'
@@ -29,11 +32,28 @@ const rooms = [
     status: 'cleaning',
   },
 ]
+const dashboard: BookingDashboard = {
+  start_date: '2026-10-01',
+  end_date: '2026-10-31',
+  dates: Array.from({ length: 31 }, (_, i) => ({
+    date: `2026-10-${String(i + 1).padStart(2, '0')}`,
+    label: String(i + 1),
+  })),
+  room_categories: rooms.map((room) => ({
+    id: room.room_category_id,
+    name: room.room_category.name,
+    availability: [{ date: '2026-10-08', total_count: 1, booked_count: 0, available_count: 1 }],
+    rooms: [{ ...room, bookings: [] }],
+  })),
+}
 const wrappers: ReturnType<typeof mount>[] = []
 const descriptors = Object.getOwnPropertyDescriptors(HTMLDialogElement.prototype)
 beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(new Date(2026, 9, 16))
   sessionStorage.clear()
   vi.resetAllMocks()
+  vi.mocked(posDashboardService.get).mockResolvedValue(dashboard)
   vi.mocked(posRoomService.list).mockResolvedValue(rooms)
   vi.mocked(posRoomService.available).mockResolvedValue([room])
   vi.mocked(posRoomService.get).mockResolvedValue(room)
@@ -50,6 +70,7 @@ afterEach(() => {
     else Reflect.deleteProperty(HTMLDialogElement.prototype, key)
   }
   vi.restoreAllMocks()
+  vi.useRealTimers()
 })
 async function render() {
   const router = createRouter({
@@ -57,6 +78,7 @@ async function render() {
     routes: [
       { path: '/pos', component: PosView },
       { path: '/pos/bookings/create', component: { template: '<div />' } },
+      { path: '/pos/bookings/:id', component: { template: '<div />' } },
     ],
   })
   await router.push('/pos')
@@ -65,7 +87,7 @@ async function render() {
   await flushPromises()
   return wrapper
 }
-it('groups live rooms by category, searches actual names and fetches the available endpoint', async () => {
+it('groups dashboard rooms, searches names and filters current availability locally', async () => {
   const wrapper = await render()
   expect(wrapper.findAll('.room-row')).toHaveLength(2)
   expect(wrapper.text()).toContain('Standard')
@@ -77,11 +99,12 @@ it('groups live rooms by category, searches actual names and fetches the availab
   await wrapper.get('[aria-label="Search rooms"]').setValue('')
   await wrapper.get('.available-filter input').setValue(true)
   await flushPromises()
-  expect(posRoomService.available).toHaveBeenCalledWith(expect.any(AbortSignal))
+  expect(posRoomService.available).not.toHaveBeenCalled()
   expect(wrapper.findAll('.room-row')).toHaveLength(1)
   await wrapper.get('.available-filter input').setValue(false)
   await flushPromises()
-  expect(posRoomService.list).toHaveBeenCalledTimes(2)
+  expect(posDashboardService.get).toHaveBeenCalledTimes(1)
+  expect(posRoomService.list).not.toHaveBeenCalled()
 })
 it('opens a drawer using fresh details by ID and handles null booking', async () => {
   const wrapper = await render()
@@ -94,7 +117,7 @@ it('opens a drawer using fresh details by ID and handles null booking', async ()
   expect(wrapper.find('.room-drawer').exists()).toBe(false)
 })
 it('supports room-list and detail retries', async () => {
-  vi.mocked(posRoomService.list).mockRejectedValueOnce(new Error('List unavailable'))
+  vi.mocked(posDashboardService.get).mockRejectedValueOnce(new Error('List unavailable'))
   const wrapper = await render()
   expect(wrapper.get('[role="alert"]').text()).toContain('List unavailable')
   await wrapper.get('[role="alert"] button').trigger('click')
@@ -106,21 +129,86 @@ it('supports room-list and detail retries', async () => {
   await flushPromises()
   expect(wrapper.get('.room-drawer').text()).toContain('45000.00')
 })
-it('ignores outdated list responses after switching to available rooms', async () => {
-  let resolve!: (value: typeof rooms) => void
-  vi.mocked(posRoomService.list).mockReturnValueOnce(
+it('ignores outdated dashboard responses after changing dates', async () => {
+  let resolve!: (value: BookingDashboard) => void
+  vi.mocked(posDashboardService.get).mockReturnValueOnce(
     new Promise((done) => {
       resolve = done
     }),
   )
-  const wrapper = await render()
-  const signal = vi.mocked(posRoomService.list).mock.lastCall?.[0]
-  await wrapper.get('.available-filter input').setValue(true)
+  const w = await render()
+  const signal = vi.mocked(posDashboardService.get).mock.lastCall?.[1]
+  await w
+    .findAll('.date-controls button')
+    .find((b) => b.text() === 'Today')!
+    .trigger('click')
   await flushPromises()
   expect(signal?.aborted).toBe(true)
-  resolve(rooms)
+  resolve({ ...dashboard, room_categories: [] })
   await flushPromises()
-  expect(wrapper.findAll('.room-row')).toHaveLength(1)
+  expect(w.findAll('.room-row')).toHaveLength(2)
+})
+it('renders booking bars and daily counts and selects a single start date', async () => {
+  const booking = {
+    id: 8,
+    booking_no: 'BK-008',
+    guest_name: 'Mg Mg',
+    guest_phone: null,
+    booking_type: 'reservation',
+    charge_type: 'day',
+    status: 'reserved',
+    expected_check_in_at: '2026-10-08 13:00:00',
+    expected_check_out_at: '2026-10-09 12:00:00',
+    checked_in_at: null,
+    checked_out_at: null,
+    total_amount: '65000',
+    paid_amount: '20000',
+    balance_amount: '45000',
+  }
+  vi.mocked(posDashboardService.get).mockResolvedValue({
+    ...dashboard,
+    room_categories: [
+      {
+        ...dashboard.room_categories[0]!,
+        rooms: [
+          {
+            ...dashboard.room_categories[0]!.rooms[0]!,
+            bookings: [booking, { ...booking, id: 9, booking_no: 'BK-009' }],
+          },
+        ],
+      },
+    ],
+  })
+  const w = await render()
+  expect(w.findAll('.day')).toHaveLength(31)
+  expect(w.findAll('a.booking')).toHaveLength(2)
+  expect(w.get('a.booking').attributes('href')).toBe('/pos/bookings/8')
+  expect(w.get('a.booking').attributes('style')).toContain('22.5806')
+  expect(w.findAll('a.booking')[1]!.attributes('style')).toContain('top: 42px')
+  expect(w.get('.room-timeline').attributes('style')).toContain('84px')
+  expect(w.find('[title="2026-10-08: 1 available, 0 booked, 1 total"]').exists()).toBe(true)
+  expect(w.find('.dashboard-date-filters').exists()).toBe(false)
+  await w.get('[aria-label="Select 2026-10-15"]').trigger('click')
+  await flushPromises()
+  expect(posDashboardService.get).toHaveBeenLastCalledWith(
+    { start_date: '2026-10-15', end_date: '2026-10-15' },
+    expect.any(AbortSignal),
+  )
+  expect(w.get('[aria-label="Select 2026-10-15"]').attributes('aria-pressed')).toBe('true')
+  expect(w.findAll('.day[aria-pressed="true"]')).toHaveLength(1)
+  await w.get('[aria-label="Select 2026-10-10"]').trigger('click')
+  await flushPromises()
+  expect(posDashboardService.get).toHaveBeenLastCalledWith(
+    { start_date: '2026-10-10', end_date: '2026-10-15' },
+    expect.any(AbortSignal),
+  )
+  expect(w.findAll('.day[aria-pressed="true"]')).toHaveLength(6)
+  await w.get('[aria-label="Select 2026-10-20"]').trigger('click')
+  await flushPromises()
+  expect(posDashboardService.get).toHaveBeenLastCalledWith(
+    { start_date: '2026-10-20', end_date: '2026-10-20' },
+    expect.any(AbortSignal),
+  )
 })
 it('aborts old room details, ignores stale results and cancels on dismissal', async () => {
   let resolve!: (value: typeof room) => void

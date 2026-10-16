@@ -84,3 +84,37 @@ it('strips document UI keys and validates dates and amounts', async () => {
     createFixedAssetSchema.validate({ ...input, documents: [{ name: 'Invoice', path: '' }] }),
   ).rejects.toThrow()
 })
+
+it('loads paginated depreciation history for the selected asset', async () => {
+  const row = {
+    id: 3,
+    fixed_asset_id: 2,
+    period: '2026-09',
+    amount: '90000.00',
+    opening_book_value: '1020000.00',
+    closing_book_value: '930000.00',
+    created_at: '2026-10-15 14:16:38',
+  }
+  const get = vi
+    .spyOn(apiClient, 'get')
+    .mockResolvedValue({
+      data: {
+        success: true,
+        data: [row],
+        meta: { current_page: 1, per_page: 15, total: 3, last_page: 1 },
+      },
+    })
+  const signal = new AbortController().signal
+  expect(await fixedAssetService.depreciations(2, { page: 1 }, signal)).toEqual({
+    data: [row],
+    page: 1,
+    perPage: 15,
+    total: 3,
+  })
+  expect(get).toHaveBeenCalledWith('/api/v1/admin/fixed-assets/2/depreciations', {
+    params: { page: 1 },
+    signal,
+  })
+  await expect(fixedAssetService.depreciations(NaN)).rejects.toThrow('Invalid fixed asset ID')
+  expect(get).toHaveBeenCalledTimes(1)
+})

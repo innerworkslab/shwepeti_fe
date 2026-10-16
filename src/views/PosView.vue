@@ -5,19 +5,21 @@ import { RouterLink } from 'vue-router'
 import AppIcon from '@/components/common/AppIcon.vue'
 import RoomDrawer from '@/components/pos/RoomDrawer.vue'
 import { usePosSessionStore } from '@/stores/pos-session'
-import { posRoomService } from '@/services/pos-room.service'
+import { posDashboardService } from '@/services/pos-dashboard.service'
 import { toApiError } from '@/services/api/api-error'
-import type { PosRoom } from '@/types/pos-room'
+import type { BookingDashboard, DashboardRoom } from '@/types/pos-dashboard'
 const session = usePosSessionStore()
 const today = new Date()
 today.setHours(0, 0, 0, 0)
-const start = ref(new Date(today.getFullYear(), today.getMonth(), Math.max(1, today.getDate() - 3)))
-const dayCount = 16
+const start = ref(new Date(today))
+const end = ref(new Date(today))
+const selectionAnchor = ref<Date | null>(null)
+const calendarMonth = ref(new Date(today.getFullYear(), today.getMonth(), 1))
 const query = ref('')
 const typeFilter = ref('all')
 const collapsed = ref<string[]>([])
 const availableOnly = ref(false)
-const rooms = ref<PosRoom[]>([])
+const dashboard = ref<BookingDashboard | null>(null)
 const loading = ref(true)
 const loadError = ref('')
 const selectedRoomId = ref<number | null>(null)
@@ -29,12 +31,13 @@ async function loadRooms() {
   controller = active
   loading.value = true
   loadError.value = ''
-  rooms.value = []
+  dashboard.value = null
   try {
-    const result = await (availableOnly.value
-      ? posRoomService.available(active.signal)
-      : posRoomService.list(active.signal))
-    if (!disposed && !active.signal.aborted) rooms.value = result
+    const result = await posDashboardService.get(
+      { start_date: dateKey(start.value), end_date: dateKey(end.value) },
+      active.signal,
+    )
+    if (!disposed && !active.signal.aborted) dashboard.value = result
   } catch (cause) {
     if (!disposed && !active.signal.aborted) loadError.value = toApiError(cause).message
   } finally {
@@ -42,67 +45,148 @@ async function loadRooms() {
   }
 }
 onMounted(loadRooms)
-watch(availableOnly, loadRooms)
-type RoomGroup = { id: string; name: string; description: string; rooms: PosRoom[] }
-const groups = computed(() => {
-  const grouped = new Map<string, RoomGroup>()
-  for (const room of rooms.value) {
-    const key = String(room.room_category_id)
-    if (!grouped.has(key))
-      grouped.set(key, {
-        id: key,
-        name: room.room_category?.name ?? `Category #${key}`,
-        description: room.room_category?.description ?? '',
-        rooms: [],
-      })
-    grouped.get(key)!.rooms.push(room)
-  }
-  return [...grouped.values()]
-})
+watch([start, end], loadRooms)
+const groups = computed(() =>
+  (dashboard.value?.room_categories ?? []).map((group) => ({
+    ...group,
+    id: String(group.id),
+    description: '',
+  })),
+)
+type RoomGroup = (typeof groups.value)[number]
 function dateKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 function addDays(date: Date, amount: number) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate() + amount)
 }
-const days = computed(() => Array.from({ length: dayCount }, (_, i) => addDays(start.value, i)))
-const years = computed(() => Array.from({ length: 9 }, (_, i) => start.value.getFullYear() - 4 + i))
+const days = computed(() => {
+  const first = calendarMonth.value
+  const count = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate()
+  return Array.from({ length: count }, (_, index) => addDays(first, index))
+})
+const dayCount = computed(() => days.value.length)
+const years = computed(() =>
+  Array.from({ length: 9 }, (_, i) => calendarMonth.value.getFullYear() - 4 + i),
+)
 const months = Array.from({ length: 12 }, (_, i) =>
   new Date(2026, i, 1).toLocaleString('en', { month: 'short' }),
 )
-const rangeLabel = computed(
-  () =>
-    `${days.value[0]!.toLocaleDateString('en', { month: 'short', day: 'numeric' })} - ${days.value[dayCount - 1]!.toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' })}`,
-)
+const rangeLabel = computed(() => {
+  const format = (date: Date) =>
+    date.toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' })
+  return dateKey(start.value) === dateKey(end.value)
+    ? format(start.value)
+    : `${format(start.value)} – ${format(end.value)}`
+})
 const visibleGroups = computed(() =>
   groups.value
     .filter((g) => typeFilter.value === 'all' || g.id === typeFilter.value)
     .map((g) => ({
       ...g,
-      rooms: g.rooms.filter((room) =>
-        `${room.name} ${room.id}`.toLowerCase().includes(query.value.trim().toLowerCase()),
+      rooms: g.rooms.filter(
+        (room) =>
+          (!availableOnly.value || room.status === 'available') &&
+          `${room.name} ${room.id} ${room.bookings.map((b) => `${b.guest_name} ${b.booking_no}`).join(' ')}`
+            .toLowerCase()
+            .includes(query.value.trim().toLowerCase()),
       ),
     }))
     .filter((g) => g.rooms.length),
 )
 function available(group: RoomGroup, day: Date) {
-  return dateKey(day) === dateKey(today)
-    ? group.rooms.filter((room) => room.status === 'available').length
-    : null
+  return group.availability.find((entry) => entry.date === dateKey(day))?.available_count ?? null
 }
+function availabilityTitle(group: RoomGroup, day: Date) {
+  const entry = group.availability.find((value) => value.date === dateKey(day))
+  return entry
+    ? `${entry.date}: ${entry.available_count} available, ${entry.booked_count} booked, ${entry.total_count} total`
+    : 'Availability not supplied'
+}
+// Use calendar-day positions, independent of daylight-saving transitions.
+function dayNumber(value: string) {
+  return Date.parse(`${value.slice(0, 10)}T00:00:00Z`) / 86400000
+}
+function bookingBars(room: DashboardRoom) {
+  const first = days.value[0]
+  if (!first || !dayCount.value) return []
+  const firstDay = dayNumber(dateKey(first))
+  const lanes: number[] = []
+  return room.bookings
+    .map((booking) => ({
+      booking,
+      from: dayNumber(booking.checked_in_at ?? booking.expected_check_in_at) - firstDay,
+      to: dayNumber(booking.checked_out_at ?? booking.expected_check_out_at) - firstDay,
+    }))
+    .filter(
+      (bar) =>
+        Number.isFinite(bar.from) &&
+        Number.isFinite(bar.to) &&
+        bar.to >= bar.from &&
+        bar.to >= 0 &&
+        bar.from < dayCount.value,
+    )
+    .sort((a, b) => a.from - b.from || a.booking.id - b.booking.id)
+    .map((bar) => {
+      const from = Math.max(0, bar.from),
+        to = Math.min(dayCount.value - 1, bar.to)
+      let lane = lanes.findIndex((last) => last < from)
+      if (lane < 0) lane = lanes.length
+      lanes[lane] = to
+      return {
+        ...bar,
+        lane,
+        style: {
+          left: `${(from / dayCount.value) * 100}%`,
+          width: `${((to - from + 1) / dayCount.value) * 100}%`,
+          top: `${6 + lane * 36}px`,
+          ...statusStyle(bar.booking.status),
+        },
+      }
+    })
+}
+function timelineHeight(room: DashboardRoom) {
+  return `${Math.max(44, ...bookingBars(room).map((bar) => (bar.lane + 1) * 36 + 12))}px`
+}
+
 function toggleGroup(id: string) {
   collapsed.value = collapsed.value.includes(id)
     ? collapsed.value.filter((value) => value !== id)
     : [...collapsed.value, id]
 }
+function selectDay(day: Date) {
+  if (!selectionAnchor.value) {
+    selectionAnchor.value = new Date(day)
+    start.value = new Date(day)
+    end.value = new Date(day)
+  } else {
+    const anchor = selectionAnchor.value
+    start.value = new Date(day < anchor ? day : anchor)
+    end.value = new Date(day < anchor ? anchor : day)
+    selectionAnchor.value = null
+  }
+}
+function selectedDay(day: Date) {
+  return day >= start.value && day <= end.value
+}
 function shift(amount: number) {
-  start.value = addDays(start.value, amount)
+  calendarMonth.value = new Date(
+    calendarMonth.value.getFullYear(),
+    calendarMonth.value.getMonth() + (amount < 0 ? -1 : 1),
+    1,
+  )
 }
 function selectMonth(month: number) {
-  start.value = new Date(start.value.getFullYear(), month, 1)
+  calendarMonth.value = new Date(calendarMonth.value.getFullYear(), month, 1)
 }
 function selectYear(year: number) {
-  start.value = new Date(year, start.value.getMonth(), 1)
+  calendarMonth.value = new Date(year, calendarMonth.value.getMonth(), 1)
+}
+function showToday() {
+  calendarMonth.value = new Date(today.getFullYear(), today.getMonth(), 1)
+  selectionAnchor.value = null
+  start.value = new Date(today)
+  end.value = new Date(today)
 }
 const dialog = ref<HTMLDialogElement | null>(null)
 const panel = ref('')
@@ -157,7 +241,7 @@ onBeforeUnmount(() => {
         </nav>
         <div class="booking-tools">
           <label class="available-filter"
-            ><input v-model="availableOnly" type="checkbox" /> Available rooms only</label
+            ><input v-model="availableOnly" type="checkbox" /> Currently available rooms only</label
           ><button type="button" :disabled="loading" aria-label="Refresh rooms" @click="loadRooms">
             <AppIcon name="refresh" :size="16" />
           </button>
@@ -166,7 +250,7 @@ onBeforeUnmount(() => {
               v-model="query"
               type="search"
               aria-label="Search rooms"
-              placeholder="Search by room name or number" /></label
+              placeholder="Search rooms, guests or bookings" /></label
           ><button
             class="icon-button"
             title="Calendar display options"
@@ -188,17 +272,28 @@ onBeforeUnmount(() => {
             <AppIcon name="chevronLeft" :size="16" /></button
           ><button class="icon-button" aria-label="Next dates" @click="shift(7)">
             <AppIcon name="chevronRight" :size="16" /></button
-          ><button @click="start = new Date(today)">Today</button>
+          ><button @click="showToday">Today</button>
         </div>
-        <div class="legend"><span>Availability counts show current room status only</span></div>
+        <div class="legend">
+          <span
+            >Daily category availability · Booking bars include arrival and departure dates</span
+          >
+        </div>
       </div>
+      <p class="selection-hint" role="status">
+        {{
+          selectionAnchor
+            ? 'Single day loaded. Choose another date to extend the range, or the same date to finish.'
+            : 'Choose a date for one day, then a second date for a range.'
+        }}
+      </p>
       <nav class="date-strip years" aria-label="Select year">
         <span class="strip-label">Year</span
         ><button
           v-for="year in years"
           :key="year"
-          :aria-pressed="start.getFullYear() === year"
-          :class="{ active: start.getFullYear() === year }"
+          :aria-pressed="calendarMonth.getFullYear() === year"
+          :class="{ active: calendarMonth.getFullYear() === year }"
           @click="selectYear(year)"
         >
           {{ year }}
@@ -209,30 +304,41 @@ onBeforeUnmount(() => {
         ><button
           v-for="(month, index) in months"
           :key="month"
-          :aria-pressed="start.getMonth() === index"
-          :class="{ active: start.getMonth() === index }"
+          :aria-pressed="calendarMonth.getMonth() === index"
+          :class="{ active: calendarMonth.getMonth() === index }"
           @click="selectMonth(index)"
         >
           {{ month }}
         </button>
       </nav>
-      <p v-if="loading" role="status" class="notice">Loading rooms...</p>
+      <p v-if="loading" role="status" class="notice">Loading booking dashboard...</p>
       <div v-else-if="loadError" role="alert" class="notice">
         <p>{{ loadError }}</p>
         <button type="button" @click="loadRooms">Try again</button>
       </div>
       <div v-else class="calendar-scroll" tabindex="0" aria-label="Scrollable room schedule">
-        <div class="schedule">
+        <div
+          class="schedule"
+          :style="{
+            '--day-count': Math.max(1, dayCount),
+            minWidth: `${180 + Math.max(1, dayCount) * 64}px`,
+          }"
+        >
           <div class="schedule-header">
             <div class="room-label">
               Rooms <span>{{ visibleGroups.reduce((total, g) => total + g.rooms.length, 0) }}</span>
             </div>
             <div class="days">
-              <div
+              <button
                 v-for="day in days"
                 :key="dateKey(day)"
                 class="day"
+                type="button"
+                :aria-label="`Select ${dateKey(day)}`"
+                :aria-pressed="selectedDay(day)"
+                @click="selectDay(day)"
                 :class="{
+                  selected: selectedDay(day),
                   today: dateKey(day) === dateKey(today),
                   weekend: day.getDay() === 0 || day.getDay() === 6,
                 }"
@@ -240,7 +346,7 @@ onBeforeUnmount(() => {
                 <span>{{ day.toLocaleDateString('en', { weekday: 'short' }) }}</span
                 ><strong>{{ day.getDate() }}</strong
                 ><small>{{ day.toLocaleDateString('en', { month: 'short' }) }}</small>
-              </div>
+              </button>
             </div>
           </div>
           <section v-for="group in visibleGroups" :key="group.id" :aria-label="group.name">
@@ -261,11 +367,7 @@ onBeforeUnmount(() => {
                 <div v-for="day in days" :key="dateKey(day)">
                   <span
                     :class="{ soldout: available(group, day) === 0 }"
-                    :title="
-                      available(group, day) == null
-                        ? 'Date-specific availability is not available yet'
-                        : `${available(group, day)} rooms currently available`
-                    "
+                    :title="availabilityTitle(group, day)"
                     >{{ available(group, day) ?? '-' }}</span
                   >
                 </div>
@@ -288,7 +390,7 @@ onBeforeUnmount(() => {
                 /><span>{{ room.name }}</span
                 ><AppIcon name="more" :size="15" />
               </button>
-              <div class="room-timeline">
+              <div class="room-timeline" :style="{ minHeight: timelineHeight(room) }">
                 <div class="grid-lines" aria-hidden="true">
                   <span
                     v-for="day in days"
@@ -296,13 +398,16 @@ onBeforeUnmount(() => {
                     :class="{ weekend: day.getDay() === 0 || day.getDay() === 6 }"
                   />
                 </div>
-                <button
-                  v-if="room.current_booking"
-                  class="current-booking"
-                  @click="selectedRoomId = room.id"
+                <RouterLink
+                  v-for="bar in bookingBars(room)"
+                  :key="bar.booking.id"
+                  class="booking"
+                  :style="bar.style"
+                  :to="`/pos/bookings/${bar.booking.id}`"
+                  :aria-label="`View booking ${bar.booking.booking_no} for ${bar.booking.guest_name}`"
+                  :title="`${bar.booking.guest_name} · ${bar.booking.booking_no} · ${statusLabel(bar.booking.status)} · ${bar.booking.expected_check_in_at} to ${bar.booking.expected_check_out_at} · Balance: ${bar.booking.balance_amount}`"
+                  >{{ bar.booking.guest_name }} · {{ bar.booking.booking_no }}</RouterLink
                 >
-                  Current booking <AppIcon name="chevronRight" :size="14" />
-                </button>
               </div>
             </div>
           </section>
@@ -379,6 +484,41 @@ onBeforeUnmount(() => {
   </main>
 </template>
 <style scoped>
+.selection-hint {
+  margin: 0;
+  padding: 8px 20px;
+  color: #526680;
+  background: #f5faff;
+}
+.day.selected {
+  background: #e0f3ff;
+  color: #075985;
+  box-shadow: inset 0 -3px #0ea5e9;
+}
+button.day {
+  display: block;
+  border: 0;
+  border-radius: 0;
+  border-right: 1px solid #f0f3f8;
+  background: transparent;
+}
+button.day:hover {
+  background: #edf7ff;
+}
+button.day.selected {
+  background: #e0f3ff;
+  color: #075985;
+}
+button.day:focus-visible {
+  outline: 2px solid #0284c7;
+  outline-offset: -2px;
+}
+a.booking {
+  text-decoration: none;
+  line-height: 31px;
+  box-sizing: border-box;
+}
+
 .booking-tools a {
   display: inline-flex;
   align-items: center;
@@ -669,7 +809,7 @@ select:focus-visible,
 .availability,
 .grid-lines {
   display: grid;
-  grid-template-columns: repeat(16, minmax(0, 1fr));
+  grid-template-columns: repeat(var(--day-count), minmax(0, 1fr));
 }
 .day {
   text-align: center;
@@ -744,7 +884,7 @@ select:focus-visible,
   background: #fa787e;
 }
 .room-row {
-  height: 42px;
+  min-height: 44px;
 }
 .room-number {
   border: 0;
@@ -942,7 +1082,7 @@ select:focus-visible,
     padding: 36px 48px;
   }
   .room-row {
-    height: 48px;
+    min-height: 48px;
   }
   .booking {
     top: 7px;

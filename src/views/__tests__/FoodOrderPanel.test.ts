@@ -45,6 +45,9 @@ it('scopes orders to the booking and room and submits exact food payload', async
       room_id: 5,
       items: [{ menu_id: 1, qty: 2, note: 'Less spicy' }],
       discount_amount: 0,
+      tax_percentage: 0,
+      service_charge_percentage: 0,
+      service_charge_amount: 0,
       tax_amount: 0,
       note: 'Send to room',
     },
@@ -95,4 +98,29 @@ it('locks a served order against status updates', async () => {
       .attributes('disabled'),
   ).toBeDefined()
   expect(posFoodService.updateStatus).not.toHaveBeenCalled()
+})
+
+it('recalculates read-only charges from quantities and discounted subtotal', async () => {
+  const w = await render()
+  await w.get('[aria-label="Add Rice"]').trigger('click')
+  await w.get('[name="qty-1"]').setValue(2)
+  await w.get('[name="discount_amount"]').setValue(200)
+  await w.get('[name="tax_percentage"]').setValue(5)
+  await w.get('[name="service_charge_percentage"]').setValue(10)
+  expect((w.get('[name="tax_amount"]').element as HTMLInputElement).value).toBe('90')
+  expect((w.get('[name="service_charge_amount"]').element as HTMLInputElement).value).toBe('180')
+  expect(w.get('[name="tax_amount"]').attributes('readonly')).toBeDefined()
+  expect(w.get('[name="service_charge_amount"]').attributes('readonly')).toBeDefined()
+  vi.mocked(posFoodService.create).mockResolvedValue({ id: 20 })
+  await w.get('form').trigger('submit')
+  await flushPromises()
+  expect(posFoodService.create).toHaveBeenCalledWith(
+    expect.objectContaining({
+      tax_percentage: 5,
+      tax_amount: 90,
+      service_charge_percentage: 10,
+      service_charge_amount: 180,
+    }),
+    expect.any(AbortSignal),
+  )
 })

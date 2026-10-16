@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { calculatePosCharges } from '@/utils/pos-charges'
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { ValidationError } from 'yup'
 import AppIcon from '@/components/common/AppIcon.vue'
@@ -26,7 +27,12 @@ const busy = ref(false)
 const query = ref('')
 const categoryId = ref<number | null>(null)
 const cart = ref<{ menu_id: number; qty: number; note: string }[]>([])
-const form = reactive({ discount_amount: 0, tax_amount: 0, note: '' })
+const form = reactive({
+  discount_amount: 0,
+  tax_percentage: 0,
+  service_charge_percentage: 0,
+  note: '',
+})
 const statuses = reactive<Record<number, FoodOrderStatus>>({})
 let disposed = false
 const controller = new AbortController()
@@ -67,9 +73,15 @@ const subtotal = computed(() =>
     0,
   ),
 )
-const estimate = computed(
-  () => subtotal.value - Number(form.discount_amount) + Number(form.tax_amount),
+const charges = computed(() =>
+  calculatePosCharges(
+    subtotal.value,
+    Number(form.discount_amount),
+    Number(form.tax_percentage),
+    Number(form.service_charge_percentage),
+  ),
 )
+const estimate = computed(() => charges.value.total)
 function money(value: number) {
   return Number.isFinite(value)
     ? value.toLocaleString(undefined, { maximumFractionDigits: 2 })
@@ -136,7 +148,14 @@ async function submit() {
   notice.value = ''
   try {
     const payload = await foodOrderSchema.validate(
-      { ...form, items: cart.value, booking_id: props.bookingId, room_id: props.roomId },
+      {
+        ...form,
+        tax_amount: charges.value.tax_amount,
+        service_charge_amount: charges.value.service_charge_amount,
+        items: cart.value,
+        booking_id: props.bookingId,
+        room_id: props.roomId,
+      },
       { abortEarly: false, stripUnknown: true },
     )
     if (
@@ -160,7 +179,8 @@ async function submit() {
     if (disposed) return
     cart.value = []
     form.discount_amount = 0
-    form.tax_amount = 0
+    form.tax_percentage = 0
+    form.service_charge_percentage = 0
     form.note = ''
     notice.value = 'Food order created.'
     await loadOrders()
@@ -295,8 +315,34 @@ onBeforeUnmount(() => {
                 min="0"
                 step="any" /></label
             ><label
+              >Tax (%)<input
+                v-model.number="form.tax_percentage"
+                name="tax_percentage"
+                type="number"
+                min="0"
+                max="100"
+                step="any"
+            /></label>
+            <label
+              >Service charge (%)<input
+                v-model.number="form.service_charge_percentage"
+                name="service_charge_percentage"
+                type="number"
+                min="0"
+                max="100"
+                step="any"
+            /></label>
+            <label
+              >Service charge amount<input
+                :value="charges.service_charge_amount"
+                name="service_charge_amount"
+                type="number"
+                readonly
+            /></label>
+            <label
               >Tax amount<input
-                v-model.number="form.tax_amount"
+                :value="charges.tax_amount"
+                readonly
                 name="tax_amount"
                 type="number"
                 min="0"
@@ -374,6 +420,10 @@ onBeforeUnmount(() => {
               ><dt>Tax</dt>
               <dd>{{ order.tax_amount }}</dd></template
             >
+            <template v-if="order.service_charge_amount != null"
+              ><dt>Service charge</dt>
+              <dd>{{ order.service_charge_amount }}</dd></template
+            >
             <template v-if="order.total_amount != null"
               ><dt>Total</dt>
               <dd>{{ order.total_amount }}</dd></template
@@ -409,6 +459,11 @@ onBeforeUnmount(() => {
   </div>
 </template>
 <style scoped>
+input[readonly] {
+  background: #f1f5f9;
+  color: #475569;
+  cursor: default;
+}
 .menu-categories {
   display: flex;
   gap: 6px;

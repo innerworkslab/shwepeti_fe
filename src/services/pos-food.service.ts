@@ -30,6 +30,9 @@ export interface FoodOrder {
   subtotal?: string | number
   discount_amount?: string | number
   tax_amount?: string | number
+  tax_percentage?: string | number
+  service_charge_percentage?: string | number
+  service_charge_amount?: string | number
   total_amount?: string | number
   note?: string | null
   items?: {
@@ -47,6 +50,9 @@ export interface FoodOrderInput {
   room_id: number
   items: { menu_id: number; qty: number; note: string }[]
   discount_amount: number
+  tax_percentage: number
+  service_charge_percentage: number
+  service_charge_amount: number
   tax_amount: number
   note: string
 }

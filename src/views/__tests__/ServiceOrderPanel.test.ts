@@ -37,6 +37,10 @@ it('uses the category, scopes history, validates and sends a laundry order', asy
   expect(posServiceOrderService.create).not.toHaveBeenCalled()
   await w.get('[name="qty-9"]').setValue(2)
   await w.get('[name="note-9"]').setValue('Shirts')
+  await w.get('[name="tax_percentage"]').setValue(5)
+  await w.get('[name="service_charge_percentage"]').setValue(10)
+  expect(w.get('[name="tax_amount"]').attributes('readonly')).toBeDefined()
+  expect(w.get('[name="service_charge_amount"]').attributes('readonly')).toBeDefined()
   vi.mocked(posServiceOrderService.create).mockResolvedValue({})
   await w.get('form').trigger('submit')
   await flushPromises()
@@ -47,7 +51,10 @@ it('uses the category, scopes history, validates and sends a laundry order', asy
       type: 'laundry',
       items: [{ item_id: 9, qty: 2, note: 'Shirts' }],
       discount_amount: 0,
-      tax_amount: 0,
+      tax_percentage: 5,
+      service_charge_percentage: 10,
+      service_charge_amount: 400,
+      tax_amount: 200,
       note: '',
     },
     expect.any(AbortSignal),

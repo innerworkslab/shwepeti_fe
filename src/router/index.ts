@@ -51,6 +51,11 @@ const router = createRouter({
           component: () => import('@/views/FixedAssetFormView.vue'),
         },
         {
+          path: 'fixed-assets/:id/depreciations',
+          name: 'fixed-asset-depreciations',
+          component: () => import('@/views/FixedAssetDepreciationsView.vue'),
+        },
+        {
           path: 'fixed-assets/:id/edit',
           name: 'fixed-asset-edit',
           component: () => import('@/views/FixedAssetFormView.vue'),

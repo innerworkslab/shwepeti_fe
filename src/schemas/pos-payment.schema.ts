@@ -1,3 +1,4 @@
+import { posChargeFields } from './pos-charges.schema'
 import { number, object, string, type InferType } from 'yup'
 import { formatTransactionDate, validTransactionDate } from './cashbook-transaction.schema'
 export const bookingPaymentMethods = ['kpay', 'wave', 'aya', 'cash'] as const
@@ -31,3 +32,6 @@ export const partialPaymentSchema = bookingPaymentSchema.shape({
     .required('Choose a cashbook.'),
 })
 export type PartialPaymentInput = InferType<typeof partialPaymentSchema>
+
+export const checkoutPaymentSchema = bookingPaymentSchema.shape(posChargeFields)
+export type CheckoutPaymentInput = InferType<typeof checkoutPaymentSchema>

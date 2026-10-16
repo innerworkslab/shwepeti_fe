@@ -20,6 +20,9 @@ it('loads all list pages with the POS client and posts exact endpoints', async (
     room_id: 1,
     items: [{ menu_id: 1, qty: 2, note: '' }],
     discount_amount: 0,
+    tax_percentage: 0,
+    service_charge_percentage: 0,
+    service_charge_amount: 0,
     tax_amount: 0,
     note: '',
   }

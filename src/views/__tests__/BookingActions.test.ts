@@ -12,6 +12,8 @@ it.each(['partial', 'checkout'] as const)('validates and submits %s payment', as
   vi.mocked(posBookingService.get).mockResolvedValue({
     id: 1,
     status: 'checked_in',
+    subtotal: '45000.00',
+    discount_amount: '0.00',
     total_amount: '45000.00',
     paid_amount: '30000.00',
     balance_amount: '15000.00',
@@ -30,7 +32,12 @@ it.each(['partial', 'checkout'] as const)('validates and submits %s payment', as
   expect(posBookingService.checkout).not.toHaveBeenCalled()
   expect(posBookingService.partialPayment).not.toHaveBeenCalled()
   await w.get('[name="cashbook_id"]').setValue('1')
-  await w.get('[name="amount"]').setValue('15000')
+  if (mode === 'checkout') {
+    await w.get('[name="tax_percentage"]').setValue(5)
+    await w.get('[name="service_charge_percentage"]').setValue(10)
+    expect(w.get('[name="tax_amount"]').attributes('readonly')).toBeDefined()
+    expect((w.get('[name="amount"]').element as HTMLInputElement).value).toBe('21750')
+  } else await w.get('[name="amount"]').setValue('15000')
   await w.get('[name="paid_at"]').setValue('2026-10-08T12:00')
   await w.get('[name="payment_method"]').setValue('kpay')
   await w.get('[name="note"]').setValue('Payment')
@@ -42,10 +49,18 @@ it.each(['partial', 'checkout'] as const)('validates and submits %s payment', as
     1,
     {
       cashbook_id: 1,
-      amount: 15000,
+      amount: mode === 'checkout' ? 21750 : 15000,
       paid_at: '2026-10-08 12:00:00',
       payment_method: 'kpay',
       note: 'Payment',
+      ...(mode === 'checkout'
+        ? {
+            tax_percentage: 5,
+            tax_amount: 2250,
+            service_charge_percentage: 10,
+            service_charge_amount: 4500,
+          }
+        : {}),
     },
     expect.any(AbortSignal),
   )

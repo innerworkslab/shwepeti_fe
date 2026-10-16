@@ -180,8 +180,18 @@ function saved() {
             :title="`Update status for ${row.name}`"
           >
             <AppIcon name="status" />
-          </button></div
-      ></template>
+          </button>
+          <RouterLink
+            class="action"
+            :to="`/fixed-assets/${row.id}/depreciations`"
+            :aria-label="`View depreciation history for ${row.name}`"
+            :title="`View depreciation history for ${row.name}`"
+            ><AppIcon name="ledger" :size="18" /><span class="action-label"
+              >Depreciation history</span
+            ></RouterLink
+          >
+        </div></template
+      >
     </DataTable>
     <FixedAssetStatusModal
       v-if="selected"

@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { computed, watch, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { calculatePosCharges } from '@/utils/pos-charges'
+import { checkoutPaymentSchema } from '@/schemas/pos-payment.schema'
 import { ValidationError } from 'yup'
 import { posCashbookService, type PosCashbook } from '@/services/pos-cashbook.service'
 import { posBookingService } from '@/services/pos-booking.service'
@@ -18,11 +20,30 @@ const saving = ref(false)
 const error = ref('')
 const mode = ref<'partial' | 'checkout' | null>(null)
 const form = reactive({
+  tax_percentage: 0,
+  service_charge_percentage: 0,
   cashbook_id: '' as string | number,
   payment_method: 'cash',
   amount: '' as string | number,
   paid_at: '',
   note: '',
+})
+const charges = computed(() =>
+  calculatePosCharges(
+    Number(booking.value?.subtotal),
+    Number(booking.value?.discount_amount ?? 0),
+    Number(form.tax_percentage),
+    Number(form.service_charge_percentage),
+  ),
+)
+const checkoutBalance = computed(() =>
+  Math.max(
+    0,
+    Math.round((charges.value.total - Number(booking.value?.paid_amount ?? 0)) * 100) / 100,
+  ),
+)
+watch(checkoutBalance, (value) => {
+  if (mode.value === 'checkout') form.amount = Number.isFinite(value) ? value : ''
 })
 const controller = new AbortController()
 const cashbooks = ref<PosCashbook[]>([])
@@ -63,7 +84,10 @@ function start(action: 'partial' | 'checkout') {
   mode.value = action
   form.cashbook_id = ''
   void loadCashbooks()
-  form.amount = action === 'checkout' ? (booking.value?.balance_amount ?? '') : ''
+  form.tax_percentage = Number(booking.value?.tax_percentage ?? 0)
+  form.service_charge_percentage = Number(booking.value?.service_charge_percentage ?? 0)
+  form.amount =
+    action === 'checkout' && Number.isFinite(checkoutBalance.value) ? checkoutBalance.value : ''
   form.paid_at = ''
   form.note = ''
   error.value = ''
@@ -81,18 +105,32 @@ async function save(action: 'check-in' | 'partial' | 'checkout') {
   try {
     if (action === 'check-in') await posBookingService.checkIn(props.bookingId, controller.signal)
     else {
-      const payload = await bookingPaymentSchema.validate(form, {
-        abortEarly: false,
-        stripUnknown: true,
-      })
+      const payload = await bookingPaymentSchema.validate(
+        action === 'checkout' ? { ...form, amount: checkoutBalance.value } : form,
+        {
+          abortEarly: false,
+          stripUnknown: true,
+        },
+      )
       if (action === 'partial' && payload.amount <= 0)
         throw new Error('Partial payment must be greater than zero.')
       if (!cashbooks.value.some((cashbook) => cashbook.id === payload.cashbook_id))
         throw new Error('Choose a cashbook from the list.')
       if (disposed) return
-      if (action === 'checkout')
-        await posBookingService.checkout(props.bookingId, payload, controller.signal)
-      else {
+      if (action === 'checkout') {
+        const checkout = await checkoutPaymentSchema.validate(
+          {
+            ...payload,
+            tax_percentage: form.tax_percentage,
+            service_charge_percentage: form.service_charge_percentage,
+            tax_amount: charges.value.tax_amount,
+            service_charge_amount: charges.value.service_charge_amount,
+          },
+          { abortEarly: false, stripUnknown: true },
+        )
+        if (disposed) return
+        await posBookingService.checkout(props.bookingId, checkout, controller.signal)
+      } else {
         const partial = await partialPaymentSchema.validate(form, {
           abortEarly: false,
           stripUnknown: true,
@@ -185,6 +223,44 @@ function submit() {
             </p>
             <p v-else-if="!cashbooksLoading && !cashbooks.length">No cashbooks found.</p>
           </div>
+          <template v-if="mode === 'checkout'">
+            <label
+              >Tax (%)<input
+                v-model.number="form.tax_percentage"
+                name="tax_percentage"
+                type="number"
+                min="0"
+                max="100"
+                step="any"
+            /></label>
+            <label
+              >Service charge (%)<input
+                v-model.number="form.service_charge_percentage"
+                name="service_charge_percentage"
+                type="number"
+                min="0"
+                max="100"
+                step="any"
+            /></label>
+            <label
+              >Tax amount<input
+                :value="charges.tax_amount"
+                name="tax_amount"
+                type="number"
+                readonly
+            /></label>
+            <label
+              >Service charge amount<input
+                :value="charges.service_charge_amount"
+                name="service_charge_amount"
+                type="number"
+                readonly
+            /></label>
+            <p>
+              Charges apply to the subtotal after discount. Amount due includes these charges and
+              deducts payments already made.
+            </p>
+          </template>
           <label
             >Payment method<select v-model="form.payment_method" name="payment_method">
               <option v-for="method in bookingPaymentMethods" :key="method" :value="method">
@@ -195,6 +271,7 @@ function submit() {
             >Amount<input
               v-model="form.amount"
               name="amount"
+              :readonly="mode === 'checkout'"
               type="number"
               min="0"
               step="any" /></label
@@ -221,6 +298,11 @@ function submit() {
   </section>
 </template>
 <style scoped>
+input[readonly] {
+  background: #f1f5f9;
+  color: #475569;
+  cursor: default;
+}
 .booking-actions {
   margin: 18px 0;
   padding: 16px;

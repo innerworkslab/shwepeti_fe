@@ -92,10 +92,17 @@ it('uses bodyless check-in and exact checkout/partial payment payloads', async (
     note: 'Final payment',
   }
   await posBookingService.checkIn(1)
-  await posBookingService.checkout(1, payload)
+  const checkout = {
+    ...payload,
+    tax_percentage: 0,
+    tax_amount: 0,
+    service_charge_percentage: 0,
+    service_charge_amount: 0,
+  }
+  await posBookingService.checkout(1, checkout)
   await posBookingService.partialPayment(1, { ...payload, cashbook_id: 1 })
   expect(post).toHaveBeenNthCalledWith(1, '/bookings/1/check-in', undefined, { signal: undefined })
-  expect(post).toHaveBeenNthCalledWith(2, '/bookings/1/checkout', payload, { signal: undefined })
+  expect(post).toHaveBeenNthCalledWith(2, '/bookings/1/checkout', checkout, { signal: undefined })
   expect(post).toHaveBeenNthCalledWith(
     3,
     '/bookings/1/payments',

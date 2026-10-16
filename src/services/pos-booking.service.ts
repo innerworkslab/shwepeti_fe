@@ -1,4 +1,4 @@
-import type { BookingPaymentInput, PartialPaymentInput } from '@/schemas/pos-payment.schema'
+import type { CheckoutPaymentInput, PartialPaymentInput } from '@/schemas/pos-payment.schema'
 import type { PosBookingDetail } from '@/types/pos-booking'
 import { posApiClient } from './api/pos-client'
 import type { PosBookingInput } from '@/schemas/pos-booking.schema'
@@ -21,7 +21,7 @@ async function bookingAction(id: number, action: string, payload: unknown, signa
 }
 export const posBookingService = {
   checkIn: (id: number, signal?: AbortSignal) => bookingAction(id, 'check-in', undefined, signal),
-  checkout: (id: number, payload: BookingPaymentInput, signal?: AbortSignal) =>
+  checkout: (id: number, payload: CheckoutPaymentInput, signal?: AbortSignal) =>
     bookingAction(id, 'checkout', payload, signal),
   partialPayment: (id: number, payload: PartialPaymentInput, signal?: AbortSignal) =>
     bookingAction(id, 'payments', { ...payload, payment_type: 'partial' }, signal),
