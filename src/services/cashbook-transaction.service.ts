@@ -9,11 +9,20 @@ import type {
 const path = '/api/v1/admin/cashbook-transactions'
 export const cashbookTransactionService = {
   async list(params: PaginationParams & CashbookTransactionFilters = {}, signal?: AbortSignal) {
-    const response = await apiClient.get<ApiPaginatedResponse<CashbookTransaction>>(path, {
+    const response = await apiClient.get<
+      ApiPaginatedResponse<CashbookTransaction> & {
+        opening_balance?: string | number | null
+        closing_balance?: string | number | null
+      }
+    >(path, {
       params,
       signal,
     })
-    return normalizePagination(response.data)
+    return {
+      ...normalizePagination(response.data),
+      opening_balance: response.data.opening_balance,
+      closing_balance: response.data.closing_balance,
+    }
   },
   async get(id: number, signal?: AbortSignal): Promise<CashbookTransaction> {
     const response = await apiClient.get<CashbookTransaction | { data: CashbookTransaction }>(

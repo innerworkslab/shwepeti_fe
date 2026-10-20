@@ -85,3 +85,111 @@ it('checks in a reserved booking and retains errors on failure', async () => {
   expect(w.emitted('saved')).toBeUndefined()
   w.unmount()
 })
+
+it.each([false, true])(
+  'automatically checks out a paid booking and safely retries failures (%s)',
+  async (fails) => {
+    const initial = {
+      id: 1,
+      status: 'checked_in',
+      subtotal: '100',
+      discount_amount: '0',
+      total_amount: '115',
+      paid_amount: '15',
+      balance_amount: '100',
+      tax_percentage: 5,
+      tax_amount: '5',
+      service_charge_percentage: 10,
+      service_charge_amount: '10',
+    }
+    vi.mocked(posBookingService.get)
+      .mockResolvedValueOnce(initial as never)
+      .mockResolvedValue({ ...initial, paid_amount: '115', balance_amount: '0' } as never)
+    vi.mocked(posCashbookService.list).mockResolvedValue([
+      { id: 1, name: 'Cash', code: 'CASH' },
+    ] as never)
+    if (fails)
+      vi.mocked(posBookingService.checkout)
+        .mockRejectedValueOnce(new Error('Try later'))
+        .mockResolvedValue(undefined)
+    const w = mount(BookingActions, { props: { bookingId: 1, disabled: false } })
+    try {
+      await flushPromises()
+      await w
+        .findAll('button')
+        .find((b) => b.text() === 'Partial payment')!
+        .trigger('click')
+      await flushPromises()
+      await w.get('[name="cashbook_id"]').setValue('1')
+      await w.get('[name="amount"]').setValue('100')
+      await w.get('[name="paid_at"]').setValue('2026-10-20T10:00')
+      await w.get('[name="payment_method"]').setValue('kpay')
+      await w.get('[name="note"]').setValue('Settled')
+      await w.get('form').trigger('submit')
+      await flushPromises()
+      expect(posBookingService.checkout).toHaveBeenCalledWith(
+        1,
+        {
+          cashbook_id: 1,
+          payment_method: 'kpay',
+          amount: 0,
+          paid_at: '2026-10-20 10:00:00',
+          note: 'Settled',
+          tax_percentage: 5,
+          tax_amount: 5,
+          service_charge_percentage: 10,
+          service_charge_amount: 10,
+        },
+        expect.any(AbortSignal),
+      )
+      if (fails) {
+        expect(w.text()).toContain('Payment was recorded')
+        expect(w.emitted('saved')).toBeUndefined()
+        await w
+          .findAll('button')
+          .find((b) => b.text() === 'Retry payment completion')!
+          .trigger('click')
+        await flushPromises()
+        expect(posBookingService.checkout).toHaveBeenCalledTimes(2)
+      }
+      expect(posBookingService.partialPayment).toHaveBeenCalledTimes(1)
+      expect(w.emitted('saved')).toHaveLength(1)
+    } finally {
+      w.unmount()
+    }
+  },
+)
+
+it('uses refreshed room invoice amounts even when booking details still have older totals', async () => {
+  vi.mocked(posBookingService.get).mockResolvedValue({
+    id: 1,
+    status: 'checked_in',
+    subtotal: '100',
+    total_amount: '100',
+    tax_amount: '0',
+    paid_amount: '0',
+    balance_amount: '100',
+  } as never)
+  const w = mount(BookingActions, {
+    props: {
+      bookingId: 1,
+      disabled: false,
+      roomBooking: { id: 1, total_amount: '150.00', tax_amount: '15.00' },
+    },
+  })
+  try {
+    await flushPromises()
+    expect(w.text()).toContain('150.00')
+    expect(w.text()).toContain('15.00')
+    await w.setProps({
+      refreshKey: 1,
+      roomBooking: { id: 1, total_amount: '275.00', tax_amount: '25.00', balance_amount: '0.00' },
+    })
+    await flushPromises()
+    expect(w.text()).toContain('275.00')
+    expect(w.text()).toContain('25.00')
+    expect(w.text()).not.toContain('150.00')
+  } finally {
+    w.unmount()
+  }
+})

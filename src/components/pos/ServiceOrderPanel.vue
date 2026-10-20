@@ -19,7 +19,7 @@ const props = defineProps<{
   canOrder: boolean
   serviceType: 'amenity' | 'laundry'
 }>()
-const emit = defineEmits<{ busy: [value: boolean] }>()
+const emit = defineEmits<{ busy: [value: boolean]; saved: [] }>()
 const menus = ref<ServiceItem[]>([])
 const orders = ref<ServiceOrder[]>([])
 const menuError = ref('')
@@ -160,6 +160,7 @@ async function submit() {
     form.tax_percentage = 0
     form.service_charge_percentage = 0
     form.note = ''
+    emit('saved')
     notice.value = 'Service order created.'
     await loadOrders()
   } catch (cause) {
@@ -181,6 +182,7 @@ async function update(order: ServiceOrder) {
     await posServiceOrderService.updateStatus(order.id, status, controller.signal)
     if (!disposed) {
       order.status = status
+      emit('saved')
       notice.value = 'Order status updated.'
       await loadOrders()
     }

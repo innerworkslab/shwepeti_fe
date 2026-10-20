@@ -14,6 +14,10 @@ const cashbookId = computed(() => {
   const id = Number(route.query.cashbook_id)
   return Number.isSafeInteger(id) && id > 0 ? id : undefined
 })
+const balances = ref<{
+  opening_balance?: string | number | null
+  closing_balance?: string | number | null
+}>({})
 const columns: DataTableColumn<CashbookTransaction>[] = [
   { key: 'id', label: 'ID', field: 'id' },
   { key: 'transaction_date', label: 'Transaction date', field: 'transaction_date' },
@@ -27,13 +31,6 @@ const columns: DataTableColumn<CashbookTransaction>[] = [
   { key: 'amount', label: 'Amount', field: 'amount' },
   { key: 'reference_no', label: 'Reference', field: 'reference_no' },
   { key: 'balance_after', label: 'Balance after', field: 'balance_after' },
-  { key: 'cashbook_code', label: 'Cashbook code', format: (row) => row.cashbook?.code },
-  { key: 'cashbook_type', label: 'Cashbook type', format: (row) => row.cashbook?.type },
-  { key: 'reference_type', label: 'Reference type', field: 'reference_type' },
-  { key: 'reference_id', label: 'Reference ID', field: 'reference_id' },
-  { key: 'creator', label: 'Created by', format: (row) => row.creator?.name },
-  { key: 'created_at', label: 'Created at', field: 'created_at' },
-  { key: 'updated_at', label: 'Updated at', field: 'updated_at' },
   { key: 'actions', label: 'Actions', align: 'right' },
 ]
 const {
@@ -50,7 +47,16 @@ const {
   setFilters,
   refresh,
 } = useDataTable<CashbookTransaction, CashbookTransactionFilters>(
-  ({ search: _search, ...params }, signal) => cashbookTransactionService.list(params, signal),
+  async ({ search: _search, ...params }, signal) => {
+    balances.value = {}
+    const result = await cashbookTransactionService.list(params, signal)
+    if (!signal?.aborted)
+      balances.value = {
+        opening_balance: result.opening_balance,
+        closing_balance: result.closing_balance,
+      }
+    return result
+  },
   { initialFilters: { cashbook_id: cashbookId.value } },
 )
 watch(cashbookId, (id) => setFilters({ cashbook_id: id }))
@@ -96,6 +102,12 @@ function clearDates() {
       }}
     </p>
     <p v-if="notice" role="status" class="notice">{{ notice }}</p>
+    <dl class="ledger-balances" aria-label="Opening balance">
+      <div>
+        <dt>Opening balance</dt>
+        <dd>{{ loading || error ? '—' : (balances.opening_balance ?? '—') }}</dd>
+      </div>
+    </dl>
     <DataTable
       :rows="rows"
       :columns="columns"
@@ -119,16 +131,16 @@ function clearDates() {
           <AppIcon name="add" :size="16" />Add transaction
         </button></template
       >
-      <template #cell-actions="{ row }"
-        ><button
+      <template #cell-actions="{ row }">
+        <button
           type="button"
           :aria-label="`View transaction #${row.id}`"
-          @click="openForm(row)"
           :title="`View transaction #${row.id}`"
+          @click="openForm(row)"
         >
           <AppIcon name="availability" :size="18" /><span class="action-label">View details</span>
-        </button></template
-      >
+        </button>
+      </template>
       <template #filters>
         <form class="date-filters" @submit.prevent="applyDates">
           <label :for="`${prefix}-from`"
@@ -157,15 +169,46 @@ function clearDates() {
         </form>
       </template>
     </DataTable>
+    <dl class="ledger-balances" aria-label="Closing balance">
+      <div>
+        <dt>Closing balance</dt>
+        <dd>{{ loading || error ? '—' : (balances.closing_balance ?? '—') }}</dd>
+      </div>
+    </dl>
     <CashbookTransactionModal
-      v-if="modalOpen"
       :transaction-id="selected?.id"
+      v-if="modalOpen"
       @close="modalOpen = false"
       @saved="saved"
     />
   </section>
 </template>
 <style scoped>
+.ledger-balances {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+.ledger-balances > div {
+  flex: 1;
+  min-width: 180px;
+  padding: 1rem;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+.ledger-balances dt {
+  color: #64748b;
+  font-size: 0.875rem;
+}
+.ledger-balances dd {
+  margin: 0.5rem 0 0;
+  font-size: 1.4rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
 .date-filters {
   display: flex;
   align-items: flex-end;

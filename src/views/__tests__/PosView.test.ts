@@ -52,6 +52,7 @@ const descriptors = Object.getOwnPropertyDescriptors(HTMLDialogElement.prototype
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(new Date(2026, 9, 16))
+  localStorage.clear()
   sessionStorage.clear()
   vi.resetAllMocks()
   vi.mocked(posDashboardService.get).mockResolvedValue(dashboard)

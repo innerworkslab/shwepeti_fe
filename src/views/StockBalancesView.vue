@@ -58,8 +58,12 @@ const {
   setPerPage,
   setFilters,
   refresh,
-} = useDataTable<StockBalance, StockBalanceFilters>(({ search: _search, ...params }, signal) =>
-  stockBalanceService.list(params, signal),
+} = useDataTable<StockBalance, StockBalanceFilters>(
+  async ({ search: _search, ...params }, signal) => {
+    if (!params.warehouse_id) return { data: [], total: 0, page: 1, perPage: params.perPage }
+    return stockBalanceService.list(params, signal)
+  },
+  { immediate: false },
 )
 const warehouses = ref<Warehouse[]>([])
 const optionsLoading = ref(false)
@@ -76,6 +80,11 @@ async function loadOptions() {
     const warehouseOptions = await warehouseService.listOptions(active.signal)
     if (disposed || active.signal.aborted) return
     warehouses.value = warehouseOptions
+    setFilters({
+      warehouse_id: warehouseOptions.some((w) => w.id === filters.value.warehouse_id)
+        ? filters.value.warehouse_id
+        : warehouseOptions[0]?.id,
+    })
   } catch (cause) {
     if (!disposed) {
       optionsError.value = toApiError(cause).message
@@ -99,11 +108,11 @@ function clearFilters() {
   dates.date_from = ''
   dates.date_to = ''
   dateError.value = ''
-  setFilters({ warehouse_id: undefined, date_from: undefined, date_to: undefined })
+  setFilters({ warehouse_id: warehouses.value[0]?.id, date_from: undefined, date_to: undefined })
 }
 function changeFilter(key: keyof StockBalanceFilters, event: Event) {
   const value = (event.target as HTMLSelectElement).value
-  setFilters({ [key]: value === '' ? undefined : Number(value) })
+  if (warehouses.value.some((w) => w.id === Number(value))) setFilters({ [key]: Number(value) })
 }
 onMounted(() => void loadOptions())
 onBeforeUnmount(() => {
@@ -142,7 +151,7 @@ onBeforeUnmount(() => {
             :disabled="optionsLoading || !!optionsError"
             @change="changeFilter('warehouse_id', $event)"
           >
-            <option value="">All warehouses</option>
+            <option v-if="!warehouses.length" value="" disabled>No warehouses available</option>
             <option v-for="warehouse in warehouses" :key="warehouse.id" :value="warehouse.id">
               {{ warehouse.name }}
             </option>

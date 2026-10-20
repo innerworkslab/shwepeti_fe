@@ -7,18 +7,51 @@ import { posCashbookService, type PosCashbook } from '@/services/pos-cashbook.se
 import { posBookingService } from '@/services/pos-booking.service'
 import {
   partialPaymentSchema,
+  type PartialPaymentInput,
   bookingPaymentMethods,
   bookingPaymentSchema,
 } from '@/schemas/pos-payment.schema'
 import type { PosBookingDetail } from '@/types/pos-booking'
 import { toApiError } from '@/services/api/api-error'
-const props = defineProps<{ bookingId: number; disabled: boolean }>()
+const props = defineProps<{
+  bookingId: number
+  disabled: boolean
+  refreshKey?: number
+  roomBooking?: Record<string, unknown> | null
+}>()
 const emit = defineEmits<{ busy: [value: boolean]; saved: [] }>()
 const booking = ref<PosBookingDetail | null>(null)
+// The room endpoint is authoritative for the invoice after add-on orders.
+const invoice = computed(() => {
+  if (!booking.value) return null
+  const result = { ...booking.value }
+  if (Number(props.roomBooking?.id) === props.bookingId) {
+    for (const key of [
+      'subtotal',
+      'discount_amount',
+      'tax_amount',
+      'tax_percentage',
+      'service_charge_amount',
+      'service_charge_percentage',
+      'total_amount',
+      'paid_amount',
+      'balance_amount',
+    ] as const) {
+      const value = props.roomBooking?.[key]
+      if (
+        ((typeof value === 'string' && value.trim() !== '') || typeof value === 'number') &&
+        Number.isFinite(Number(value))
+      )
+        Object.assign(result, { [key]: value })
+    }
+  }
+  return result
+})
 const loading = ref(true)
 const saving = ref(false)
 const error = ref('')
 const mode = ref<'partial' | 'checkout' | null>(null)
+const recordedPayment = ref<PartialPaymentInput | null>(null)
 const form = reactive({
   tax_percentage: 0,
   service_charge_percentage: 0,
@@ -30,8 +63,8 @@ const form = reactive({
 })
 const charges = computed(() =>
   calculatePosCharges(
-    Number(booking.value?.subtotal),
-    Number(booking.value?.discount_amount ?? 0),
+    Number(invoice.value?.subtotal),
+    Number(invoice.value?.discount_amount ?? 0),
     Number(form.tax_percentage),
     Number(form.service_charge_percentage),
   ),
@@ -39,7 +72,7 @@ const charges = computed(() =>
 const checkoutBalance = computed(() =>
   Math.max(
     0,
-    Math.round((charges.value.total - Number(booking.value?.paid_amount ?? 0)) * 100) / 100,
+    Math.round((charges.value.total - Number(invoice.value?.paid_amount ?? 0)) * 100) / 100,
   ),
 )
 watch(checkoutBalance, (value) => {
@@ -76,24 +109,78 @@ async function load() {
   }
 }
 onMounted(load)
+watch(
+  () => props.refreshKey,
+  () => {
+    if (!saving.value) void load()
+  },
+)
 onBeforeUnmount(() => {
   disposed = true
   controller.abort()
 })
 function start(action: 'partial' | 'checkout') {
+  if (recordedPayment.value) return
   mode.value = action
   form.cashbook_id = ''
   void loadCashbooks()
-  form.tax_percentage = Number(booking.value?.tax_percentage ?? 0)
-  form.service_charge_percentage = Number(booking.value?.service_charge_percentage ?? 0)
+  form.tax_percentage = Number(invoice.value?.tax_percentage ?? 0)
+  form.service_charge_percentage = Number(invoice.value?.service_charge_percentage ?? 0)
   form.amount =
     action === 'checkout' && Number.isFinite(checkoutBalance.value) ? checkoutBalance.value : ''
   form.paid_at = ''
   form.note = ''
   error.value = ''
 }
+async function completeRecordedPayment() {
+  const payment = recordedPayment.value
+  if (!payment) return
+  const fresh = await posBookingService.get(props.bookingId, controller.signal)
+  if (disposed) return
+  booking.value = fresh
+  const balance =
+    fresh.balance_amount == null || fresh.balance_amount === '' ? NaN : Number(fresh.balance_amount)
+  if (!Number.isFinite(balance)) throw new Error('Could not verify the remaining balance.')
+  if (balance <= 0 && fresh.status === 'checked_in') {
+    const checkout = await checkoutPaymentSchema.validate(
+      {
+        ...payment,
+        amount: 0,
+        tax_percentage: fresh.tax_percentage ?? 0,
+        tax_amount: fresh.tax_amount ?? 0,
+        service_charge_percentage: fresh.service_charge_percentage ?? 0,
+        service_charge_amount: fresh.service_charge_amount ?? 0,
+      },
+      { abortEarly: false, stripUnknown: true },
+    )
+    if (disposed) return
+    await posBookingService.checkout(props.bookingId, checkout, controller.signal)
+  }
+  if (!disposed) recordedPayment.value = null
+}
+async function retryCompletion() {
+  if (saving.value || props.disabled || !recordedPayment.value) return
+  saving.value = true
+  emit('busy', true)
+  error.value = ''
+  let succeeded = false
+  try {
+    await completeRecordedPayment()
+    succeeded = true
+  } catch (cause) {
+    if (!disposed)
+      error.value = `Payment was recorded. Completion failed: ${toApiError(cause).message}`
+  } finally {
+    if (!disposed) {
+      saving.value = false
+      emit('busy', false)
+      if (succeeded) emit('saved')
+    }
+  }
+}
 async function save(action: 'check-in' | 'partial' | 'checkout') {
-  if (saving.value || props.disabled || loading.value || !booking.value) return
+  if (saving.value || props.disabled || loading.value || !booking.value || recordedPayment.value)
+    return
   if (action === 'check-in' && booking.value.status !== 'reserved') return
   if (action === 'checkout' && booking.value.status !== 'checked_in') return
   if (action === 'partial' && !['reserved', 'checked_in'].includes(booking.value.status)) return
@@ -139,13 +226,18 @@ async function save(action: 'check-in' | 'partial' | 'checkout') {
           throw new Error('Choose a cashbook from the list.')
         if (disposed) return
         await posBookingService.partialPayment(props.bookingId, partial, controller.signal)
+        if (disposed) return
+        recordedPayment.value = partial
+        mode.value = null
+        await completeRecordedPayment()
       }
     }
     succeeded = true
   } catch (cause) {
     if (!disposed)
       error.value =
-        cause instanceof ValidationError ? cause.errors.join(' ') : toApiError(cause).message
+        (recordedPayment.value ? 'Payment was recorded. Completion failed: ' : '') +
+        (cause instanceof ValidationError ? cause.errors.join(' ') : toApiError(cause).message)
   } finally {
     if (!disposed) {
       saving.value = false
@@ -165,34 +257,50 @@ function submit() {
     <p v-if="error" class="error" role="alert">
       {{ error }} <button v-if="!booking && !loading" type="button" @click="load">Retry</button>
     </p>
+    <button
+      v-if="recordedPayment"
+      type="button"
+      :disabled="saving || disabled"
+      @click="retryCompletion"
+    >
+      Retry payment completion
+    </button>
     <template v-if="booking && !loading"
       ><dl>
+        <dt>Subtotal</dt>
+        <dd>{{ invoice?.subtotal }}</dd>
+        <dt>Discount</dt>
+        <dd>{{ invoice?.discount_amount }}</dd>
+        <dt>Tax</dt>
+        <dd>{{ invoice?.tax_amount ?? '0.00' }}</dd>
+        <dt>Service charge</dt>
+        <dd>{{ invoice?.service_charge_amount ?? '0.00' }}</dd>
         <dt>Total</dt>
-        <dd>{{ booking.total_amount }}</dd>
+        <dd>{{ invoice?.total_amount }}</dd>
         <dt>Paid</dt>
-        <dd>{{ booking.paid_amount }}</dd>
+        <dd>{{ invoice?.paid_amount }}</dd>
         <dt>Balance</dt>
-        <dd>{{ booking.balance_amount }}</dd>
+        <dd>{{ invoice?.balance_amount }}</dd>
       </dl>
       <div class="actions">
         <button
           v-if="booking.status === 'reserved'"
           type="button"
-          :disabled="saving || disabled"
+          :disabled="saving || disabled || !!recordedPayment"
           @click="save('check-in')"
         >
           Check in</button
         ><button
           v-if="['reserved', 'checked_in'].includes(booking.status)"
           type="button"
-          :disabled="saving || disabled"
+          :disabled="saving || disabled || !!recordedPayment"
           @click="start('partial')"
         >
           Partial payment</button
         ><button
           v-if="booking.status === 'checked_in'"
           type="button"
-          :disabled="saving || disabled"
+          :disabled="saving || disabled || !!recordedPayment"
           @click="start('checkout')"
         >
           Check out
@@ -200,7 +308,7 @@ function submit() {
       </div>
       <form v-if="mode" novalidate @submit.prevent="submit">
         <h4>{{ mode === 'checkout' ? 'Checkout payment' : 'Partial payment' }}</h4>
-        <fieldset :disabled="saving || disabled">
+        <fieldset :disabled="saving || disabled || !!recordedPayment">
           <div>
             <label
               >Cashbook<select

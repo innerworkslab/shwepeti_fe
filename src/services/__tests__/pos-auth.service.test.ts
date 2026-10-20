@@ -18,12 +18,14 @@ const user = {
   role: 'restaurant_administrator',
 }
 beforeEach(() => {
+  localStorage.clear()
   sessionStorage.clear()
   setActivePinia(createPinia())
   config.posApiBaseUrl = 'https://pos.example.test/api/v1/pos'
 })
 afterEach(() => {
   vi.restoreAllMocks()
+  localStorage.clear()
   sessionStorage.clear()
   setPosAccessToken(null)
   setAccessToken(null)
@@ -51,6 +53,7 @@ it('blocks requests when the POS URL placeholder is empty', async () => {
 it('persists POS authentication across reloads without changing the admin token', async () => {
   setAccessToken('admin-test-token')
   usePosSessionStore().setSession(user, 'pos-test-token')
+  sessionStorage.clear() // Simulate a new tab.
   setPosAccessToken(null)
   setActivePinia(createPinia())
   expect(usePosSessionStore().user).toEqual(user)
@@ -58,7 +61,7 @@ it('persists POS authentication across reloads without changing the admin token'
   expect(apiClient.defaults.headers.common.Authorization).toBe('Bearer admin-test-token')
   expect(sessionStorage.getItem('shwe-petit.session')).toBeNull()
   usePosSessionStore().clearSession()
-  expect(sessionStorage.getItem('shwe-petit.pos-session')).toBeNull()
+  expect(localStorage.getItem('shwe-petit.pos-session')).toBeNull()
   expect(apiClient.defaults.headers.common.Authorization).toBe('Bearer admin-test-token')
 })
 it('allows POS login independently and does not authorize admin routes with a POS session', async () => {
@@ -76,4 +79,17 @@ it('protects the POS calendar using the POS session and preserves deep-link quer
   usePosSessionStore().setSession(user, 'pos-test-token')
   await router.push('/pos')
   expect(router.currentRoute.value.name).toBe('pos')
+})
+
+it('synchronizes POS logout without clearing admin credentials', () => {
+  setAccessToken('admin-test-token')
+  const pos = usePosSessionStore()
+  pos.setSession(user, 'pos-test-token')
+  localStorage.removeItem('shwe-petit.pos-session')
+  window.dispatchEvent(
+    new StorageEvent('storage', { key: 'shwe-petit.pos-session', storageArea: localStorage }),
+  )
+  expect(pos.user).toBeNull()
+  expect(posApiClient.defaults.headers.common.Authorization).toBeUndefined()
+  expect(apiClient.defaults.headers.common.Authorization).toBe('Bearer admin-test-token')
 })

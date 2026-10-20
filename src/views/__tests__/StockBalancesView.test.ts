@@ -39,6 +39,12 @@ afterEach(() => wrappers.splice(0).forEach((wrapper) => wrapper.unmount()))
 it('combines filters, resets pagination, preserves filters across pages and clears them', async () => {
   const wrapper = render()
   await flushPromises()
+  expect(stockBalanceService.list).toHaveBeenNthCalledWith(
+    1,
+    expect.objectContaining({ warehouse_id: 2 }),
+    expect.any(AbortSignal),
+  )
+  expect(wrapper.get('[name="warehouse_id"]').text()).not.toContain('All warehouses')
   await wrapper.get('[aria-label="Next page"]').trigger('click')
   await flushPromises()
   await wrapper.get('[name="warehouse_id"]').setValue('2')
@@ -63,7 +69,7 @@ it('combines filters, resets pagination, preserves filters across pages and clea
     .trigger('click')
   await flushPromises()
   expect(stockBalanceService.list).toHaveBeenLastCalledWith(
-    { page: 1, perPage: 15, warehouse_id: undefined, date_from: undefined, date_to: undefined },
+    { page: 1, perPage: 15, warehouse_id: 2, date_from: undefined, date_to: undefined },
     expect.any(AbortSignal),
   )
   expect(wrapper.get('tbody').text()).toContain('0.000000')
@@ -121,4 +127,11 @@ it('uses nested stock units and preserves zero balances', async () => {
   await wrapper.get('form').trigger('submit')
   expect(stockBalanceService.list).toHaveBeenCalledTimes(1)
   expect(wrapper.get('[role="alert"]').text()).toContain('From date')
+})
+
+it('does not fetch unfiltered stock when no warehouses exist', async () => {
+  vi.mocked(warehouseService.listOptions).mockResolvedValue([])
+  render()
+  await flushPromises()
+  expect(stockBalanceService.list).not.toHaveBeenCalled()
 })

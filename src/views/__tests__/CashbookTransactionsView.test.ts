@@ -108,20 +108,6 @@ describe('Cashbook transactions', () => {
       expect.any(AbortSignal),
     )
   })
-  it('fetches read-only details with retry and no cashbook lookup', async () => {
-    vi.mocked(cashbookTransactionService.get).mockRejectedValueOnce(new Error('Unavailable'))
-    const wrapper = render()
-    await flushPromises()
-    await wrapper.get('[aria-label="View transaction #7"]').trigger('click')
-    await flushPromises()
-    expect(wrapper.get('dialog').text()).toContain('Unavailable')
-    await wrapper.get('dialog [role="alert"] button').trigger('click')
-    await flushPromises()
-    expect(cashbookTransactionService.get).toHaveBeenLastCalledWith(7, expect.any(AbortSignal))
-    expect(wrapper.get('dialog').text()).toContain('Room payment')
-    expect(wrapper.find('dialog button[type="submit"]').exists()).toBe(false)
-    expect(cashbookService.listOptions).not.toHaveBeenCalled()
-  })
 })
 
 it('filters by cashbook and keeps dates when switching cashbooks', async () => {
@@ -141,4 +127,19 @@ it('filters by cashbook and keeps dates when switching cashbooks', async () => {
     expect.objectContaining({ cashbook_id: 4, date_from: '2026-10-13', page: 1 }),
     expect.any(AbortSignal),
   )
+})
+
+it('shows response-level opening and closing balances, including zero', async () => {
+  vi.mocked(cashbookTransactionService.list).mockResolvedValue({
+    data: [],
+    total: 0,
+    page: 1,
+    perPage: 15,
+    opening_balance: 0,
+    closing_balance: '9950000.00',
+  })
+  const w = render()
+  await flushPromises()
+  expect(w.get('[aria-label="Closing balance"]').text()).toContain('9950000.00')
+  expect(w.findAll('[aria-label="Opening balance"] dd')[0]?.text()).toBe('0')
 })

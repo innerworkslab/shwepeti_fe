@@ -14,7 +14,7 @@ import { foodOrderSchema } from '@/schemas/pos-food.schema'
 import { statusLabel } from '@/constants/hotel-status'
 import { toApiError } from '@/services/api/api-error'
 const props = defineProps<{ roomId: number; bookingId: number; canOrder: boolean }>()
-const emit = defineEmits<{ busy: [value: boolean] }>()
+const emit = defineEmits<{ busy: [value: boolean]; saved: [] }>()
 const menus = ref<PosMenu[]>([])
 const orders = ref<FoodOrder[]>([])
 const menuError = ref('')
@@ -182,6 +182,7 @@ async function submit() {
     form.tax_percentage = 0
     form.service_charge_percentage = 0
     form.note = ''
+    emit('saved')
     notice.value = 'Food order created.'
     await loadOrders()
   } catch (cause) {
@@ -209,6 +210,7 @@ async function update(order: FoodOrder) {
     await posFoodService.updateStatus(order.id, status, controller.signal)
     if (!disposed) {
       order.status = status
+      emit('saved')
       notice.value = 'Order status updated.'
       await loadOrders()
     }

@@ -11,17 +11,20 @@ const user = {
 }
 const key = 'shwe-petit.session'
 beforeEach(() => {
+  localStorage.clear()
   sessionStorage.clear()
   setAccessToken(null)
   setActivePinia(createPinia())
 })
 afterEach(() => {
   vi.restoreAllMocks()
+  localStorage.clear()
   sessionStorage.clear()
   setAccessToken(null)
 })
 it('restores the user and bearer token before guarding a deep link after reload', async () => {
   useSessionStore().setSession(user, 'test-token')
+  sessionStorage.clear() // A new tab has no tab-local session.
   // A new store and empty Axios state simulate a fresh application boot.
   setAccessToken(null)
   setActivePinia(createPinia())
@@ -39,6 +42,7 @@ it('clears persisted credentials on logout so a reload cannot restore them', asy
   useSessionStore().setSession(user, 'test-token')
   useSessionStore().clearSession()
   expect(sessionStorage.getItem(key)).toBeNull()
+  expect(localStorage.getItem(key)).toBeNull()
   expect(apiClient.defaults.headers.common.Authorization).toBeUndefined()
   setActivePinia(createPinia())
   await router.push('/items')
@@ -52,9 +56,10 @@ it.each([
   JSON.stringify({ token: '', user }),
   JSON.stringify({ token: 'test-token', user: { name: 'Incomplete' } }),
 ])('discards malformed session %s', (stored) => {
-  sessionStorage.setItem(key, stored)
+  localStorage.setItem(key, stored)
   expect(useSessionStore().user).toBeNull()
   expect(sessionStorage.getItem(key)).toBeNull()
+  expect(localStorage.getItem(key)).toBeNull()
   expect(apiClient.defaults.headers.common.Authorization).toBeUndefined()
 })
 it('stores only the token and basic profile, never a password', () => {
@@ -62,7 +67,7 @@ it('stores only the token and basic profile, never a password', () => {
     { ...user, password: 'must-not-persist' } as typeof user,
     'test-token',
   )
-  expect(JSON.parse(sessionStorage.getItem(key)!)).toEqual({ token: 'test-token', user })
+  expect(JSON.parse(localStorage.getItem(key)!)).toEqual({ token: 'test-token', user })
 })
 it('still allows login and logout when browser storage is blocked', () => {
   vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
@@ -80,4 +85,26 @@ it('still allows login and logout when browser storage is blocked', () => {
   expect(() => session.clearSession()).not.toThrow()
   expect(session.user).toBeNull()
   expect(apiClient.defaults.headers.common.Authorization).toBeUndefined()
+})
+
+it('migrates an existing tab session into shared storage', () => {
+  sessionStorage.setItem(key, JSON.stringify({ user, token: 'legacy-token' }))
+  expect(useSessionStore().user).toEqual(user)
+  expect(JSON.parse(localStorage.getItem(key)!).token).toBe('legacy-token')
+  expect(sessionStorage.getItem(key)).toBeNull()
+})
+it('synchronizes login and logout events without restoring stale legacy credentials', () => {
+  const session = useSessionStore()
+  localStorage.setItem(key, JSON.stringify({ user, token: 'other-tab-token' }))
+  window.dispatchEvent(new StorageEvent('storage', { key, storageArea: localStorage }))
+  expect(session.user).toEqual(user)
+  expect(apiClient.defaults.headers.common.Authorization).toBe('Bearer other-tab-token')
+  sessionStorage.setItem(key, JSON.stringify({ user, token: 'stale-token' }))
+  localStorage.setItem(`${key}.migrated`, '1')
+  localStorage.removeItem(key)
+  window.dispatchEvent(new StorageEvent('storage', { key, storageArea: localStorage }))
+  expect(session.user).toBeNull()
+  expect(apiClient.defaults.headers.common.Authorization).toBeUndefined()
+  setActivePinia(createPinia())
+  expect(useSessionStore().user).toBeNull()
 })

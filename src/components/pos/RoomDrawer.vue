@@ -13,6 +13,9 @@ const emit = defineEmits<{ close: []; updated: [] }>()
 const dialog = ref<HTMLDialogElement | null>(null)
 const room = ref<PosRoom | null>(null)
 const busy = ref(false)
+const refreshing = ref(false)
+const refreshError = ref('')
+const invoiceRevision = ref(0)
 const serviceTab = ref<'food' | 'amenity' | 'laundry'>('food')
 const visited = ref({ food: true, amenity: false, laundry: false })
 function selectService(tab: 'food' | 'amenity' | 'laundry') {
@@ -40,23 +43,40 @@ async function bookingSaved() {
   emit('updated')
   await load()
 }
-async function load() {
+async function orderSaved() {
+  emit('updated')
+  await load(true)
+  if (!disposed) invoiceRevision.value++
+}
+async function load(preserve = false) {
   controller?.abort()
   const active = new AbortController()
   controller = active
-  loading.value = true
+  if (preserve) refreshing.value = true
+  else loading.value = true
+  refreshError.value = ''
   error.value = ''
-  room.value = null
+  if (!preserve) room.value = null
   try {
     const result = await posRoomService.get(props.roomId, active.signal)
     if (!disposed && !active.signal.aborted) room.value = result
   } catch (cause) {
-    if (!disposed && !active.signal.aborted) error.value = toApiError(cause).message
+    if (!disposed && !active.signal.aborted) {
+      if (preserve) refreshError.value = toApiError(cause).message
+      else error.value = toApiError(cause).message
+    }
   } finally {
-    if (!disposed && !active.signal.aborted) loading.value = false
+    if (!disposed && !active.signal.aborted) {
+      loading.value = false
+      refreshing.value = false
+    }
   }
 }
-watch(() => props.roomId, load, { immediate: true })
+watch(
+  () => props.roomId,
+  () => load(),
+  { immediate: true },
+)
 onMounted(() => {
   previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null
   dialog.value?.showModal()
@@ -101,9 +121,14 @@ function backdrop(event: MouseEvent) {
       <p v-if="loading" role="status" class="muted">Loading room details...</p>
       <div v-else-if="error" role="alert" class="error">
         <p>{{ error }}</p>
-        <button type="button" @click="load">Try again</button>
+        <button type="button" @click="load()">Try again</button>
       </div>
       <template v-else-if="room">
+        <p v-if="refreshing" role="status">Updating room invoice…</p>
+        <p v-if="refreshError" role="alert">
+          {{ refreshError }}
+          <button type="button" @click="orderSaved">Retry invoice refresh</button>
+        </p>
         <div class="room-summary">
           <span class="room-symbol"><AppIcon name="rooms" :size="30" /></span>
           <div>
@@ -150,7 +175,9 @@ function backdrop(event: MouseEvent) {
           v-if="bookingId"
           :key="`booking-${room.id}-${bookingId}`"
           :booking-id="bookingId"
-          :disabled="busy"
+          :refresh-key="invoiceRevision"
+          :room-booking="room.current_booking"
+          :disabled="busy || refreshing || !!refreshError"
           @busy="busy = $event"
           @saved="bookingSaved"
         />
@@ -173,18 +200,20 @@ function backdrop(event: MouseEvent) {
             v-if="bookingId && visited[type]"
             :room-id="room.id"
             :booking-id="bookingId"
-            :can-order="canOrder"
+            :can-order="canOrder && !refreshing && !refreshError"
             :service-type="type"
+            @saved="orderSaved"
             @busy="busy = $event"
           />
         </template>
         <FoodOrderPanel
+          @saved="orderSaved"
           v-show="serviceTab === 'food'"
           v-if="bookingId"
           :key="`${room.id}-${bookingId}`"
           :room-id="room.id"
           :booking-id="bookingId"
-          :can-order="canOrder"
+          :can-order="canOrder && !refreshing && !refreshError"
           @busy="busy = $event"
         />
       </template>

@@ -8,6 +8,7 @@ import { usePosSessionStore } from '@/stores/pos-session'
 vi.mock('@/services/pos-auth.service', () => ({ posAuthService: { login: vi.fn() } }))
 const wrappers: ReturnType<typeof mount>[] = []
 beforeEach(() => {
+  localStorage.clear()
   sessionStorage.clear()
   vi.resetAllMocks()
 })

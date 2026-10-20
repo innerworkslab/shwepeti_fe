@@ -18,6 +18,8 @@ it('normalizes lists and requests the specified detail and create endpoints', as
     .mockResolvedValueOnce({
       data: {
         success: true,
+        opening_balance: '0.00',
+        closing_balance: '9950000.00',
         data: [row],
         meta: { current_page: 1, per_page: 15, total: 1, last_page: 1 },
       },
@@ -27,6 +29,8 @@ it('normalizes lists and requests the specified detail and create endpoints', as
   const params = { page: 1, date_from: '2026-09-01', date_to: '2026-09-30' }
   expect(await cashbookTransactionService.list(params)).toEqual({
     data: [row],
+    opening_balance: '0.00',
+    closing_balance: '9950000.00',
     page: 1,
     perPage: 15,
     total: 1,
