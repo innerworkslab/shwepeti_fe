@@ -33,6 +33,18 @@ const columns: DataTableColumn<StockIn>[] = [
       row.cashbook?.name ?? (row.cashbook_id ? `Cashbook #${row.cashbook_id}` : null),
   },
   {
+    key: 'opening_balance',
+    label: 'Opening balance',
+    format: (row) => row.cashbook?.opening_balance,
+    align: 'right',
+  },
+  {
+    key: 'current_balance',
+    label: 'Current balance',
+    format: (row) => row.cashbook?.current_balance,
+    align: 'right',
+  },
+  {
     key: 'items',
     label: 'Items',
     format: (row) =>

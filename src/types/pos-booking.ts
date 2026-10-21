@@ -1,5 +1,6 @@
 import type { PosRoom } from './pos-room'
 export interface BookingPayment {
+  cashbook_id?: number
   id: number
   booking_id: number
   payment_no: string
@@ -36,6 +37,11 @@ export interface PosBookingDetail {
   service_charge_percentage?: number | string
   service_charge_amount?: number | string
   tax_amount: string
+  room_total_amount?: string | number
+  food_order_amount?: string | number
+  service_order_amount?: string | number
+  order_amount?: string | number
+  grand_total_amount?: string | number
   total_amount: string
   paid_amount: string
   balance_amount: string

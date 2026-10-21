@@ -27,7 +27,12 @@ export interface StockIn {
   supplier_id?: number | null
   cashbook_id?: number | null
   supplier?: { id: number; name: string } | null
-  cashbook?: { id: number; name: string } | null
+  cashbook?: {
+    id: number
+    name: string
+    opening_balance?: string | number | null
+    current_balance?: string | number | null
+  } | null
   total_amount?: string | number
   paid_amount?: string | number
   payable_amount?: string | number

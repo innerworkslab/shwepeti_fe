@@ -83,10 +83,10 @@ it('updates order status, and hides ordering for closed bookings', async () => {
   expect(posFoodService.updateStatus).toHaveBeenCalledWith(10, 'preparing', expect.any(AbortSignal))
 })
 
-it('locks a served order against status updates', async () => {
+it.each(['served', 'cancelled'])('locks a %s order against status updates', async (status) => {
   const w = await render()
   vi.mocked(posFoodService.orders).mockResolvedValue([
-    { id: 10, booking_id: 3, room_id: 5, status: 'served' },
+    { id: 10, booking_id: 3, room_id: 5, status },
   ])
   await w.get('[aria-label="Refresh food orders"]').trigger('click')
   await flushPromises()

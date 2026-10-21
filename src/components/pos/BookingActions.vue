@@ -21,11 +21,14 @@ const props = defineProps<{
 }>()
 const emit = defineEmits<{ busy: [value: boolean]; saved: [] }>()
 const booking = ref<PosBookingDetail | null>(null)
-// The room endpoint is authoritative for the invoice after add-on orders.
+// Prefer the detailed booking invoice; retain room snapshots for older API responses.
 const invoice = computed(() => {
   if (!booking.value) return null
   const result = { ...booking.value }
-  if (Number(props.roomBooking?.id) === props.bookingId) {
+  if (
+    booking.value.grand_total_amount == null &&
+    Number(props.roomBooking?.id) === props.bookingId
+  ) {
     for (const key of [
       'subtotal',
       'discount_amount',
@@ -72,7 +75,16 @@ const charges = computed(() =>
 const checkoutBalance = computed(() =>
   Math.max(
     0,
-    Math.round((charges.value.total - Number(invoice.value?.paid_amount ?? 0)) * 100) / 100,
+    Math.round(
+      (charges.value.total +
+        Number(
+          invoice.value?.order_amount ??
+            Number(invoice.value?.food_order_amount ?? 0) +
+              Number(invoice.value?.service_order_amount ?? 0),
+        ) -
+        Number(invoice.value?.paid_amount ?? 0)) *
+        100,
+    ) / 100,
   ),
 )
 watch(checkoutBalance, (value) => {
@@ -120,7 +132,16 @@ onBeforeUnmount(() => {
   controller.abort()
 })
 function start(action: 'partial' | 'checkout') {
-  if (recordedPayment.value) return
+  if (recordedPayment.value || saving.value || props.disabled || loading.value) return
+  if (action === 'partial' && Number(invoice.value?.balance_amount) <= 0) return
+  if (
+    action === 'checkout' &&
+    invoice.value?.balance_amount != null &&
+    Number(invoice.value.balance_amount) === 0
+  ) {
+    void checkoutSettledBooking()
+    return
+  }
   mode.value = action
   form.cashbook_id = ''
   void loadCashbooks()
@@ -138,14 +159,41 @@ async function completeRecordedPayment() {
   const fresh = await posBookingService.get(props.bookingId, controller.signal)
   if (disposed) return
   booking.value = fresh
-  const balance =
-    fresh.balance_amount == null || fresh.balance_amount === '' ? NaN : Number(fresh.balance_amount)
-  if (!Number.isFinite(balance)) throw new Error('Could not verify the remaining balance.')
-  if (balance <= 0 && fresh.status === 'checked_in') {
-    const checkout = await checkoutPaymentSchema.validate(
+  if (!disposed) recordedPayment.value = null
+}
+async function checkoutSettledBooking() {
+  if (saving.value || props.disabled || booking.value?.status !== 'checked_in') return
+  saving.value = true
+  emit('busy', true)
+  error.value = ''
+  let succeeded = false
+  try {
+    const fresh = await posBookingService.get(props.bookingId, controller.signal)
+    if (disposed) return
+    booking.value = fresh
+    if (
+      fresh.balance_amount == null ||
+      fresh.balance_amount === '' ||
+      Number(fresh.balance_amount) !== 0
+    )
+      throw new Error('The balance has changed. Please review the invoice and check out again.')
+    if (fresh.status !== 'checked_in') throw new Error('This booking is no longer checked in.')
+    await loadCashbooks()
+    if (disposed) return
+    const lastPayment = fresh.payments?.at(-1)
+    const cashbookId = lastPayment?.cashbook_id ?? cashbooks.value[0]?.id
+    const now = new Date()
+    const paidAt = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+      .toISOString()
+      .slice(0, 19)
+      .replace('T', ' ')
+    const payload = await checkoutPaymentSchema.validate(
       {
-        ...payment,
+        cashbook_id: cashbookId,
+        payment_method: lastPayment?.payment_method ?? 'cash',
         amount: 0,
+        paid_at: paidAt,
+        note: 'Checkout with balance already settled',
         tax_percentage: fresh.tax_percentage ?? 0,
         tax_amount: fresh.tax_amount ?? 0,
         service_charge_percentage: fresh.service_charge_percentage ?? 0,
@@ -153,10 +201,17 @@ async function completeRecordedPayment() {
       },
       { abortEarly: false, stripUnknown: true },
     )
-    if (disposed) return
-    await posBookingService.checkout(props.bookingId, checkout, controller.signal)
+    await posBookingService.checkout(props.bookingId, payload, controller.signal)
+    succeeded = true
+  } catch (cause) {
+    if (!disposed) error.value = toApiError(cause).message
+  } finally {
+    if (!disposed) {
+      saving.value = false
+      emit('busy', false)
+      if (succeeded) emit('saved')
+    }
   }
-  if (!disposed) recordedPayment.value = null
 }
 async function retryCompletion() {
   if (saving.value || props.disabled || !recordedPayment.value) return
@@ -183,7 +238,12 @@ async function save(action: 'check-in' | 'partial' | 'checkout') {
     return
   if (action === 'check-in' && booking.value.status !== 'reserved') return
   if (action === 'checkout' && booking.value.status !== 'checked_in') return
-  if (action === 'partial' && !['reserved', 'checked_in'].includes(booking.value.status)) return
+  if (
+    action === 'partial' &&
+    (!['reserved', 'checked_in'].includes(booking.value.status) ||
+      Number(invoice.value?.balance_amount) <= 0)
+  )
+    return
   if (action !== 'check-in' && (cashbooksLoading.value || cashbookError.value)) return
   saving.value = true
   emit('busy', true)
@@ -275,8 +335,16 @@ function submit() {
         <dd>{{ invoice?.tax_amount ?? '0.00' }}</dd>
         <dt>Service charge</dt>
         <dd>{{ invoice?.service_charge_amount ?? '0.00' }}</dd>
-        <dt>Total</dt>
-        <dd>{{ invoice?.total_amount }}</dd>
+        <dt>Room total</dt>
+        <dd>{{ invoice?.room_total_amount ?? invoice?.total_amount }}</dd>
+        <dt>Food orders</dt>
+        <dd>{{ invoice?.food_order_amount ?? '0.00' }}</dd>
+        <dt>Service orders</dt>
+        <dd>{{ invoice?.service_order_amount ?? '0.00' }}</dd>
+        <dt>Orders total</dt>
+        <dd>{{ invoice?.order_amount ?? '?' }}</dd>
+        <dt>Grand total</dt>
+        <dd>{{ invoice?.grand_total_amount ?? invoice?.total_amount }}</dd>
         <dt>Paid</dt>
         <dd>{{ invoice?.paid_amount }}</dd>
         <dt>Balance</dt>
@@ -291,7 +359,10 @@ function submit() {
         >
           Check in</button
         ><button
-          v-if="['reserved', 'checked_in'].includes(booking.status)"
+          v-if="
+            ['reserved', 'checked_in'].includes(booking.status) &&
+            Number(invoice?.balance_amount) > 0
+          "
           type="button"
           :disabled="saving || disabled || !!recordedPayment"
           @click="start('partial')"

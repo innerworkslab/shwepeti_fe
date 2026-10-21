@@ -86,79 +86,52 @@ it('checks in a reserved booking and retains errors on failure', async () => {
   w.unmount()
 })
 
-it.each([false, true])(
-  'automatically checks out a paid booking and safely retries failures (%s)',
-  async (fails) => {
-    const initial = {
-      id: 1,
-      status: 'checked_in',
-      subtotal: '100',
-      discount_amount: '0',
-      total_amount: '115',
-      paid_amount: '15',
-      balance_amount: '100',
-      tax_percentage: 5,
-      tax_amount: '5',
-      service_charge_percentage: 10,
-      service_charge_amount: '10',
-    }
-    vi.mocked(posBookingService.get)
-      .mockResolvedValueOnce(initial as never)
-      .mockResolvedValue({ ...initial, paid_amount: '115', balance_amount: '0' } as never)
-    vi.mocked(posCashbookService.list).mockResolvedValue([
-      { id: 1, name: 'Cash', code: 'CASH' },
-    ] as never)
-    if (fails)
-      vi.mocked(posBookingService.checkout)
-        .mockRejectedValueOnce(new Error('Try later'))
-        .mockResolvedValue(undefined)
-    const w = mount(BookingActions, { props: { bookingId: 1, disabled: false } })
-    try {
-      await flushPromises()
-      await w
-        .findAll('button')
-        .find((b) => b.text() === 'Partial payment')!
-        .trigger('click')
-      await flushPromises()
-      await w.get('[name="cashbook_id"]').setValue('1')
-      await w.get('[name="amount"]').setValue('100')
-      await w.get('[name="paid_at"]').setValue('2026-10-20T10:00')
-      await w.get('[name="payment_method"]').setValue('kpay')
-      await w.get('[name="note"]').setValue('Settled')
-      await w.get('form').trigger('submit')
-      await flushPromises()
-      expect(posBookingService.checkout).toHaveBeenCalledWith(
-        1,
-        {
-          cashbook_id: 1,
-          payment_method: 'kpay',
-          amount: 0,
-          paid_at: '2026-10-20 10:00:00',
-          note: 'Settled',
-          tax_percentage: 5,
-          tax_amount: 5,
-          service_charge_percentage: 10,
-          service_charge_amount: 10,
-        },
-        expect.any(AbortSignal),
-      )
-      if (fails) {
-        expect(w.text()).toContain('Payment was recorded')
-        expect(w.emitted('saved')).toBeUndefined()
-        await w
-          .findAll('button')
-          .find((b) => b.text() === 'Retry payment completion')!
-          .trigger('click')
-        await flushPromises()
-        expect(posBookingService.checkout).toHaveBeenCalledTimes(2)
-      }
-      expect(posBookingService.partialPayment).toHaveBeenCalledTimes(1)
-      expect(w.emitted('saved')).toHaveLength(1)
-    } finally {
-      w.unmount()
-    }
-  },
-)
+it('records full partial payment without checkout, then checks out only on click', async () => {
+  const initial = {
+    id: 1,
+    status: 'checked_in',
+    subtotal: '100',
+    total_amount: '100',
+    paid_amount: '0',
+    balance_amount: '100',
+    payments: [],
+  }
+  vi.mocked(posBookingService.get)
+    .mockResolvedValueOnce(initial as never)
+    .mockResolvedValue({ ...initial, paid_amount: '100', balance_amount: '0' } as never)
+  vi.mocked(posCashbookService.list).mockResolvedValue([
+    { id: 1, name: 'Cash', code: 'CASH' },
+  ] as never)
+  const w = mount(BookingActions, { props: { bookingId: 1, disabled: false } })
+  try {
+    await flushPromises()
+    await w
+      .findAll('button')
+      .find((b) => b.text() === 'Partial payment')!
+      .trigger('click')
+    await flushPromises()
+    await w.get('[name="cashbook_id"]').setValue('1')
+    await w.get('[name="amount"]').setValue('100')
+    await w.get('[name="paid_at"]').setValue('2026-10-21T10:00')
+    await w.get('form').trigger('submit')
+    await flushPromises()
+    expect(posBookingService.partialPayment).toHaveBeenCalledTimes(1)
+    expect(posBookingService.checkout).not.toHaveBeenCalled()
+    await w
+      .findAll('button')
+      .find((b) => b.text() === 'Check out')!
+      .trigger('click')
+    await flushPromises()
+    expect(w.find('form').exists()).toBe(false)
+    expect(posBookingService.checkout).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({ amount: 0, cashbook_id: 1 }),
+      expect.any(AbortSignal),
+    )
+  } finally {
+    w.unmount()
+  }
+})
 
 it('uses refreshed room invoice amounts even when booking details still have older totals', async () => {
   vi.mocked(posBookingService.get).mockResolvedValue({
@@ -189,6 +162,45 @@ it('uses refreshed room invoice amounts even when booking details still have old
     expect(w.text()).toContain('275.00')
     expect(w.text()).toContain('25.00')
     expect(w.text()).not.toContain('150.00')
+  } finally {
+    w.unmount()
+  }
+})
+
+it('shows the booking order breakdown and includes orders once in checkout', async () => {
+  vi.mocked(posBookingService.get).mockResolvedValue({
+    id: 1,
+    status: 'checked_in',
+    subtotal: '45000.00',
+    discount_amount: '0.00',
+    total_amount: '45000.00',
+    room_total_amount: '45000.00',
+    food_order_amount: '9540.00',
+    service_order_amount: '0.00',
+    order_amount: '9540.00',
+    grand_total_amount: '54540.00',
+    tax_amount: '0.00',
+    paid_amount: '0.00',
+    balance_amount: '54540.00',
+  } as never)
+  vi.mocked(posCashbookService.list).mockResolvedValue([])
+  const w = mount(BookingActions, {
+    props: { bookingId: 1, disabled: false, roomBooking: { id: 1, balance_amount: '45000.00' } },
+  })
+  try {
+    await flushPromises()
+    const labels = w.findAll('dt')
+    const amount = (label: string) =>
+      labels.find((d) => d.text() === label)?.element.nextElementSibling?.textContent
+    expect(amount('Food orders')).toBe('9540.00')
+    expect(amount('Service orders')).toBe('0.00')
+    expect(amount('Grand total')).toBe('54540.00')
+    expect(amount('Balance')).toBe('54540.00')
+    await w
+      .findAll('button')
+      .find((b) => b.text() === 'Check out')!
+      .trigger('click')
+    expect((w.get('[name="amount"]').element as HTMLInputElement).value).toBe('54540')
   } finally {
     w.unmount()
   }
