@@ -15,21 +15,37 @@ export interface CreateStockInInput {
   items: StockInLineInput[]
 }
 export interface StockInLine {
+  id?: number
+  base_quantity?: string | number
+  total_cost?: string | number
+  batch_no?: string | null
+  expiry_date?: string | null
+  remark?: string | null
+
   item_id: number
   unit_id: number
   quantity: string | number
   unit_cost: string | number
-  item?: { id: number; name: string } | null
+  item?: { id: number; name: string; code?: string; sku?: string | null } | null
   unit?: { id: number; name: string; symbol?: string } | null
 }
 export interface StockIn {
   reference_no?: string
   supplier_id?: number | null
   cashbook_id?: number | null
-  supplier?: { id: number; name: string } | null
+  supplier?: {
+    id: number
+    name: string
+    supplier_code?: string
+    phone_number?: string | null
+    email?: string | null
+    address?: string | null
+  } | null
   cashbook?: {
     id: number
     name: string
+    code?: string
+    type?: string
     opening_balance?: string | number | null
     current_balance?: string | number | null
   } | null
@@ -37,13 +53,15 @@ export interface StockIn {
   paid_amount?: string | number
   payable_amount?: string | number
   remark?: string | null
-  creator?: { id: number; name: string } | null
+  creator?: { id: number; name: string; email?: string } | null
   created_at?: string
+  updated_at?: string
+  created_by?: number
 
   id: number
   warehouse_id: number
   transaction_date: string
   status?: string
-  warehouse?: { id: number; name: string } | null
+  warehouse?: { id: number; name: string; code?: string } | null
   items?: StockInLine[]
 }

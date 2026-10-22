@@ -12,6 +12,23 @@ const router = createRouter({
       children: [
         { path: '', name: 'pos', component: () => import('@/views/PosView.vue') },
         {
+          path: 'cashbook-closings',
+          name: 'pos-cashbook-closings',
+          component: () => import('@/views/CashbookClosingsView.vue'),
+          props: { pos: true },
+        },
+        {
+          path: 'cashbook-transfers',
+          name: 'pos-cashbook-transfers',
+          component: () => import('@/views/CashbookTransfersView.vue'),
+          props: { pos: true },
+        },
+        {
+          path: 'cashbook-transactions',
+          name: 'pos-cashbook-transactions',
+          component: () => import('@/views/PosCashbookTransactionsView.vue'),
+        },
+        {
           path: 'cashbooks',
           name: 'pos-cashbooks',
           component: () => import('@/views/PosCashbooksView.vue'),
@@ -101,6 +118,16 @@ const router = createRouter({
           component: () => import('@/views/SupplierFormView.vue'),
         },
         {
+          path: 'cashbook-closings',
+          name: 'cashbook-closings',
+          component: () => import('@/views/CashbookClosingsView.vue'),
+        },
+        {
+          path: 'cashbook-transfers',
+          name: 'cashbook-transfers',
+          component: () => import('@/views/CashbookTransfersView.vue'),
+        },
+        {
           path: 'cashbook-transactions',
           name: 'cashbook-transactions',
           component: () => import('@/views/CashbookTransactionsView.vue'),
@@ -171,6 +198,11 @@ const router = createRouter({
           name: 'stock-ins',
           component: () => import('@/views/StockInsView.vue'),
           children: [
+            {
+              path: ':id',
+              name: 'stock-in-detail',
+              component: () => import('@/views/StockInDetailView.vue'),
+            },
             {
               path: 'create',
               component: () => import('@/views/LargeFormView.vue'),

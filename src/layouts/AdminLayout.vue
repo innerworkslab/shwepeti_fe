@@ -203,6 +203,18 @@ async function logout() {
         </button>
         <div v-if="cashbooksOpen && expanded" id="cashbook-links" class="cashbook-links">
           <RouterLink
+            to="/cashbook-closings"
+            class="cashbook-manage"
+            :class="{ 'is-active': route.path === '/cashbook-closings' }"
+            ><AppIcon name="cashbooks" :size="16" />Cashbook closings</RouterLink
+          >
+          <RouterLink
+            class="cashbook-manage"
+            to="/cashbook-transfers"
+            :class="{ 'is-active': route.path === '/cashbook-transfers' }"
+            ><AppIcon name="cashbooks" :size="15" />Cashbook transfers</RouterLink
+          >
+          <RouterLink
             class="cashbook-manage"
             :class="{ 'is-active': route.path === '/cashbooks' }"
             to="/cashbooks"

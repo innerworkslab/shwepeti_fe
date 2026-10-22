@@ -145,6 +145,15 @@ function pageSaved() {
         <div class="row-actions">
           <button
             type="button"
+            class="icon-button"
+            :aria-label="`View stock in #${row.id}`"
+            title="View details"
+            @click="router.push(`/stock-ins/${row.id}`)"
+          >
+            <AppIcon name="availability" :size="18" />
+          </button>
+          <button
+            type="button"
             :aria-label="`Update status for stock in #${row.id}`"
             title="Update status"
             class="icon-button"

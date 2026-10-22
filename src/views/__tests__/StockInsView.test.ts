@@ -51,6 +51,10 @@ beforeEach(() => {
       description: null,
       min_stock: 0,
       item_unit_conversions: [],
+      units: [
+        { id: 1, name: 'Kilogram', symbol: 'kg' },
+        { id: 2, name: 'Gram', symbol: 'g' },
+      ],
     },
   ])
   vi.mocked(unitService.listOptions).mockResolvedValue([
@@ -250,4 +254,26 @@ describe('Stock In', () => {
     await flushPromises()
     expect(wrapper.find('[data-form-surface]').exists()).toBe(false)
   })
+})
+
+it('restricts units to the selected item and clears incompatible selections', async () => {
+  vi.mocked(itemService.listOptions).mockResolvedValue([
+    { id: 1, name: 'Chicken', units: [{ id: 1, name: 'kg' }] },
+    { id: 2, name: 'Oil', units: [{ id: 3, name: 'L' }] },
+  ] as never)
+  const w = await render()
+  await flushPromises()
+  await w.get('button.primary').trigger('click')
+  await flushPromises()
+  const unit = w.get('[name="items[0].unit_id"]')
+  expect(unit.attributes('disabled')).toBeDefined()
+  await w.get('[name="items[0].item_id"]').setValue('1')
+  await unit.setValue('1')
+  expect(unit.text()).toContain('kg')
+  expect(unit.text()).not.toContain('L')
+  await w.get('[name="items[0].item_id"]').setValue('2')
+  expect((unit.element as HTMLSelectElement).value).toBe('')
+  expect(unit.text()).toContain('L')
+  expect(unit.text()).not.toContain('kg')
+  expect(unitService.listOptions).not.toHaveBeenCalled()
 })

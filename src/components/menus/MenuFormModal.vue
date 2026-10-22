@@ -5,9 +5,7 @@ import { ValidationError } from 'yup'
 import { warehouseService } from '@/services/warehouse.service'
 import type { Warehouse } from '@/types/warehouse'
 import { menuCategoryService } from '@/services/menu-category.service'
-import { unitService } from '@/services/unit.service'
 import type { MenuCategory } from '@/types/menu-category'
-import type { Unit } from '@/types/unit'
 import type { Item } from '@/types/item'
 import { menuService } from '@/services/menu.service'
 import { itemService } from '@/services/item.service'
@@ -54,7 +52,12 @@ const form = reactive({
 const warehouses = ref<Warehouse[]>([])
 const categories = ref<MenuCategory[]>([])
 const items = ref<Item[]>([])
-const units = ref<Unit[]>([])
+function itemUnits(id: number | string) {
+  return items.value.find((item) => item.id === Number(id))?.units ?? []
+}
+function itemChanged(row: { item_id: number | string; unit_id: number | string }) {
+  if (!itemUnits(row.item_id).some((unit) => unit.id === Number(row.unit_id))) row.unit_id = ''
+}
 const statusOnly = computed(() => props.mode === 'status')
 const availabilityOnly = computed(() => props.mode === 'availability')
 const detailsOnly = computed(() => statusOnly.value || availabilityOnly.value)
@@ -86,9 +89,8 @@ async function load() {
   loading.value = true
   loadError.value = ''
   try {
-    const [categoryOptions, unitOptions, itemOptions, menu, warehouseOptions] = await Promise.all([
+    const [categoryOptions, itemOptions, menu, warehouseOptions] = await Promise.all([
       detailsOnly.value ? Promise.resolve([]) : menuCategoryService.listOptions(active.signal),
-      detailsOnly.value ? Promise.resolve([]) : unitService.listOptions(active.signal),
       detailsOnly.value ? Promise.resolve([]) : itemService.listOptions(active.signal),
       props.menuId != null ? menuService.get(props.menuId, active.signal) : Promise.resolve(null),
       detailsOnly.value ? Promise.resolve([]) : warehouseService.listOptions(active.signal),
@@ -96,7 +98,6 @@ async function load() {
     if (disposed || active.signal.aborted) return
     warehouses.value = warehouseOptions
     categories.value = categoryOptions
-    units.value = unitOptions
     items.value = itemOptions
     if (menu) {
       if (menu.id !== props.menuId)
@@ -153,6 +154,17 @@ async function submit() {
   errors.value = {}
   saveError.value = ''
   try {
+    if (
+      !detailsOnly.value &&
+      form.recipes.some(
+        (row) =>
+          row.unit_id !== '' &&
+          !itemUnits(row.item_id).some((unit) => unit.id === Number(row.unit_id)),
+      )
+    ) {
+      throw new Error('Choose a related unit for each selected item.')
+    }
+
     if (statusOnly.value) {
       if (props.menuId == null) throw new Error('Select a menu to update its status.')
       const payload = await menuStatusSchema.validate(
@@ -440,7 +452,7 @@ async function submit() {
               <h3>Recipes</h3>
               <p v-if="!form.recipes.length">No recipe ingredients added.</p>
               <small v-if="!items.length">No items found. Create an item first.</small
-              ><small v-if="!units.length">No units found. Create a unit first.</small>
+              ><small>Units are based on the selected item.</small>
               <div v-for="(row, index) in form.recipes" :key="row.key" class="recipe-row">
                 <h4>Ingredient {{ index + 1 }}</h4>
                 <div class="field">
@@ -449,6 +461,7 @@ async function submit() {
                     :id="`${prefix}-recipe-${row.key}-item_id`"
                     :name="`recipes[${index}].item_id`"
                     v-model="row.item_id"
+                    @change="itemChanged(row)"
                     :aria-invalid="!!errors[`recipes[${index}].item_id`]"
                     :aria-describedby="
                       errors[`recipes[${index}].item_id`]
@@ -477,6 +490,7 @@ async function submit() {
                     :id="`${prefix}-recipe-${row.key}-unit_id`"
                     :name="`recipes[${index}].unit_id`"
                     v-model="row.unit_id"
+                    :disabled="!itemUnits(row.item_id).length"
                     :aria-invalid="!!errors[`recipes[${index}].unit_id`]"
                     :aria-describedby="
                       errors[`recipes[${index}].unit_id`]
@@ -486,10 +500,18 @@ async function submit() {
                     required
                   >
                     <option value="" disabled>Choose unit</option>
-                    <option v-if="missing(units, row.unit_id)" :value="row.unit_id">
+                    <option
+                      disabled
+                      v-if="missing(itemUnits(row.item_id), row.unit_id)"
+                      :value="row.unit_id"
+                    >
                       Unit #{{ row.unit_id }} (not in list)
                     </option>
-                    <option v-for="option in units" :key="option.id" :value="option.id">
+                    <option
+                      v-for="option in itemUnits(row.item_id)"
+                      :key="option.id"
+                      :value="option.id"
+                    >
                       {{ option.name }}
                     </option></select
                   ><span

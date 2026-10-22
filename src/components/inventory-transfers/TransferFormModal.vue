@@ -5,13 +5,11 @@ import AppIcon from '@/components/common/AppIcon.vue'
 import { transferService } from '@/services/transfer.service'
 import { warehouseService } from '@/services/warehouse.service'
 import { itemService } from '@/services/item.service'
-import { unitService } from '@/services/unit.service'
 import { createTransferSchema, transferStatusSchema } from '@/schemas/transfer.schema'
 import { toApiError } from '@/services/api/api-error'
 import type { Transfer } from '@/types/transfer'
 import type { Warehouse } from '@/types/warehouse'
 import type { Item } from '@/types/item'
-import type { Unit } from '@/types/unit'
 
 const props = withDefaults(
   defineProps<{
@@ -48,7 +46,12 @@ const form = reactive({
 })
 const warehouses = ref<Warehouse[]>([])
 const items = ref<Item[]>([])
-const units = ref<Unit[]>([])
+function itemUnits(id: number | string) {
+  return items.value.find((item) => item.id === Number(id))?.units ?? []
+}
+function itemChanged(row: { item_id: number | string; unit_id: number | string }) {
+  if (!itemUnits(row.item_id).some((unit) => unit.id === Number(row.unit_id))) row.unit_id = ''
+}
 const loading = ref(true)
 const saving = ref(false)
 defineExpose({ saving })
@@ -74,15 +77,13 @@ async function load() {
   loadError.value = ''
   try {
     if (!statusOnly.value) {
-      const [warehouseOptions, itemOptions, unitOptions] = await Promise.all([
+      const [warehouseOptions, itemOptions] = await Promise.all([
         warehouseService.listOptions(active.signal),
         itemService.listOptions(active.signal),
-        unitService.listOptions(active.signal),
       ])
       if (disposed || active.signal.aborted) return
       warehouses.value = warehouseOptions
       items.value = itemOptions
-      units.value = unitOptions
     }
   } catch (cause) {
     if (!disposed) {
@@ -117,6 +118,16 @@ async function submit() {
   errors.value = {}
   saveError.value = ''
   try {
+    if (
+      !statusOnly.value &&
+      form.items.some(
+        (row) =>
+          row.unit_id !== '' &&
+          !itemUnits(row.item_id).some((unit) => unit.id === Number(row.unit_id)),
+      )
+    ) {
+      throw new Error('Choose a related unit for each selected item.')
+    }
     if (props.transfer) {
       const payload = await transferStatusSchema.validate(
         { status: form.status },
@@ -302,7 +313,7 @@ async function submit() {
             <section class="lines" aria-label="Transfer items">
               <h3>Items</h3>
               <small v-if="!items.length">No items found. Create an item first.</small
-              ><small v-if="!units.length">No units found. Create a unit first.</small>
+              ><small>Units are based on the selected item.</small>
               <p v-if="errors.items" role="alert" class="error">{{ errors.items }}</p>
               <div v-for="(row, index) in form.items" :key="row.key" class="item-row">
                 <h4>Item {{ index + 1 }}</h4>
@@ -313,6 +324,7 @@ async function submit() {
                       :id="`${prefix}-item-${row.key}-item_id`"
                       :name="`items[${index}].item_id`"
                       v-model="row.item_id"
+                      @change="itemChanged(row)"
                       :aria-invalid="!!errors[`items[${index}].item_id`]"
                       :aria-describedby="
                         errors[`items[${index}].item_id`]
@@ -338,6 +350,7 @@ async function submit() {
                       :id="`${prefix}-item-${row.key}-unit_id`"
                       :name="`items[${index}].unit_id`"
                       v-model="row.unit_id"
+                      :disabled="!itemUnits(row.item_id).length"
                       :aria-invalid="!!errors[`items[${index}].unit_id`]"
                       :aria-describedby="
                         errors[`items[${index}].unit_id`]
@@ -347,7 +360,11 @@ async function submit() {
                       required
                     >
                       <option value="" disabled>Choose unit</option>
-                      <option v-for="option in units" :key="option.id" :value="option.id">
+                      <option
+                        v-for="option in itemUnits(row.item_id)"
+                        :key="option.id"
+                        :value="option.id"
+                      >
                         {{ option.name }} ({{ option.symbol }})
                       </option></select
                     ><span

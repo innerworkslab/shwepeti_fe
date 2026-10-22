@@ -16,6 +16,7 @@ export interface UpdateItemInput extends CreateItemInput {
   id: number
 }
 export interface Item extends CreateItemInput {
+  units?: { id: number; name: string; symbol?: string; is_active?: boolean }[]
   id: number
   is_active?: boolean
   price?: number | string | null

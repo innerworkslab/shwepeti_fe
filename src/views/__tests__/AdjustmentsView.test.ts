@@ -41,6 +41,10 @@ beforeEach(() => {
       description: null,
       min_stock: 0,
       item_unit_conversions: [],
+      units: [
+        { id: 1, name: 'Kilogram', symbol: 'kg' },
+        { id: 2, name: 'Gram', symbol: 'g' },
+      ],
     },
   ])
   vi.mocked(unitService.listOptions).mockResolvedValue([

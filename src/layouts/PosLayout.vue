@@ -1,10 +1,34 @@
 <script setup lang="ts">
+import { posCashbookService, type PosCashbook } from '@/services/pos-cashbook.service'
 import { nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useRouter, useRoute, RouterLink, RouterView } from 'vue-router'
 import AppIcon from '@/components/common/AppIcon.vue'
 import { posAuthService } from '@/services/pos-auth.service'
 import { usePosSessionStore } from '@/stores/pos-session'
 import { toApiError } from '@/services/api/api-error'
+const cashbooks = ref<PosCashbook[]>([])
+const cashbooksOpen = ref(false)
+const cashbooksLoading = ref(false)
+const cashbooksError = ref('')
+const cashbookController = new AbortController()
+async function loadCashbooks() {
+  if (cashbooksLoading.value) return
+  cashbooksLoading.value = true
+  cashbooksError.value = ''
+  try {
+    const result = await posCashbookService.list(cashbookController.signal)
+    if (!cashbookController.signal.aborted) cashbooks.value = result
+  } catch (cause) {
+    if (!cashbookController.signal.aborted) cashbooksError.value = toApiError(cause).message
+  } finally {
+    cashbooksLoading.value = false
+  }
+}
+function toggleCashbooks() {
+  cashbooksOpen.value = !cashbooksOpen.value
+  if (cashbooksOpen.value) void loadCashbooks()
+}
+onBeforeUnmount(() => cashbookController.abort())
 const router = useRouter()
 const session = usePosSessionStore()
 const loggingOut = ref(false)
@@ -102,18 +126,95 @@ onBeforeUnmount(() => drawer.value?.close())
           @click="close"
           ><AppIcon name="calendar" />Bookings</RouterLink
         >
-        <RouterLink
-          to="/pos/cashbooks"
-          :class="{ active: route.path === '/pos/cashbooks' }"
-          @click="close"
-          ><AppIcon name="cashbooks" />Cashbooks</RouterLink
-        >
+        <div class="cashbook-group">
+          <button
+            class="cashbook-toggle"
+            type="button"
+            :aria-expanded="cashbooksOpen"
+            aria-controls="pos-cashbook-links"
+            @click="toggleCashbooks"
+          >
+            <AppIcon name="cashbooks" />Cashbooks<AppIcon
+              name="chevronDown"
+              :class="{ rotated: cashbooksOpen }"
+            />
+          </button>
+          <div v-if="cashbooksOpen" id="pos-cashbook-links" class="cashbook-links">
+            <RouterLink
+              to="/pos/cashbook-closings"
+              class="cashbook-manage"
+              :class="{ active: route.path === '/pos/cashbook-closings' }"
+              @click="close"
+              ><AppIcon name="cashbooks" :size="16" />Cashbook closings</RouterLink
+            >
+            <RouterLink
+              to="/pos/cashbook-transfers"
+              :class="{ active: route.path === '/pos/cashbook-transfers' }"
+              @click="close"
+              ><AppIcon name="cashbooks" :size="16" />Cashbook transfers</RouterLink
+            >
+            <p v-if="cashbooksLoading" role="status">Loading cashbooks…</p>
+            <p v-else-if="cashbooksError" role="alert">
+              {{ cashbooksError }} <button @click="loadCashbooks">Retry</button>
+            </p>
+            <template v-else>
+              <RouterLink to="/pos/cashbooks" @click="close">All cashbooks</RouterLink>
+              <RouterLink
+                v-for="book in cashbooks"
+                :key="book.id"
+                :to="{ path: '/pos/cashbook-transactions', query: { cashbook_id: book.id } }"
+                :class="{
+                  active:
+                    route.path === '/pos/cashbook-transactions' &&
+                    Number(route.query.cashbook_id) === book.id,
+                }"
+                @click="close"
+              >
+                <AppIcon name="cashbooks" :size="16" /><span
+                  >{{ book.name }}<small>{{ book.code }}</small></span
+                >
+              </RouterLink>
+              <p v-if="!cashbooks.length">No cashbooks found.</p>
+            </template>
+          </div>
+        </div>
       </nav>
     </dialog>
     <RouterView v-if="!signedOut" />
   </div>
 </template>
 <style scoped>
+.cashbook-toggle {
+  width: 100%;
+  padding: 14px;
+  background: #183249;
+  color: #fff;
+  border: 0;
+}
+.cashbook-toggle > :last-child {
+  margin-left: auto;
+  transition: transform 0.2s;
+}
+.rotated {
+  transform: rotate(180deg);
+}
+.cashbook-links {
+  margin: 6px 0 0 12px;
+  padding-left: 8px;
+  border-left: 2px solid #d7b977;
+}
+.cashbook-links a {
+  padding: 10px;
+}
+.cashbook-links small {
+  display: block;
+  margin-top: 4px;
+  letter-spacing: 0.5px;
+}
+.cashbook-links p {
+  font-size: 13px;
+}
+
 .logout {
   margin-left: auto;
 }
