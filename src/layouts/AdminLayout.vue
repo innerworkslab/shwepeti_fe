@@ -77,7 +77,13 @@ const expanded = computed(() => (mobile.value ? mobileOpen.value : !desktopColla
 const currentPage = computed(
   () =>
     links.find((link) => link.to === route.path)?.label ??
-    (route.path.startsWith('/cashbook') ? 'Cashbooks' : 'Overview'),
+    (route.path === '/cashbook-closings'
+      ? 'Cashbook Closings'
+      : route.path === '/cashbook-transfers'
+        ? 'Cashbook Transfers'
+        : ['/cashbooks', '/cashbook-transactions'].includes(route.path)
+          ? 'Cashbooks'
+          : 'Overview'),
 )
 const displayName = computed(() => session.user?.name || 'User')
 const displayRole = computed(
@@ -185,12 +191,16 @@ async function logout() {
         </button>
       </div>
       <nav id="sidebar-navigation" aria-label="Main navigation">
-        <RouterLink class="nav-link" to="/cashbook-transfers"
+        <RouterLink
+          class="nav-link"
+          to="/cashbook-transfers"
+          :class="{ 'is-active': route.path === '/cashbook-transfers' }"
           ><AppIcon name="cashbooks" /><span v-if="expanded">Cashbook transfers</span></RouterLink
         >
         <div class="closing-group">
           <button
             class="nav-link cashbook-toggle"
+            :class="{ 'is-active': route.path === '/cashbook-closings' }"
             :aria-expanded="closingsOpen"
             @click="toggleClosings"
           >
@@ -207,6 +217,11 @@ async function logout() {
               :key="book.id"
               class="cashbook-link"
               :to="{ path: '/cashbook-closings', query: { cashbook_id: book.id } }"
+              :class="{
+                'is-active':
+                  route.path === '/cashbook-closings' &&
+                  Number(route.query.cashbook_id) === book.id,
+              }"
               >{{ book.name }}</RouterLink
             >
           </div>
@@ -215,7 +230,7 @@ async function logout() {
           class="nav-link cashbook-toggle"
           :class="{
             'cashbook-toggle--open': cashbooksOpen && expanded,
-            'is-active': route.path.startsWith('/cashbook'),
+            'is-active': ['/cashbooks', '/cashbook-transactions'].includes(route.path),
           }"
           type="button"
           aria-label="Cashbooks"
@@ -769,4 +784,3 @@ nav {
   }
 }
 </style>
-

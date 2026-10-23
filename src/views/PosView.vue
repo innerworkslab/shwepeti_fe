@@ -11,10 +11,25 @@ import type { BookingDashboard, DashboardRoom, DashboardBooking } from '@/types/
 const session = usePosSessionStore()
 const today = new Date()
 today.setHours(0, 0, 0, 0)
-const start = ref(new Date(today))
-const end = ref(new Date(today))
+const start = ref(new Date(today.getFullYear(), today.getMonth(), 1))
+const end = ref(new Date(today.getFullYear(), today.getMonth() + 1, 0))
 const selectionAnchor = ref<Date | null>(null)
 const calendarMonth = ref(new Date(today.getFullYear(), today.getMonth(), 1))
+const calendarScroll = ref<HTMLElement | null>(null)
+let initialPositionSet = false
+async function centerToday() {
+  await nextTick()
+  const container = calendarScroll.value
+  const cell = container?.querySelector<HTMLElement>('.day.today')
+  if (!container || !cell || initialPositionSet) return
+  const viewport = container.getBoundingClientRect()
+  const rect = cell.getBoundingClientRect()
+  container.scrollLeft = Math.max(
+    0,
+    container.scrollLeft + rect.left - viewport.left + rect.width / 2 - container.clientWidth / 2,
+  )
+  initialPositionSet = true
+}
 const query = ref('')
 const typeFilter = ref('all')
 const collapsed = ref<string[]>([])
@@ -41,7 +56,10 @@ async function loadRooms() {
   } catch (cause) {
     if (!disposed && !active.signal.aborted) loadError.value = toApiError(cause).message
   } finally {
-    if (!disposed && !active.signal.aborted) loading.value = false
+    if (!disposed && !active.signal.aborted) {
+      loading.value = false
+      if (!loadError.value) void centerToday()
+    }
   }
 }
 onMounted(loadRooms)
@@ -326,7 +344,13 @@ onBeforeUnmount(() => {
         <p>{{ loadError }}</p>
         <button type="button" @click="loadRooms">Try again</button>
       </div>
-      <div v-else class="calendar-scroll" tabindex="0" aria-label="Scrollable room schedule">
+      <div
+        v-else
+        ref="calendarScroll"
+        class="calendar-scroll"
+        tabindex="0"
+        aria-label="Scrollable room schedule"
+      >
         <div
           class="schedule"
           :style="{
@@ -802,6 +826,16 @@ select:focus-visible,
 .schedule-header {
   border-bottom: 1px solid #e5edf5;
 }
+/* Keep room identifiers visible above the scrolling booking timeline. */
+.room-label,
+.group-label,
+.room-number {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: #fff;
+  box-shadow: 3px 0 5px #263b510a;
+}
 .room-label {
   display: flex;
   align-items: center;
@@ -856,6 +890,7 @@ select:focus-visible,
   background: #fcfdff;
 }
 .group-label {
+  background: #fcfdff;
   border: 0;
   border-right: 1px solid #e5edf5;
   border-radius: 0;

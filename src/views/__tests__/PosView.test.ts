@@ -239,3 +239,29 @@ it('aborts old room details, ignores stale results and cancels on dismissal', as
   wrapper.unmount()
   expect(signal?.aborted).toBe(true)
 })
+
+it('initially requests the full current month and centers today', async () => {
+  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+    this: HTMLElement,
+  ) {
+    return {
+      left: this.classList.contains('today') ? 1200 : 0,
+      width: this.classList.contains('today') ? 64 : 800,
+      top: 0,
+      bottom: 0,
+      right: 0,
+      height: 0,
+      x: 0,
+      y: 0,
+      toJSON() {},
+    }
+  })
+  vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(800)
+  const w = await render()
+  expect(posDashboardService.get).toHaveBeenNthCalledWith(
+    1,
+    { start_date: '2026-10-01', end_date: '2026-10-31' },
+    expect.any(AbortSignal),
+  )
+  expect((w.get('.calendar-scroll').element as HTMLElement).scrollLeft).toBe(832)
+})

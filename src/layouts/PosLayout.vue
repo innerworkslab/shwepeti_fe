@@ -131,11 +131,20 @@ onBeforeUnmount(() => drawer.value?.close())
           @click="close"
           ><AppIcon name="calendar" />Bookings</RouterLink
         >
-        <RouterLink class="cashbook-manage" to="/pos/cashbook-transfers" @click="close"
+        <RouterLink
+          class="cashbook-manage"
+          to="/pos/cashbook-transfers"
+          :class="{ active: route.path === '/pos/cashbook-transfers' }"
+          @click="close"
           ><AppIcon name="cashbooks" />Cashbook transfers</RouterLink
         >
         <div class="closing-group">
-          <button class="cashbook-toggle" :aria-expanded="closingsOpen" @click="toggleClosings">
+          <button
+            class="cashbook-toggle"
+            :class="{ active: route.path === '/pos/cashbook-closings' }"
+            :aria-expanded="closingsOpen"
+            @click="toggleClosings"
+          >
             <AppIcon name="cashbooks" />Cashbook closings<AppIcon name="chevronDown" />
           </button>
           <div v-if="closingsOpen" class="cashbook-links">
@@ -148,6 +157,11 @@ onBeforeUnmount(() => drawer.value?.close())
               :key="book.id"
               class="cashbook-link"
               :to="{ path: '/pos/cashbook-closings', query: { cashbook_id: book.id } }"
+              :class="{
+                active:
+                  route.path === '/pos/cashbook-closings' &&
+                  Number(route.query.cashbook_id) === book.id,
+              }"
               @click="close"
               >{{ book.name }}</RouterLink
             >
@@ -157,6 +171,9 @@ onBeforeUnmount(() => drawer.value?.close())
           <button
             class="cashbook-toggle"
             type="button"
+            :class="{
+              active: ['/pos/cashbooks', '/pos/cashbook-transactions'].includes(route.path),
+            }"
             :aria-expanded="cashbooksOpen"
             aria-controls="pos-cashbook-links"
             @click="toggleCashbooks"
@@ -310,7 +327,8 @@ nav a {
   text-decoration: none;
   font-size: 14px;
 }
-nav a.active {
+nav a.active,
+.cashbook-toggle.active {
   background: #e0f2fe;
   color: #036985;
   font-weight: 600;
