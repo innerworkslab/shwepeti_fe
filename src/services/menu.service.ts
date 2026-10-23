@@ -1,3 +1,4 @@
+import { multipart } from './api/multipart'
 import { normalizePagination } from './api/pagination'
 import { apiClient } from './api/client'
 import type { ApiPaginatedResponse, PaginatedResponse, PaginationParams } from '@/types/api'
@@ -24,10 +25,10 @@ export const menuService = {
     return 'data' in response.data ? response.data.data : response.data
   },
   async create(input: CreateMenuInput): Promise<void> {
-    await apiClient.post('/api/v1/admin/menus', input)
+    await apiClient.post('/api/v1/admin/menus', multipart(input))
   },
   async update(input: UpdateMenuInput): Promise<void> {
-    await apiClient.post('/api/v1/admin/menus', input)
+    await apiClient.post('/api/v1/admin/menus', multipart(input))
   },
   async toggleAvailable(id: number, input: { is_available: boolean }): Promise<void> {
     await apiClient.post(`${path(id)}/toggle-available`, input)

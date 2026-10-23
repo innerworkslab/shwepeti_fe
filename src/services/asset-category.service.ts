@@ -27,6 +27,9 @@ export const assetCategoryService = {
     )
     return normalizePagination(response.data)
   },
+  async parentOptions(signal?: AbortSignal): Promise<AssetCategory[]> {
+    return loadOptions<AssetCategory>('/api/v1/admin/asset-categories?parent_id', signal)
+  },
   async listOptions(signal?: AbortSignal): Promise<AssetCategory[]> {
     return loadOptions<AssetCategory>('/api/v1/admin/asset-categories', signal)
   },

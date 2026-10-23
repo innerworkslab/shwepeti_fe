@@ -1,4 +1,4 @@
-import { array, boolean, number, object, string } from 'yup'
+import { array, mixed, boolean, number, object, string } from 'yup'
 const id = (label: string) =>
   number()
     .typeError(`Choose ${label}.`)
@@ -22,20 +22,16 @@ export const createMenuSchema = object({
     .transform((value, original) => (original === '' ? null : value))
     .nullable()
     .defined(),
-  image_url: string()
-    .trim()
-    .transform((value) => (value === '' ? null : value))
+  image_url: mixed<string | File>()
+    .transform((v) => (v === '' ? null : v))
     .nullable()
-    .test('url', 'Enter an HTTP or HTTPS image URL.', (value) => {
-      if (value == null) return true
-      try {
-        const url = new URL(value)
-        return url.protocol === 'http:' || url.protocol === 'https:'
-      } catch {
-        return false
-      }
-    })
-    .defined(),
+    .defined()
+    .test(
+      'image',
+      'Choose an image file.',
+      (v) =>
+        v == null || typeof v === 'string' || (v instanceof File && v.type.startsWith('image/')),
+    ),
   recipes: array()
     .of(
       object({

@@ -36,6 +36,12 @@ const links: { to: string; label: string; icon: IconName }[] = [
 ]
 const cashbooks = ref<Cashbook[]>([])
 const cashbooksOpen = ref(false)
+const closingsOpen = ref(false)
+function toggleClosings() {
+  if (!expanded.value) toggleSidebar()
+  closingsOpen.value = !closingsOpen.value
+  if (closingsOpen.value) void loadCashbooks()
+}
 const cashbooksLoading = ref(false)
 const cashbooksError = ref('')
 const cashbookController = new AbortController()
@@ -179,6 +185,32 @@ async function logout() {
         </button>
       </div>
       <nav id="sidebar-navigation" aria-label="Main navigation">
+        <RouterLink class="nav-link" to="/cashbook-transfers"
+          ><AppIcon name="cashbooks" /><span v-if="expanded">Cashbook transfers</span></RouterLink
+        >
+        <div class="closing-group">
+          <button
+            class="nav-link cashbook-toggle"
+            :aria-expanded="closingsOpen"
+            @click="toggleClosings"
+          >
+            <AppIcon name="cashbooks" /><span v-if="expanded">Cashbook closings</span
+            ><AppIcon v-if="expanded" name="chevronDown" />
+          </button>
+          <div v-if="closingsOpen && expanded" class="cashbook-links">
+            <p v-if="cashbooksLoading">Loading cashbooks…</p>
+            <p v-else-if="cashbooksError" role="alert">
+              {{ cashbooksError }}<button @click="loadCashbooks">Retry</button>
+            </p>
+            <RouterLink
+              v-for="book in cashbooks"
+              :key="book.id"
+              class="cashbook-link"
+              :to="{ path: '/cashbook-closings', query: { cashbook_id: book.id } }"
+              >{{ book.name }}</RouterLink
+            >
+          </div>
+        </div>
         <button
           class="nav-link cashbook-toggle"
           :class="{
@@ -202,18 +234,6 @@ async function logout() {
           />
         </button>
         <div v-if="cashbooksOpen && expanded" id="cashbook-links" class="cashbook-links">
-          <RouterLink
-            to="/cashbook-closings"
-            class="cashbook-manage"
-            :class="{ 'is-active': route.path === '/cashbook-closings' }"
-            ><AppIcon name="cashbooks" :size="16" />Cashbook closings</RouterLink
-          >
-          <RouterLink
-            class="cashbook-manage"
-            to="/cashbook-transfers"
-            :class="{ 'is-active': route.path === '/cashbook-transfers' }"
-            ><AppIcon name="cashbooks" :size="15" />Cashbook transfers</RouterLink
-          >
           <RouterLink
             class="cashbook-manage"
             :class="{ 'is-active': route.path === '/cashbooks' }"
@@ -749,3 +769,4 @@ nav {
   }
 }
 </style>
+

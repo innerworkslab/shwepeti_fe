@@ -27,6 +27,10 @@ const editing = computed(() => props.menuId != null)
 const prefix = useId()
 const dialog = ref<HTMLDialogElement | null>(null)
 let nextRowKey = 0
+function selectImage(event: Event) {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (file) form.image_url = file
+}
 function newRecipe() {
   return {
     key: nextRowKey++,
@@ -44,7 +48,7 @@ const form = reactive({
   menu_category_id: '' as number | string,
   price: '' as number | string,
   cost_price: '' as number | string,
-  image_url: '',
+  image_url: '' as string | File,
   is_active: undefined as boolean | undefined,
   is_available: undefined as boolean | undefined,
   recipes: [] as ReturnType<typeof newRecipe>[],
@@ -435,15 +439,15 @@ async function submit() {
               }}</span>
             </div>
             <div class="field">
-              <label :for="`${prefix}-image_url`">Image URL (optional)</label
+              <label :for="`${prefix}-image_url`">Upload image (optional)</label
               ><input
                 :id="`${prefix}-image_url`"
                 name="image_url"
-                v-model="form.image_url"
+                @change="selectImage"
                 :aria-invalid="!!errors.image_url"
                 :aria-describedby="errors.image_url ? `${prefix}-image_url-error` : undefined"
-                type="url"
-                placeholder="https://..."
+                type="file"
+                accept="image/*"
               /><span v-if="errors.image_url" :id="`${prefix}-image_url-error`" class="error">{{
                 errors.image_url
               }}</span>

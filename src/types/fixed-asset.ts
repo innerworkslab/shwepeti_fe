@@ -1,6 +1,6 @@
 export interface AssetDocument {
   name: string
-  path: string
+  path: string | File
 }
 export interface CreateFixedAssetInput {
   asset_code: string
@@ -10,7 +10,11 @@ export interface CreateFixedAssetInput {
   serial_number: string
   purchase_date: string
   purchase_amount: number
-  warranty_expiry_date: string
+  location: string
+  depreciation_enabled: boolean
+  depreciation_start_date?: string
+  useful_life_months?: number
+  residual_value?: number
   documents: AssetDocument[]
   remark: string
 }

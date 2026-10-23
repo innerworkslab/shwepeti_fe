@@ -42,7 +42,7 @@ const columns: DataTableColumn<FixedAsset>[] = [
   { key: 'serial_number', label: 'Serial number', field: 'serial_number' },
   { key: 'purchase_date', label: 'Purchase date', field: 'purchase_date' },
   { key: 'purchase_amount', label: 'Purchase amount', field: 'purchase_amount', align: 'right' },
-  { key: 'warranty_expiry_date', label: 'Warranty expiry', field: 'warranty_expiry_date' },
+  { key: 'location', label: 'Location', field: 'location' },
   { key: 'status', label: 'Status', field: 'status' },
   { key: 'actions', label: 'Actions', align: 'right' },
 ]

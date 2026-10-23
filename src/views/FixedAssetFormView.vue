@@ -26,8 +26,12 @@ const defaults = () => ({
   serial_number: '',
   purchase_date: '',
   purchase_amount: '' as number | string,
-  warranty_expiry_date: '',
-  documents: [] as { name: string; path: string; key: number }[],
+  location: '',
+  depreciation_enabled: false,
+  depreciation_start_date: '',
+  useful_life_months: '' as number | string,
+  residual_value: '' as number | string,
+  documents: [] as { name: string; path: string | File; key: number }[],
   remark: '',
 })
 const form = reactive(defaults())
@@ -72,7 +76,11 @@ async function load() {
         serial_number: result.serial_number ?? '',
         purchase_date: result.purchase_date.replace(' ', 'T'),
         purchase_amount: result.purchase_amount,
-        warranty_expiry_date: result.warranty_expiry_date?.slice(0, 10) ?? '',
+        location: result.location ?? '',
+        depreciation_enabled: result.depreciation_enabled ?? false,
+        depreciation_start_date: result.depreciation_start_date ?? '',
+        useful_life_months: result.useful_life_months ?? '',
+        residual_value: result.residual_value ?? '',
         documents: (result.documents ?? []).map((document) => ({
           name: document.name,
           path: document.path,
@@ -152,7 +160,23 @@ async function submit() {
     }
   }
 }
-function documentUrl(path: string): string | undefined {
+function selectDocument(document: { name: string; path: string | File }, event: Event) {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (file) {
+    document.path = file
+    if (!document.name) document.name = file.name
+  }
+}
+const previews = new Map<File, string>()
+onBeforeUnmount(() => {
+  previews.forEach((url) => URL.revokeObjectURL(url))
+  previews.clear()
+})
+function documentUrl(path: string | File): string | undefined {
+  if (path instanceof File) {
+    if (!previews.has(path)) previews.set(path, URL.createObjectURL(path))
+    return previews.get(path)
+  }
   try {
     const url = new URL(path)
     return ['http:', 'https:'].includes(url.protocol) ? url.href : undefined
@@ -244,23 +268,52 @@ function removeDocument(index: number) {
           }}</span>
         </div>
         <div class="field">
-          <label for="asset-warranty_expiry_date">Warranty expiry date</label
-          ><input
-            id="asset-warranty_expiry_date"
-            name="warranty_expiry_date"
-            v-model="form.warranty_expiry_date"
-            type="date"
-            :aria-invalid="!!errors.warranty_expiry_date"
-            :aria-describedby="
-              errors.warranty_expiry_date ? 'asset-warranty_expiry_date-error' : undefined
-            "
-          /><span
-            v-if="errors.warranty_expiry_date"
-            id="asset-warranty_expiry_date-error"
-            class="error"
-            >{{ errors.warranty_expiry_date }}</span
+          <label for="asset-location">Location</label
+          ><input id="asset-location" name="location" v-model="form.location" />
+        </div>
+        <div class="field">
+          <label
+            ><input
+              name="depreciation_enabled"
+              type="checkbox"
+              v-model="form.depreciation_enabled"
+            />
+            Enable depreciation</label
           >
         </div>
+        <template v-if="form.depreciation_enabled">
+          <div class="field">
+            <label for="asset-depreciation-start">Depreciation start date</label
+            ><input
+              id="asset-depreciation-start"
+              name="depreciation_start_date"
+              type="date"
+              v-model="form.depreciation_start_date"
+            /><span class="error">{{ errors.depreciation_start_date }}</span>
+          </div>
+          <div class="field">
+            <label for="asset-life">Useful life (months)</label
+            ><input
+              id="asset-life"
+              name="useful_life_months"
+              type="number"
+              min="1"
+              step="1"
+              v-model="form.useful_life_months"
+            /><span class="error">{{ errors.useful_life_months }}</span>
+          </div>
+          <div class="field">
+            <label for="asset-residual">Residual value</label
+            ><input
+              id="asset-residual"
+              name="residual_value"
+              type="number"
+              min="0"
+              step="0.01"
+              v-model="form.residual_value"
+            /><span class="error">{{ errors.residual_value }}</span>
+          </div>
+        </template>
         <div class="field">
           <label for="asset-remark">Remark</label
           ><input
@@ -352,10 +405,11 @@ function removeDocument(index: number) {
               >
             </div>
             <div class="field">
-              <label :for="`document-path-${document.key}`">Document path</label
+              <label :for="`document-path-${document.key}`">Upload document</label
               ><input
                 :id="`document-path-${document.key}`"
-                v-model="document.path"
+                type="file"
+                @change="selectDocument(document, $event)"
                 :name="`documents[${index}].path`"
                 :aria-invalid="!!errors[`documents[${index}].path`]"
                 :aria-describedby="

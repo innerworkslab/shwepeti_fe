@@ -59,7 +59,7 @@ async function load() {
     props.category
       ? assetCategoryService.get(props.category.id, controller.signal)
       : Promise.resolve(null),
-    props.statusOnly ? Promise.resolve([]) : assetCategoryService.listOptions(controller.signal),
+    props.statusOnly ? Promise.resolve([]) : assetCategoryService.parentOptions(controller.signal),
   ])
   if (disposed) return
   const [detail, options] = results

@@ -8,6 +8,11 @@ import { usePosSessionStore } from '@/stores/pos-session'
 import { toApiError } from '@/services/api/api-error'
 const cashbooks = ref<PosCashbook[]>([])
 const cashbooksOpen = ref(false)
+const closingsOpen = ref(false)
+function toggleClosings() {
+  closingsOpen.value = !closingsOpen.value
+  if (closingsOpen.value) void loadCashbooks()
+}
 const cashbooksLoading = ref(false)
 const cashbooksError = ref('')
 const cashbookController = new AbortController()
@@ -126,6 +131,28 @@ onBeforeUnmount(() => drawer.value?.close())
           @click="close"
           ><AppIcon name="calendar" />Bookings</RouterLink
         >
+        <RouterLink class="cashbook-manage" to="/pos/cashbook-transfers" @click="close"
+          ><AppIcon name="cashbooks" />Cashbook transfers</RouterLink
+        >
+        <div class="closing-group">
+          <button class="cashbook-toggle" :aria-expanded="closingsOpen" @click="toggleClosings">
+            <AppIcon name="cashbooks" />Cashbook closings<AppIcon name="chevronDown" />
+          </button>
+          <div v-if="closingsOpen" class="cashbook-links">
+            <p v-if="cashbooksLoading">Loading cashbooks…</p>
+            <p v-else-if="cashbooksError" role="alert">
+              {{ cashbooksError }}<button @click="loadCashbooks">Retry</button>
+            </p>
+            <RouterLink
+              v-for="book in cashbooks"
+              :key="book.id"
+              class="cashbook-link"
+              :to="{ path: '/pos/cashbook-closings', query: { cashbook_id: book.id } }"
+              @click="close"
+              >{{ book.name }}</RouterLink
+            >
+          </div>
+        </div>
         <div class="cashbook-group">
           <button
             class="cashbook-toggle"
@@ -140,19 +167,6 @@ onBeforeUnmount(() => drawer.value?.close())
             />
           </button>
           <div v-if="cashbooksOpen" id="pos-cashbook-links" class="cashbook-links">
-            <RouterLink
-              to="/pos/cashbook-closings"
-              class="cashbook-manage"
-              :class="{ active: route.path === '/pos/cashbook-closings' }"
-              @click="close"
-              ><AppIcon name="cashbooks" :size="16" />Cashbook closings</RouterLink
-            >
-            <RouterLink
-              to="/pos/cashbook-transfers"
-              :class="{ active: route.path === '/pos/cashbook-transfers' }"
-              @click="close"
-              ><AppIcon name="cashbooks" :size="16" />Cashbook transfers</RouterLink
-            >
             <p v-if="cashbooksLoading" role="status">Loading cashbooks…</p>
             <p v-else-if="cashbooksError" role="alert">
               {{ cashbooksError }} <button @click="loadCashbooks">Retry</button>

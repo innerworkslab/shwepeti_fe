@@ -1,3 +1,4 @@
+vi.mock('vue-router', () => ({ useRoute: () => ({ query: {} }) }))
 import { expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import View from '../CashbookClosingsView.vue'

@@ -1,3 +1,4 @@
+import { multipart } from './api/multipart'
 import { normalizePagination } from './api/pagination'
 import { apiClient } from './api/client'
 import type { ApiPaginatedResponse, PaginatedResponse, PaginationParams } from '@/types/api'
@@ -47,10 +48,10 @@ export const fixedAssetService = {
     return 'data' in response.data ? response.data.data : response.data
   },
   async create(input: CreateFixedAssetInput): Promise<void> {
-    await apiClient.post('/api/v1/admin/fixed-assets', input)
+    await apiClient.post('/api/v1/admin/fixed-assets', multipart(input))
   },
   async update(input: UpdateFixedAssetInput): Promise<void> {
-    await apiClient.post('/api/v1/admin/fixed-assets', input)
+    await apiClient.post('/api/v1/admin/fixed-assets', multipart(input))
   },
   async updateStatus(id: number, input: { status: 'posted' | 'cancelled' }): Promise<void> {
     await apiClient.post(`${path(id)}/status`, input)

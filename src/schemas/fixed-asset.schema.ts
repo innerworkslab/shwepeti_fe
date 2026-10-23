@@ -1,4 +1,4 @@
-import { array, number, object, string } from 'yup'
+import { array, mixed, boolean, number, object, string } from 'yup'
 // Preserve the wall-clock time entered by the user; the API expects no timezone suffix.
 export function formatTransactionDate(value: string): string {
   const normalized = value.replace('T', ' ').replace(/(\d{2}:\d{2}:\d{2})\.0+$/, '$1')
@@ -55,18 +55,54 @@ export const createFixedAssetSchema = object({
       (value) => value == null || Number.isFinite(value),
     )
     .required('Purchase amount is required.'),
-  warranty_expiry_date: string()
-    .required('Warranty expiry date is required.')
-    .test(
-      'date',
-      'Enter a valid warranty expiry date.',
-      (value) => !!value && validTransactionDate(`${value} 00:00:00`),
-    ),
+  location: string().trim().defined(),
+  depreciation_enabled: boolean().required(),
+  depreciation_start_date: string().when('depreciation_enabled', {
+    is: true,
+    then: (s) =>
+      s
+        .required('Depreciation start date is required.')
+        .test(
+          'date',
+          'Enter a valid depreciation start date.',
+          (v) => !!v && validTransactionDate(`${v} 00:00:00`),
+        ),
+    otherwise: (s) => s.strip(),
+  }),
+  useful_life_months: number().when('depreciation_enabled', {
+    is: true,
+    then: (s) =>
+      s
+        .typeError('Enter useful life in months.')
+        .integer()
+        .positive()
+        .max(Number.MAX_SAFE_INTEGER)
+        .required(),
+    otherwise: (s) => s.strip(),
+  }),
+  residual_value: number().when('depreciation_enabled', {
+    is: true,
+    then: (s) =>
+      s
+        .typeError('Enter residual value.')
+        .min(0)
+        .required()
+        .test('residual', 'Residual value cannot exceed purchase amount.', function (v) {
+          return Number.isFinite(v) && v <= Number(this.parent.purchase_amount)
+        }),
+    otherwise: (s) => s.strip(),
+  }),
   documents: array()
     .of(
       object({
         name: string().trim().required('Document name is required.'),
-        path: string().trim().required('Document path is required.'),
+        path: mixed<string | File>()
+          .required('Choose a document.')
+          .test(
+            'file',
+            'Choose a document.',
+            (v) => v instanceof File || (typeof v === 'string' && !!v.trim()),
+          ),
       }),
     )
     .required(),

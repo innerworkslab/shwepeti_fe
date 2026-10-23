@@ -12,7 +12,7 @@ export interface CreateMenuInput {
   description: string
   price: number
   cost_price: number | null
-  image_url: string | null
+  image_url: string | File | null
   recipes: MenuRecipe[]
 }
 export interface UpdateMenuInput extends CreateMenuInput {

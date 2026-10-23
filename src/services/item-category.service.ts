@@ -15,7 +15,7 @@ export interface ItemCategoryListParams extends PaginationParams {
 
 export const itemCategoryService = {
   async parentOptions(signal?: AbortSignal): Promise<ItemCategory[]> {
-    return loadOptions<ItemCategory>('/api/v1/admin/item-categories?parentId', signal)
+    return loadOptions<ItemCategory>('/api/v1/admin/item-categories?parent_id', signal)
   },
   async list(
     params: ItemCategoryListParams = {},

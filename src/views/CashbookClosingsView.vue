@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
+import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue'
+import { useRoute } from 'vue-router'
 import { object, number, string, ValidationError } from 'yup'
 import DataTable from '@/components/common/DataTable.vue'
 import AppIcon from '@/components/common/AppIcon.vue'
@@ -10,6 +11,13 @@ import { posCashbookService } from '@/services/pos-cashbook.service'
 import { toApiError } from '@/services/api/api-error'
 import type { DataTableColumn } from '@/types/data-table'
 const props = defineProps<{ pos?: boolean }>()
+const route = useRoute()
+watch(
+  () => route.query.cashbook_id,
+  (id) => {
+    if (books.value.some((b) => b.id === Number(id))) setFilters({ cashbook_id: Number(id) })
+  },
+)
 const service = cashbookClosings(!!props.pos)
 const books = ref<{ id: number; name: string; code: string }[]>([])
 const optionsLoading = ref(false)
@@ -55,8 +63,8 @@ async function loadOptions() {
     if (controller.signal.aborted) return
     books.value = result
     setFilters({
-      cashbook_id: result.some((b) => b.id === filters.value.cashbook_id)
-        ? filters.value.cashbook_id
+      cashbook_id: result.some((b) => b.id === Number(route.query.cashbook_id))
+        ? Number(route.query.cashbook_id)
         : result[0]?.id,
     })
   } catch (e) {
