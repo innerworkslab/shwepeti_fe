@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { reportLinks, reportDefinitions, type AdminReport } from '@/constants/admin-reports'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppIcon from '@/components/common/AppIcon.vue'
@@ -13,6 +14,11 @@ import { toApiError } from '@/services/api/api-error'
 const route = useRoute()
 const router = useRouter()
 const session = useSessionStore()
+const reportsOpen = ref(false)
+function toggleReports() {
+  if (!expanded.value) toggleSidebar()
+  reportsOpen.value = !reportsOpen.value
+}
 const links: { to: string; label: string; icon: IconName }[] = [
   { to: '/supplier-ap-balances', label: 'Supplier AP', icon: 'ledger' },
   { to: '/fixed-assets', label: 'Fixed Assets', icon: 'items' },
@@ -77,6 +83,7 @@ const expanded = computed(() => (mobile.value ? mobileOpen.value : !desktopColla
 const currentPage = computed(
   () =>
     links.find((link) => link.to === route.path)?.label ??
+    reportDefinitions[route.path.replace('/reports/', '') as AdminReport]?.title ??
     (route.path === '/cashbook-closings'
       ? 'Cashbook Closings'
       : route.path === '/cashbook-transfers'
@@ -191,41 +198,53 @@ async function logout() {
         </button>
       </div>
       <nav id="sidebar-navigation" aria-label="Main navigation">
+        <span v-if="expanded" class="nav-section-label">Daily operations</span>
         <RouterLink
+          v-for="link in ['/rooms', '/menus'].map((path) =>
+            links.find((link) => link.to === path)!,
+          )"
+          :key="link.to"
+          :to="link.to"
           class="nav-link"
-          to="/cashbook-transfers"
-          :class="{ 'is-active': route.path === '/cashbook-transfers' }"
-          ><AppIcon name="cashbooks" /><span v-if="expanded">Cashbook transfers</span></RouterLink
+          :class="{ 'is-active': route.path === link.to }"
+          :aria-label="link.label"
+          :title="!expanded ? link.label : undefined"
         >
-        <div class="closing-group">
-          <button
-            class="nav-link cashbook-toggle"
-            :class="{ 'is-active': route.path === '/cashbook-closings' }"
-            :aria-expanded="closingsOpen"
-            @click="toggleClosings"
-          >
-            <AppIcon name="cashbooks" /><span v-if="expanded">Cashbook closings</span
-            ><AppIcon v-if="expanded" name="chevronDown" />
-          </button>
-          <div v-if="closingsOpen && expanded" class="cashbook-links">
-            <p v-if="cashbooksLoading">Loading cashbooks…</p>
-            <p v-else-if="cashbooksError" role="alert">
-              {{ cashbooksError }}<button @click="loadCashbooks">Retry</button>
-            </p>
-            <RouterLink
-              v-for="book in cashbooks"
-              :key="book.id"
-              class="cashbook-link"
-              :to="{ path: '/cashbook-closings', query: { cashbook_id: book.id } }"
-              :class="{
-                'is-active':
-                  route.path === '/cashbook-closings' &&
-                  Number(route.query.cashbook_id) === book.id,
-              }"
-              >{{ book.name }}</RouterLink
-            >
-          </div>
-        </div>
+          <AppIcon :name="link.icon" />
+          <span v-if="expanded">{{ link.label }}</span>
+          <span
+            v-if="expanded && route.path === link.to"
+            class="active-dot"
+            aria-hidden="true"
+          ></span>
+        </RouterLink>
+        <span v-if="expanded" class="nav-section-label">Inventory</span>
+        <RouterLink
+          v-for="link in [
+            '/stock-ins',
+            '/inventory-transfers',
+            '/inventory-adjustments',
+            '/inventory-stock-balances',
+            '/inventory-ledgers',
+            '/items',
+            '/warehouses',
+          ].map((path) => links.find((link) => link.to === path)!)"
+          :key="link.to"
+          :to="link.to"
+          class="nav-link"
+          :class="{ 'is-active': route.path === link.to }"
+          :aria-label="link.label"
+          :title="!expanded ? link.label : undefined"
+        >
+          <AppIcon :name="link.icon" />
+          <span v-if="expanded">{{ link.label }}</span>
+          <span
+            v-if="expanded && route.path === link.to"
+            class="active-dot"
+            aria-hidden="true"
+          ></span>
+        </RouterLink>
+        <span v-if="expanded" class="nav-section-label">Finance</span>
         <button
           class="nav-link cashbook-toggle"
           :class="{
@@ -288,7 +307,102 @@ async function logout() {
           </template>
         </div>
         <RouterLink
-          v-for="link in links"
+          class="nav-link"
+          to="/cashbook-transfers"
+          :class="{ 'is-active': route.path === '/cashbook-transfers' }"
+          ><AppIcon name="cashbooks" /><span v-if="expanded">Cashbook transfers</span></RouterLink
+        >
+        <div class="closing-group">
+          <button
+            class="nav-link cashbook-toggle"
+            :class="{ 'is-active': route.path === '/cashbook-closings' }"
+            :aria-expanded="closingsOpen"
+            @click="toggleClosings"
+          >
+            <AppIcon name="cashbooks" /><span v-if="expanded">Cashbook closings</span
+            ><AppIcon v-if="expanded" name="chevronDown" />
+          </button>
+          <div v-if="closingsOpen && expanded" class="cashbook-links">
+            <p v-if="cashbooksLoading">Loading cashbooks…</p>
+            <p v-else-if="cashbooksError" role="alert">
+              {{ cashbooksError }}<button @click="loadCashbooks">Retry</button>
+            </p>
+            <RouterLink
+              v-for="book in cashbooks"
+              :key="book.id"
+              class="cashbook-link"
+              :to="{ path: '/cashbook-closings', query: { cashbook_id: book.id } }"
+              :class="{
+                'is-active':
+                  route.path === '/cashbook-closings' &&
+                  Number(route.query.cashbook_id) === book.id,
+              }"
+              >{{ book.name }}</RouterLink
+            >
+          </div>
+        </div>
+        <RouterLink
+          v-for="link in links.filter((link) =>
+            ['/suppliers', '/supplier-ap-balances', '/fixed-assets'].includes(link.to),
+          )"
+          :key="link.to"
+          :to="link.to"
+          class="nav-link"
+          :class="{ 'is-active': route.path === link.to }"
+          :aria-label="link.label"
+          :title="!expanded ? link.label : undefined"
+        >
+          <AppIcon :name="link.icon" />
+          <span v-if="expanded">{{ link.label }}</span>
+          <span
+            v-if="expanded && route.path === link.to"
+            class="active-dot"
+            aria-hidden="true"
+          ></span>
+        </RouterLink>
+        <span v-if="expanded" class="nav-section-label">Reports</span>
+        <RouterLink
+          to="/reports/profit-and-loss"
+          class="nav-link"
+          :class="{ 'is-active': route.path === '/reports/profit-and-loss' }"
+          title="Financial Report"
+          ><AppIcon name="ledger" /><span v-if="expanded">Financial Report</span></RouterLink
+        >
+        <div>
+          <button
+            class="nav-link cashbook-toggle"
+            :class="{ 'is-active': reportLinks.some((link) => link.to === route.path) }"
+            :aria-expanded="reportsOpen"
+            aria-controls="report-links"
+            title="Reports"
+            @click="toggleReports"
+          >
+            <AppIcon name="ledger" /><span v-if="expanded">Reports</span
+            ><AppIcon v-if="expanded" name="chevronDown" />
+          </button>
+          <div v-if="reportsOpen && expanded" id="report-links" class="cashbook-links">
+            <RouterLink
+              v-for="link in reportLinks"
+              :key="link.key"
+              :to="link.to"
+              class="cashbook-link"
+              :class="{ 'is-active': route.path === link.to }"
+              >{{ link.title }}</RouterLink
+            >
+          </div>
+        </div>
+
+        <span v-if="expanded" class="nav-section-label">Setup & administration</span>
+        <RouterLink
+          v-for="link in [
+            '/room-categories',
+            '/menu-categories',
+            '/item-categories',
+            '/asset-categories',
+            '/unit-groups',
+            '/units',
+            '/users',
+          ].map((path) => links.find((link) => link.to === path)!)"
           :key="link.to"
           :to="link.to"
           class="nav-link"
@@ -329,6 +443,19 @@ async function logout() {
 </template>
 
 <style scoped>
+.nav-section-label {
+  display: block;
+  padding: 20px 14px 7px;
+  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+}
+.nav-section-label:first-child {
+  padding-top: 4px;
+}
+
 /* Cashbook group follows the sidebar's navy and warm gold palette. */
 .nav-link.cashbook-toggle {
   width: 100%;

@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed, watch, ref, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
+import AppIcon from '@/components/common/AppIcon.vue'
+import { toApiError } from '@/services/api/api-error'
 import DataTable from '@/components/common/DataTable.vue'
 import { useDataTable } from '@/composables/useDataTable'
 import { supplierApService } from '@/services/supplier-ap.service'
@@ -28,6 +30,7 @@ const columns: DataTableColumn<SupplierApPayment>[] = [
   { key: 'creator', label: 'Created by', format: (row) => row.creator?.name },
   { key: 'created_at', label: 'Created at', field: 'created_at' },
   { key: 'updated_at', label: 'Updated at', field: 'updated_at' },
+  { key: 'actions', label: 'Actions', align: 'right' },
 ]
 const { rows, total, page, perPage, loading, error, setPage, setPerPage, setFilters, refresh } =
   useDataTable<SupplierApPayment, { supplier_id: number }>(
@@ -38,6 +41,36 @@ const { rows, total, page, perPage, loading, error, setPage, setPerPage, setFilt
     },
     { initialFilters: { supplier_id: supplierId.value } },
   )
+const postingId = ref<number | null>(null)
+const statusError = ref('')
+const notice = ref('')
+let disposed = false
+onBeforeUnmount(() => {
+  disposed = true
+})
+async function postPayment(row: SupplierApPayment) {
+  if (postingId.value !== null || row.status !== 'draft') return
+  const supplier = supplierId.value
+  postingId.value = row.id
+  statusError.value = ''
+  notice.value = ''
+  try {
+    await supplierApService.updatePaymentStatus(row.id, { status: 'posted' })
+    if (!disposed && supplier === supplierId.value) {
+      row.status = 'posted'
+      notice.value = 'Payment posted successfully.'
+      await refresh()
+    }
+  } catch (cause) {
+    if (!disposed && supplier === supplierId.value) statusError.value = toApiError(cause).message
+  } finally {
+    if (!disposed) postingId.value = null
+  }
+}
+watch(supplierId, () => {
+  statusError.value = ''
+  notice.value = ''
+})
 watch(supplierId, (id) => setFilters({ supplier_id: id }))
 </script>
 <template>
@@ -45,6 +78,8 @@ watch(supplierId, (id) => setFilters({ supplier_id: id }))
     <RouterLink to="/supplier-ap-balances">Back to Supplier AP</RouterLink>
     <h1>Supplier #{{ route.params.id }} AP Payment History</h1>
     <p>Payment history for this supplier.</p>
+    <p v-if="statusError" role="alert">{{ statusError }}</p>
+    <p v-if="notice" role="status">{{ notice }}</p>
     <DataTable
       :rows="rows"
       :columns="columns"
@@ -59,6 +94,45 @@ watch(supplierId, (id) => setFilters({ supplier_id: id }))
       @update:page="setPage"
       @update:per-page="setPerPage"
       @refresh="refresh"
-    />
+    >
+      <template #cell-actions="{ row }">
+        <button
+          v-if="row.status === 'draft'"
+          class="post-payment"
+          type="button"
+          :disabled="postingId !== null"
+          :aria-label="`Post payment #${row.id}`"
+          title="Post payment"
+          @click="postPayment(row)"
+        >
+          <AppIcon name="availability" :size="18" /><span>{{
+            postingId === row.id ? 'Posting…' : 'Post payment'
+          }}</span>
+        </button>
+        <span v-else>—</span>
+      </template>
+    </DataTable>
   </section>
 </template>
+
+<style scoped>
+.post-payment {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  background: #183249;
+  color: white;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.post-payment:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+[role='alert'] {
+  color: #b91c1c;
+}
+</style>

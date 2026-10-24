@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { createRequestId } from '@/utils/uuid'
 import { ref, reactive, onMounted, onBeforeUnmount } from 'vue'
 import { ValidationError } from 'yup'
 import DataTable from '@/components/common/DataTable.vue'
@@ -95,7 +96,7 @@ function openCreate() {
   formError.value = ''
   message.value = ''
   Object.assign(form, {
-    request_id: crypto.randomUUID(),
+    request_id: createRequestId(),
     from_cashbook_id: '',
     to_cashbook_id: '',
     amount: '',

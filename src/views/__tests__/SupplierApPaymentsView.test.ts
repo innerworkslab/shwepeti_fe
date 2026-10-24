@@ -3,7 +3,9 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import SupplierApPaymentsView from '../SupplierApPaymentsView.vue'
 import { supplierApService } from '@/services/supplier-ap.service'
-vi.mock('@/services/supplier-ap.service', () => ({ supplierApService: { listPayments: vi.fn() } }))
+vi.mock('@/services/supplier-ap.service', () => ({
+  supplierApService: { listPayments: vi.fn(), updatePaymentStatus: vi.fn() },
+}))
 afterEach(() => vi.restoreAllMocks())
 it('shows payment history and reloads for a different supplier', async () => {
   vi.mocked(supplierApService.listPayments).mockResolvedValue({
@@ -40,6 +42,11 @@ it('shows payment history and reloads for a different supplier', async () => {
     expect(wrapper.get('tbody').text()).toContain('Main Cash')
     expect(wrapper.get('tbody').text()).toContain('12000.00')
     expect(wrapper.get('tbody').text()).toContain('draft')
+    await wrapper.get('[aria-label="Post payment #1"]').trigger('click')
+    await flushPromises()
+    expect(supplierApService.updatePaymentStatus).toHaveBeenCalledWith(1, { status: 'posted' })
+    expect(wrapper.find('[aria-label="Post payment #1"]').exists()).toBe(false)
+    expect(wrapper.text()).toContain('Payment posted successfully.')
     await router.push('/suppliers/2/ap-payments')
     await flushPromises()
     expect(supplierApService.listPayments).toHaveBeenLastCalledWith(

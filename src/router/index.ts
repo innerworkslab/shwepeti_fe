@@ -1,3 +1,4 @@
+import { reportDefinitions, type AdminReport } from '@/constants/admin-reports'
 import { createRouter, createWebHistory } from 'vue-router'
 import { useSessionStore } from '@/stores/session'
 import { usePosSessionStore } from '@/stores/pos-session'
@@ -57,6 +58,13 @@ const router = createRouter({
       meta: { requiresAuth: true },
       component: () => import('@/layouts/AdminLayout.vue'),
       children: [
+        ...(Object.keys(reportDefinitions) as AdminReport[]).map((report) => ({
+          path: `reports/${report}`,
+          name: `admin-report-${report}`,
+          component: () => import('@/views/AdminReportView.vue'),
+          props: { report },
+        })),
+
         {
           path: 'fixed-assets',
           name: 'fixed-assets',
