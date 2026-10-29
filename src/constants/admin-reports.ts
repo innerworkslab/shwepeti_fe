@@ -24,8 +24,10 @@ export const reportDefinitions = {
       'date,order_no,room,menu_id,menu_item,category_id,category,qty,unit_price,amount,status',
   },
   'top-selling-items': { title: 'Top Selling Items', fields: 'menu_id,item,qty_sold,revenue' },
-  // Provisional columns until a populated other-bills response is available.
-  'other-bills': { title: 'Other Bill', fields: 'date,room,item,qty,unit_price,amount,status' },
+  'other-bills': {
+    title: 'Other Bill',
+    fields: 'date,order_no,room,guest,charge_type,description,qty,amount',
+  },
   'inventory-balance': {
     title: 'Inventory Balance',
     fields:

@@ -25,18 +25,16 @@ const dates = reactive({ ...defaults })
 const dateError = ref('')
 const metadata = ref<ReportMeta>({})
 const textFields = new Set(
-  'name,date,room,category,guest,check_in,check_out,status,payment_status,stay_type,order_no,menu_item,item,unit,asset,month'.split(
+  'name,date,room,category,guest,charge_type,description,check_in,check_out,status,payment_status,stay_type,order_no,menu_item,item,unit,asset,month'.split(
     ',',
   ),
 )
-const columns: DataTableColumn<ReportRow>[] = definition.fields
-  .split(',')
-  .map((field) => ({
-    key: field,
-    field,
-    label: reportLabel(field),
-    align: textFields.has(field) ? 'left' : 'right',
-  }))
+const columns: DataTableColumn<ReportRow>[] = definition.fields.split(',').map((field) => ({
+  key: field,
+  field,
+  label: reportLabel(field),
+  align: textFields.has(field) ? 'left' : 'right',
+}))
 const { rows, total, page, perPage, loading, error, setPage, setPerPage, setFilters, refresh } =
   useDataTable<ReportRow, { date_from: string; date_to: string }>(
     async ({ search: _search, ...params }, signal) => {
