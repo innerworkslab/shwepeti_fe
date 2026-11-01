@@ -1,4 +1,7 @@
 export interface DashboardBooking {
+  id?: string | number
+  booking_id?: string | number
+  bookingId?: string | number
   roomId: string | number
   guestName: string
   start_date_time: string

@@ -27,6 +27,7 @@ async function load() {
   loading.value = true
   try {
     const result = await posBookingService.get(id, active.signal)
+    if (result.id !== id) throw new Error('The API returned a different booking. Please retry.')
     if (!disposed && !active.signal.aborted) booking.value = result
   } catch (cause) {
     if (!disposed && !active.signal.aborted) error.value = toApiError(cause).message
@@ -60,7 +61,7 @@ const groups = computed(() => {
       fields: [
         ['Expected check-in', b.expected_check_in_at],
         ['Expected check-out', b.expected_check_out_at],
-        ['Checked in', b.checked_in_at],
+        ['Check-in date/time', b.checked_in_at],
         ['Checked out', b.checked_out_at],
         ['Session hours', b.session_hours],
       ],

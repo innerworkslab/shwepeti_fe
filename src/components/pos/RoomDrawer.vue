@@ -25,7 +25,8 @@ function selectService(tab: 'food' | 'amenity' | 'laundry') {
   }
 }
 const bookingId = computed(() => {
-  const id = room.value?.current_booking?.id
+  if (!['reserved', 'checked_in'].includes(String(room.value?.current_booking?.status))) return null
+  const id = Number(room.value?.current_booking?.id)
   return typeof id === 'number' && Number.isSafeInteger(id) && id > 0 ? id : null
 })
 const canOrder = computed(() =>
@@ -157,18 +158,24 @@ function backdrop(event: MouseEvent) {
             {{ room.room_category.description }}
           </p>
         </details>
-        <section>
+        <section v-if="bookingId">
           <h3>Current booking</h3>
           <div v-if="bookingId" class="booking-info">
             <strong>{{ room.current_booking?.guest_name || `Booking #${bookingId}` }}</strong>
             <p>{{ room.current_booking?.booking_no }}</p>
+            <p>
+              Check-in date/time:
+              {{
+                room.current_booking?.checked_in_at ??
+                room.current_booking?.expected_check_in_at ??
+                '—'
+              }}
+            </p>
             <span>{{ statusLabel(String(room.current_booking?.status || '')) }}</span>
           </div>
           <div v-else class="booking-state">
             <AppIcon name="calendar" :size="22" />
-            <p>
-              {{ room.current_booking ? 'This room has a current booking.' : 'No current booking' }}
-            </p>
+            <p>No active booking</p>
           </div>
         </section>
         <BookingActions

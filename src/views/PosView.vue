@@ -1,13 +1,22 @@
 <script setup lang="ts">
 import { statusLabel, statusStyle } from '@/constants/hotel-status'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 import AppIcon from '@/components/common/AppIcon.vue'
 import RoomDrawer from '@/components/pos/RoomDrawer.vue'
 import { usePosSessionStore } from '@/stores/pos-session'
 import { posDashboardService } from '@/services/pos-dashboard.service'
 import { toApiError } from '@/services/api/api-error'
 import type { BookingDashboard, DashboardRoom, DashboardBooking } from '@/types/pos-dashboard'
+const router = useRouter()
+function dashboardBookingId(booking: DashboardBooking) {
+  const id = Number(booking.booking_id ?? booking.bookingId ?? booking.id)
+  return Number.isSafeInteger(id) && id > 0 ? id : null
+}
+function openBooking(booking: DashboardBooking) {
+  const id = dashboardBookingId(booking)
+  if (id) void router.push(`/pos/bookings/${id}`)
+}
 const session = usePosSessionStore()
 const today = new Date()
 today.setHours(0, 0, 0, 0)
@@ -438,7 +447,8 @@ onBeforeUnmount(() => {
                   class="booking"
                   :style="bar.style"
                   type="button"
-                  @click="selectedRoomId = room.id"
+                  @click="openBooking(bar.booking)"
+                  :disabled="!dashboardBookingId(bar.booking)"
                   :aria-label="`View ${room.name} for ${bar.booking.guestName}`"
                   :title="`${bar.booking.guestName} · ${statusLabel(bar.booking.status)} · ${bar.booking.start_date_time} to ${bar.booking.end_date_time} · ${bar.booking.totalGuests} guest(s)`"
                 >
