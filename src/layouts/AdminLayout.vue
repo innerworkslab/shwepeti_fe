@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { redirectAfterLogout } from '@/utils/logout-redirect'
 import { reportLinks, reportDefinitions, type AdminReport } from '@/constants/admin-reports'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -73,6 +74,7 @@ const mobileOpen = ref(false)
 const desktopCollapsed = ref(false)
 const toggleButton = ref<HTMLButtonElement | null>(null)
 const loggingOut = ref(false)
+const signedOut = ref(false)
 const logoutError = ref('')
 try {
   desktopCollapsed.value = localStorage.getItem('shwe-petit.sidebar-collapsed') === 'true'
@@ -140,9 +142,14 @@ async function logout() {
   loggingOut.value = true
   logoutError.value = ''
   try {
-    await authService.logout()
+    try {
+      await authService.logout()
+    } catch (cause) {
+      if (toApiError(cause).status !== 401) throw cause
+    }
+    signedOut.value = true
     session.clearSession()
-    await router.replace({ name: 'login' })
+    await redirectAfterLogout(router, '/login')
   } catch (cause) {
     logoutError.value = toApiError(cause).message
   } finally {
@@ -437,7 +444,7 @@ async function logout() {
         <span>Workspace</span><span aria-hidden="true">/</span><strong>{{ currentPage }}</strong>
       </div>
       <p v-if="logoutError" role="alert" class="logout-error">{{ logoutError }}</p>
-      <RouterView />
+      <RouterView v-if="!signedOut" />
     </main>
   </div>
 </template>

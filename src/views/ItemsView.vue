@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ExcelImportButton from '@/components/common/ExcelImportButton.vue'
 import { useRoute, useRouter } from 'vue-router'
 const route = useRoute()
 const router = useRouter()
@@ -48,6 +49,10 @@ const modalOpen = ref(false)
 const mode = ref<'edit' | 'status' | 'price'>('edit')
 const selected = ref<Item | null>(null)
 const notice = ref('')
+function imported(message: string) {
+  notice.value = message
+  void refresh()
+}
 
 function openForm(category: Item | null = null, action: 'edit' | 'status' | 'price' = 'edit') {
   if (action === 'edit') {
@@ -101,9 +106,9 @@ function pageSaved() {
     >
       <template #toolbar
         ><button type="button" class="primary" @click="openForm()">
-          <AppIcon name="add" :size="16" />Add item
-        </button></template
-      >
+          <AppIcon name="add" :size="16" />Add item</button
+        ><ExcelImportButton resource="items" @imported="imported"
+      /></template>
       <template #cell-status="{ row }">
         <span class="status" :class="{ active: row.is_active === true }">{{
           row.is_active === undefined ? '—' : row.is_active ? 'Active' : 'Inactive'

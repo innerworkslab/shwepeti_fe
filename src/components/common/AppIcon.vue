@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  Upload,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
@@ -36,6 +37,7 @@ import {
 } from '@lucide/vue'
 
 const icons = {
+  upload: Upload,
   chevronLeft: ChevronLeft,
   chevronRight: ChevronRight,
   chevronDown: ChevronDown,

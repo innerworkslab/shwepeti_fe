@@ -10,13 +10,17 @@ const pos = usePosSessionStore()
 const authorized = computed(
   () => (!route.meta.requiresAuth || !!admin.user) && (!route.meta.requiresPosAuth || !!pos.user),
 )
-watch(authorized, (allowed) => {
-  if (!allowed)
-    void router.replace({
-      name: route.meta.requiresPosAuth ? 'pos-login' : 'login',
-      query: { redirect: route.fullPath },
-    })
-})
+watch(
+  authorized,
+  (allowed) => {
+    if (!allowed) {
+      const path = route.meta.requiresPosAuth ? '/pos/login' : '/login'
+      // Layout logout owns its redirect. Storage events in other tabs still land here.
+      if (router.currentRoute.value.path !== path) void router.replace(path)
+    }
+  },
+  { flush: 'post' },
+)
 </script>
 <template>
   <RouterView v-if="authorized" />

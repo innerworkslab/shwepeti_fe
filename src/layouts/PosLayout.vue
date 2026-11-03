@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { redirectAfterLogout } from '@/utils/logout-redirect'
 import { posCashbookService, type PosCashbook } from '@/services/pos-cashbook.service'
 import { nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useRouter, useRoute, RouterLink, RouterView } from 'vue-router'
@@ -53,7 +54,7 @@ async function logout() {
     signedOut.value = true
     close()
     await nextTick()
-    await router.replace('/pos/login')
+    await redirectAfterLogout(router, '/pos/login')
   } catch (cause) {
     logoutError.value = toApiError(cause).message
   } finally {
