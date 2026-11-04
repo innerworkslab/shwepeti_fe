@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import { usePermissions } from '@/composables/usePermissions'
 const { can } = usePermissions()
 
@@ -87,9 +88,9 @@ function pageSaved() {
 
 <template>
   <section v-show="route.path.replace(/\/+$/, '') === '/items'">
-    <h1>Items</h1>
-    <p>Manage inventory items, unit conversions, and prices.</p>
-    <p v-if="notice" role="status" class="notice">{{ notice }}</p>
+    <h1>{{ t('Items') }}</h1>
+    <p>{{ t('Manage inventory items, unit conversions, and prices.') }}</p>
+    <p v-if="notice" role="status" class="notice">{{ t(notice) }}</p>
     <DataTable
       :rows="rows"
       :columns="
@@ -106,8 +107,8 @@ function pageSaved() {
       :search="search"
       :loading="loading"
       :error="error"
-      caption="Items"
-      search-placeholder="Search items…"
+      :caption="t('Items')"
+      :search-placeholder="t('Search items…')"
       @update:page="setPage"
       @update:per-page="setPerPage"
       @update:search="setSearch"
@@ -115,12 +116,12 @@ function pageSaved() {
     >
       <template #toolbar
         ><button v-if="can('items.create')" type="button" class="primary" @click="openForm()">
-          <AppIcon name="add" :size="16" />Add item</button
+          <AppIcon name="add" :size="16" /> {{ t('Add item') }}</button
         ><ExcelImportButton v-if="can('items.import')" resource="items" @imported="imported"
       /></template>
       <template #cell-status="{ row }">
         <span class="status" :class="{ active: row.is_active === true }">{{
-          row.is_active === undefined ? '—' : row.is_active ? 'Active' : 'Inactive'
+          row.is_active === undefined ? '—' : row.is_active ? t('Active') : t('Inactive')
         }}</span>
       </template>
       <template #cell-actions="{ row }">
@@ -128,17 +129,17 @@ function pageSaved() {
           <button
             v-if="can('items.update')"
             type="button"
-            :aria-label="`Edit ${row.name}`"
+            :aria-label="t('Edit {0}', [row.name])"
             @click="openForm(row)"
-            :title="`Edit ${row.name}`"
+            :title="t('Edit {0}', [row.name])"
           >
-            <AppIcon name="pencil" :size="18" /><span class="action-label">Edit</span>
+            <AppIcon name="pencil" :size="18" /><span class="action-label"> {{ t('Edit') }} </span>
           </button>
           <button
             v-if="can('items.toggle_active')"
             type="button"
-            :aria-label="`Update status for ${row.name}`"
-            title="Update status"
+            :aria-label="t('Update status for {0}', [row.name])"
+            :title="t('Update status')"
             class="icon-button"
             @click="openForm(row, 'status')"
           >
@@ -147,8 +148,8 @@ function pageSaved() {
           <button
             v-if="can('items.update_price')"
             type="button"
-            :aria-label="`Update price for ${row.name}`"
-            title="Update price"
+            :aria-label="t('Update price for {0}', [row.name])"
+            :title="t('Update price')"
             class="icon-button"
             @click="openForm(row, 'price')"
           >

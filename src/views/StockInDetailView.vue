@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import { ref, watch, onBeforeUnmount } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import { stockInService } from '@/services/stock-in.service'
@@ -30,105 +31,109 @@ onBeforeUnmount(() => controller?.abort())
 </script>
 <template>
   <section class="detail-page">
-    <RouterLink to="/stock-ins">Back to Stock In</RouterLink>
-    <h1>Stock In Details</h1>
-    <p v-if="loading" role="status">Loading stock in…</p>
-    <p v-else-if="error" role="alert">{{ error }} <button @click="load">Retry</button></p>
+    <RouterLink to="/stock-ins"> {{ t('Back to Stock In') }} </RouterLink>
+    <h1>{{ t('Stock In Details') }}</h1>
+    <p v-if="loading" role="status">{{ t('Loading stock in…') }}</p>
+    <p v-else-if="error" role="alert">
+      {{ t(error) }} <button @click="load">{{ t('Retry') }}</button>
+    </p>
     <template v-else-if="record">
       <header>
-        <h2>{{ record.reference_no ?? `Stock in #${record.id}` }}</h2>
-        <span class="status">{{ record.status ?? '—' }}</span>
+        <h2>{{ record.reference_no ?? t('Stock in #{0}', [record.id]) }}</h2>
+        <span class="status">{{ t(record.status ?? '—') }}</span>
       </header>
       <dl class="totals">
         <div>
-          <dt>Total amount</dt>
+          <dt>{{ t('Total amount') }}</dt>
           <dd>{{ record.total_amount ?? '—' }}</dd>
         </div>
         <div>
-          <dt>Paid amount</dt>
+          <dt>{{ t('Paid amount') }}</dt>
           <dd>{{ record.paid_amount ?? '—' }}</dd>
         </div>
         <div>
-          <dt>Payable amount</dt>
+          <dt>{{ t('Payable amount') }}</dt>
           <dd>{{ record.payable_amount ?? '—' }}</dd>
         </div>
       </dl>
       <div class="cards">
         <article>
-          <h3>Warehouse</h3>
-          <p>{{ record.warehouse?.name ?? `Warehouse #${record.warehouse_id}` }}</p>
+          <h3>{{ t('Warehouse') }}</h3>
+          <p>{{ record.warehouse?.name ?? t('Warehouse #{0}', [record.warehouse_id]) }}</p>
           <p>{{ record.warehouse?.code }}</p>
         </article>
         <article>
-          <h3>Supplier</h3>
+          <h3>{{ t('Supplier') }}</h3>
           <p>{{ record.supplier?.name ?? '—' }} {{ record.supplier?.supplier_code }}</p>
           <p>{{ record.supplier?.phone_number }} {{ record.supplier?.email }}</p>
           <p>{{ record.supplier?.address }}</p>
         </article>
         <article>
-          <h3>Cashbook</h3>
+          <h3>{{ t('Cashbook') }}</h3>
           <p>{{ record.cashbook?.name ?? '—' }} {{ record.cashbook?.code }}</p>
           <dl>
-            <dt>Type</dt>
-            <dd>{{ record.cashbook?.type ?? '—' }}</dd>
-            <dt>Opening balance</dt>
+            <dt>{{ t('Type') }}</dt>
+            <dd>{{ t(record.cashbook?.type ?? '—') }}</dd>
+            <dt>{{ t('Opening balance') }}</dt>
             <dd>{{ record.cashbook?.opening_balance ?? '—' }}</dd>
-            <dt>Current balance</dt>
+            <dt>{{ t('Current balance') }}</dt>
             <dd>{{ record.cashbook?.current_balance ?? '—' }}</dd>
           </dl>
         </article>
       </div>
       <dl class="metadata">
         <div>
-          <dt>Transaction date</dt>
+          <dt>{{ t('Transaction date') }}</dt>
           <dd>{{ record.transaction_date }}</dd>
         </div>
         <div>
-          <dt>Created by</dt>
+          <dt>{{ t('Created by') }}</dt>
           <dd>
             {{ record.creator?.name ?? record.created_by ?? '—' }} {{ record.creator?.email }}
           </dd>
         </div>
         <div>
-          <dt>Created at</dt>
+          <dt>{{ t('Created at') }}</dt>
           <dd>{{ record.created_at ?? '—' }}</dd>
         </div>
         <div>
-          <dt>Updated at</dt>
+          <dt>{{ t('Updated at') }}</dt>
           <dd>{{ record.updated_at ?? '—' }}</dd>
         </div>
         <div>
-          <dt>Remark</dt>
+          <dt>{{ t('Remark') }}</dt>
           <dd>{{ record.remark ?? '—' }}</dd>
         </div>
       </dl>
-      <h2>Items</h2>
+      <h2>{{ t('Items') }}</h2>
       <div class="items-table">
         <table>
           <caption>
-            Stock in items
+            {{
+              t('Stock in items')
+            }}
           </caption>
           <thead>
             <tr>
-              <th>Item</th>
-              <th>Code / SKU</th>
-              <th>Unit</th>
-              <th>Quantity</th>
-              <th>Base quantity</th>
-              <th>Unit cost</th>
-              <th>Total cost</th>
-              <th>Batch</th>
-              <th>Expiry date</th>
-              <th>Remark</th>
+              <th>{{ t('Item') }}</th>
+              <th>{{ t('Code / SKU') }}</th>
+              <th>{{ t('Unit') }}</th>
+              <th>{{ t('Quantity') }}</th>
+              <th>{{ t('Base quantity') }}</th>
+              <th>{{ t('Unit cost') }}</th>
+              <th>{{ t('Total cost') }}</th>
+              <th>{{ t('Batch') }}</th>
+              <th>{{ t('Expiry date') }}</th>
+              <th>{{ t('Remark') }}</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="(line, index) in record.items" :key="line.id ?? index">
-              <td>{{ line.item?.name ?? `Item #${line.item_id}` }}</td>
+              <td>{{ line.item?.name ?? t('Item #{0}', [line.item_id]) }}</td>
               <td>
                 {{ line.item?.code ?? '—' }}<small>{{ line.item?.sku }}</small>
               </td>
-              <td>{{ line.unit?.name ?? `Unit #${line.unit_id}` }}</td>
+              <td>{{ line.unit?.name ?? t('Unit #{0}', [line.unit_id]) }}</td>
               <td>{{ line.quantity }}</td>
               <td>{{ line.base_quantity ?? '—' }}</td>
               <td>{{ line.unit_cost }}</td>
@@ -138,7 +143,7 @@ onBeforeUnmount(() => controller?.abort())
               <td>{{ line.remark ?? '—' }}</td>
             </tr>
             <tr v-if="!record.items?.length">
-              <td colspan="10">No items found.</td>
+              <td colspan="10">{{ t('No items found.') }}</td>
             </tr>
           </tbody>
         </table>

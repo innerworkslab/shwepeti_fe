@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import { usePermissions } from '@/composables/usePermissions'
 const { can } = usePermissions()
 
@@ -53,12 +54,12 @@ const {
   <main class="bookings-page">
     <header>
       <div>
-        <h1>Bookings</h1>
-        <p>View stays, payment balances, and booking details.</p>
+        <h1>{{ t('Bookings') }}</h1>
+        <p>{{ t('View stays, payment balances, and booking details.') }}</p>
       </div>
-      <RouterLink v-if="can('bookings.create')" class="create" to="/pos/bookings/create"
-        >Create booking</RouterLink
-      >
+      <RouterLink v-if="can('bookings.create')" class="create" to="/pos/bookings/create">
+        {{ t('Create booking') }}
+      </RouterLink>
     </header>
     <DataTable
       :rows="rows"
@@ -70,8 +71,8 @@ const {
       :search="search"
       :loading="loading"
       :error="error"
-      caption="Bookings"
-      search-placeholder="Search booking, guest or room"
+      :caption="t('Bookings')"
+      :search-placeholder="t('Search booking, guest or room')"
       @update:page="setPage"
       @update:per-page="setPerPage"
       @update:search="setSearch"
@@ -82,7 +83,7 @@ const {
       >
       <template #cell-status="{ row }"
         ><span class="badge" :style="statusStyle(row.status)">{{
-          statusLabel(row.status)
+          t(statusLabel(row.status))
         }}</span></template
       >
     </DataTable>

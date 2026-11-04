@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import { computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import DataTable from '@/components/common/DataTable.vue'
@@ -38,9 +39,9 @@ watch(supplierId, (id) => setFilters({ supplier_id: id }))
 </script>
 <template>
   <section>
-    <RouterLink to="/suppliers">Back to suppliers</RouterLink>
-    <h1>Supplier #{{ route.params.id }} AP Ledger</h1>
-    <p>Accounts payable transactions for this supplier.</p>
+    <RouterLink to="/suppliers"> {{ t('Back to suppliers') }} </RouterLink>
+    <h1>{{ t('Supplier #') }} {{ route.params.id }} {{ t('AP Ledger') }}</h1>
+    <p>{{ t('Accounts payable transactions for this supplier.') }}</p>
     <DataTable
       :rows="rows"
       :columns="columns"
@@ -51,7 +52,7 @@ watch(supplierId, (id) => setFilters({ supplier_id: id }))
       :loading="loading"
       :error="error"
       :searchable="false"
-      caption="Supplier AP ledger"
+      :caption="t('Supplier AP ledger')"
       @update:page="setPage"
       @update:per-page="setPerPage"
       @refresh="refresh"

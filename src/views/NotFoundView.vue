@@ -1,4 +1,7 @@
+<script setup lang="ts">
+import { t } from '@/i18n'
+</script>
 <template>
-  <h1>Page not found</h1>
-  <RouterLink to="/">Return to dashboard</RouterLink>
+  <h1>{{ t('Page not found') }}</h1>
+  <RouterLink to="/"> {{ t('Return to dashboard') }} </RouterLink>
 </template>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import { usePermissions } from '@/composables/usePermissions'
 const { can } = usePermissions()
 
@@ -96,19 +97,19 @@ function clearDates() {
 </script>
 <template>
   <section>
-    <h1>Cashbook Transactions</h1>
+    <h1>{{ t('Cashbook Transactions') }}</h1>
     <p>
       {{
         cashbookId
-          ? `Transactions for cashbook #${cashbookId}.`
-          : 'View cashbook transactions by date.'
+          ? t('Transactions for cashbook #{0}.', [cashbookId])
+          : t('View cashbook transactions by date.')
       }}
     </p>
-    <p v-if="notice" role="status" class="notice">{{ notice }}</p>
-    <dl class="ledger-balances" aria-label="Opening balance">
+    <p v-if="notice" role="status" class="notice">{{ t(notice) }}</p>
+    <dl class="ledger-balances" :aria-label="t('Opening balance')">
       <div>
-        <dt>Opening balance</dt>
-        <dd>{{ loading || error ? '—' : (balances.opening_balance ?? '—') }}</dd>
+        <dt>{{ t('Opening balance') }}</dt>
+        <dd>{{ t(loading || error ? '—' : (balances.opening_balance ?? '—')) }}</dd>
       </div>
     </dl>
     <DataTable
@@ -124,8 +125,8 @@ function clearDates() {
       :searchable="false"
       :loading="loading"
       :error="error"
-      caption="Cashbook transactions"
-      search-placeholder="Search adjustments…"
+      :caption="t('Cashbook transactions')"
+      :search-placeholder="t('Search adjustments…')"
       @update:page="setPage"
       @update:per-page="setPerPage"
       @update:search="setSearch"
@@ -138,24 +139,27 @@ function clearDates() {
           class="primary"
           @click="openForm()"
         >
-          <AppIcon name="add" :size="16" />Add transaction
+          <AppIcon name="add" :size="16" /> {{ t('Add transaction') }}
         </button></template
       >
       <template #cell-actions="{ row }">
         <button
           v-if="can('cashbook_transactions.view')"
           type="button"
-          :aria-label="`View transaction #${row.id}`"
-          :title="`View transaction #${row.id}`"
+          :aria-label="t('View transaction #{0}', [row.id])"
+          :title="t('View transaction #{0}', [row.id])"
           @click="openForm(row)"
         >
-          <AppIcon name="availability" :size="18" /><span class="action-label">View details</span>
+          <AppIcon name="availability" :size="18" /><span class="action-label">
+            {{ t('View details') }}
+          </span>
         </button>
       </template>
       <template #filters>
         <form class="date-filters" @submit.prevent="applyDates">
-          <label :for="`${prefix}-from`"
-            >From date<input
+          <label :for="`${prefix}-from`">
+            {{ t('From date') }}
+            <input
               :id="`${prefix}-from`"
               name="date_from"
               v-model="dates.date_from"
@@ -163,8 +167,9 @@ function clearDates() {
               :aria-invalid="!!dateError"
               :aria-describedby="dateError ? `${prefix}-date-error` : undefined"
           /></label>
-          <label :for="`${prefix}-to`"
-            >To date<input
+          <label :for="`${prefix}-to`">
+            {{ t('To date') }}
+            <input
               :id="`${prefix}-to`"
               name="date_to"
               v-model="dates.date_to"
@@ -172,18 +177,18 @@ function clearDates() {
               :aria-invalid="!!dateError"
               :aria-describedby="dateError ? `${prefix}-date-error` : undefined"
           /></label>
-          <button type="submit">Apply dates</button
-          ><button type="button" @click="clearDates">Clear dates</button>
+          <button type="submit">{{ t('Apply dates') }}</button
+          ><button type="button" @click="clearDates">{{ t('Clear dates') }}</button>
           <p v-if="dateError" :id="`${prefix}-date-error`" class="error" role="alert">
-            {{ dateError }}
+            {{ t(dateError) }}
           </p>
         </form>
       </template>
     </DataTable>
-    <dl class="ledger-balances" aria-label="Closing balance">
+    <dl class="ledger-balances" :aria-label="t('Closing balance')">
       <div>
-        <dt>Closing balance</dt>
-        <dd>{{ loading || error ? '—' : (balances.closing_balance ?? '—') }}</dd>
+        <dt>{{ t('Closing balance') }}</dt>
+        <dd>{{ t(loading || error ? '—' : (balances.closing_balance ?? '—')) }}</dd>
       </div>
     </dl>
     <CashbookTransactionModal

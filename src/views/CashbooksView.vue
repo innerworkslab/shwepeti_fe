@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import { usePermissions } from '@/composables/usePermissions'
 const { can } = usePermissions()
 
@@ -57,9 +58,9 @@ function saved() {
 
 <template>
   <section>
-    <h1>Cashbooks</h1>
-    <p>Manage cashbooks, types, and active status.</p>
-    <p v-if="notice" role="status" class="notice">{{ notice }}</p>
+    <h1>{{ t('Cashbooks') }}</h1>
+    <p>{{ t('Manage cashbooks, types, and active status.') }}</p>
+    <p v-if="notice" role="status" class="notice">{{ t(notice) }}</p>
     <DataTable
       :rows="rows"
       :columns="
@@ -75,8 +76,8 @@ function saved() {
       :search="search"
       :loading="loading"
       :error="error"
-      caption="Cashbooks"
-      search-placeholder="Search cashbooks…"
+      :caption="t('Cashbooks')"
+      :search-placeholder="t('Search cashbooks…')"
       @update:page="setPage"
       @update:per-page="setPerPage"
       @update:search="setSearch"
@@ -84,12 +85,12 @@ function saved() {
     >
       <template #toolbar
         ><button v-if="can('cashbooks.create')" type="button" class="primary" @click="openForm()">
-          <AppIcon name="add" :size="16" />Add cashbook
+          <AppIcon name="add" :size="16" /> {{ t('Add cashbook') }}
         </button></template
       >
       <template #cell-status="{ row }">
         <span class="status" :class="{ active: row.is_active === true }">{{
-          row.is_active === undefined ? '—' : row.is_active ? 'Active' : 'Inactive'
+          row.is_active === undefined ? '—' : row.is_active ? t('Active') : t('Inactive')
         }}</span>
       </template>
       <template #cell-actions="{ row }">
@@ -97,17 +98,17 @@ function saved() {
           <button
             v-if="can('cashbooks.update')"
             type="button"
-            :aria-label="`Edit ${row.name}`"
+            :aria-label="t('Edit {0}', [row.name])"
             @click="openForm(row)"
-            :title="`Edit ${row.name}`"
+            :title="t('Edit {0}', [row.name])"
           >
-            <AppIcon name="pencil" :size="18" /><span class="action-label">Edit</span>
+            <AppIcon name="pencil" :size="18" /><span class="action-label"> {{ t('Edit') }} </span>
           </button>
           <button
             v-if="can('cashbooks.toggle_active')"
             type="button"
-            :aria-label="`Update status for ${row.name}`"
-            title="Update status"
+            :aria-label="t('Update status for {0}', [row.name])"
+            :title="t('Update status')"
             class="icon-button"
             @click="openForm(row, true)"
           >

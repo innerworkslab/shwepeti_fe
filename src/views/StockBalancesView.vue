@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import { onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import DataTable from '@/components/common/DataTable.vue'
 import { useDataTable } from '@/composables/useDataTable'
@@ -122,11 +123,12 @@ onBeforeUnmount(() => {
 </script>
 <template>
   <section>
-    <h1>Inventory Stock Balances</h1>
-    <p>View stock balances by warehouse and date.</p>
-    <p v-if="optionsLoading" role="status">Loading filter options...</p>
+    <h1>{{ t('Inventory Stock Balances') }}</h1>
+    <p>{{ t('View stock balances by warehouse and date.') }}</p>
+    <p v-if="optionsLoading" role="status">{{ t('Loading filter options...') }}</p>
     <div v-if="optionsError" role="alert" class="error">
-      {{ optionsError }} <button type="button" @click="loadOptions">Retry filters</button>
+      {{ t(optionsError) }}
+      <button type="button" @click="loadOptions">{{ t('Retry filters') }}</button>
     </div>
     <DataTable
       :rows="rows"
@@ -138,31 +140,38 @@ onBeforeUnmount(() => {
       :loading="loading"
       :error="error"
       :searchable="false"
-      caption="Inventory Stock Balances"
+      :caption="t('Inventory Stock Balances')"
       @update:page="setPage"
       @update:per-page="setPerPage"
       @refresh="refresh"
     >
       <template #filters>
-        <label
-          >Warehouse<select
+        <label>
+          {{ t('Warehouse') }}
+          <select
             name="warehouse_id"
             :value="filters.warehouse_id ?? ''"
             :disabled="optionsLoading || !!optionsError"
             @change="changeFilter('warehouse_id', $event)"
           >
-            <option v-if="!warehouses.length" value="" disabled>No warehouses available</option>
+            <option v-if="!warehouses.length" value="" disabled>
+              {{ t('No warehouses available') }}
+            </option>
             <option v-for="warehouse in warehouses" :key="warehouse.id" :value="warehouse.id">
               {{ warehouse.name }}
             </option>
           </select></label
         >
         <form @submit.prevent="applyDates" class="date-filters">
-          <label>From date<input type="date" name="date_from" v-model="dates.date_from" /></label>
-          <label>To date<input type="date" name="date_to" v-model="dates.date_to" /></label>
-          <button type="submit">Apply dates</button
-          ><button type="button" @click="clearFilters">Clear filters</button>
-          <p v-if="dateError" role="alert">{{ dateError }}</p>
+          <label>
+            {{ t('From date') }} <input type="date" name="date_from" v-model="dates.date_from"
+          /></label>
+          <label>
+            {{ t('To date') }} <input type="date" name="date_to" v-model="dates.date_to"
+          /></label>
+          <button type="submit">{{ t('Apply dates') }}</button
+          ><button type="button" @click="clearFilters">{{ t('Clear filters') }}</button>
+          <p v-if="dateError" role="alert">{{ t(dateError) }}</p>
         </form>
       </template></DataTable
     >

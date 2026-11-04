@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
+import LanguageSwitch from '@/components/common/LanguageSwitch.vue'
 import { usePermissions } from '@/composables/usePermissions'
 const { can, canVisit } = usePermissions()
 
@@ -163,25 +165,33 @@ async function logout() {
 
 <template>
   <div class="admin-layout" :class="{ 'is-expanded': expanded }">
-    <a class="skip-link" href="#main-content">Skip to content</a>
+    <a class="skip-link" href="#main-content"> {{ t('Skip to content') }} </a>
     <header class="topbar">
-      <RouterLink v-if="canVisit('/')" to="/" class="brand" :aria-label="`${env.appName} home`">
+      <RouterLink
+        v-if="canVisit('/')"
+        to="/"
+        class="brand"
+        :aria-label="t('{0} home', [env.appName])"
+      >
         <span class="brand-mark" aria-hidden="true">sp<span class="brand-star">✦</span></span>
         <span class="brand-wordmark"
-          ><strong>SHWE PETIT</strong><small>HOTEL MANAGEMENT</small></span
+          ><strong>SHWE PETIT</strong><small> {{ t('HOTEL MANAGEMENT') }} </small></span
         >
       </RouterLink>
       <div class="account">
+        <LanguageSwitch />
         <div class="user-profile">
           <span class="avatar"><AppIcon name="user" /></span>
           <span class="user-details"
             ><strong>{{ displayName }}</strong
-            ><small>{{ displayRole }}</small></span
+            ><small>{{ t(displayRole) }}</small></span
           >
         </div>
         <span class="account-divider" aria-hidden="true"></span>
         <button class="logout-button" type="button" :disabled="loggingOut" @click="logout">
-          <AppIcon name="logout" /><span>{{ loggingOut ? 'Signing out...' : 'Log out' }}</span>
+          <AppIcon name="logout" /><span>{{
+            loggingOut ? t('Signing out...') : t('Log out')
+          }}</span>
         </button>
       </div>
     </header>
@@ -190,16 +200,16 @@ async function logout() {
       id="admin-sidebar"
       class="sidebar"
       :class="{ 'sidebar--expanded': expanded }"
-      aria-label="Sidebar"
+      :aria-label="t('Sidebar')"
     >
       <div class="sidebar-heading">
-        <span v-if="expanded" class="section-label">WORKSPACE</span>
+        <span v-if="expanded" class="section-label"> {{ t('WORKSPACE') }} </span>
         <button
           ref="toggleButton"
           type="button"
           class="sidebar-toggle"
-          :aria-label="expanded ? 'Collapse sidebar' : 'Expand sidebar'"
-          :title="expanded ? 'Collapse sidebar' : 'Expand sidebar'"
+          :aria-label="expanded ? t('Collapse sidebar') : t('Expand sidebar')"
+          :title="expanded ? t('Collapse sidebar') : t('Expand sidebar')"
           :aria-expanded="expanded"
           aria-controls="sidebar-navigation"
           @click="toggleSidebar"
@@ -207,7 +217,7 @@ async function logout() {
           <AppIcon :name="expanded ? 'collapse' : 'expand'" />
         </button>
       </div>
-      <nav id="sidebar-navigation" aria-label="Main navigation">
+      <nav id="sidebar-navigation" :aria-label="t('Main navigation')">
         <RouterLink
           v-for="link in ['/rooms', '/menus']
             .map((path) => links.find((link) => link.to === path)!)
@@ -216,11 +226,11 @@ async function logout() {
           :to="link.to"
           class="nav-link"
           :class="{ 'is-active': route.path === link.to }"
-          :aria-label="link.label"
-          :title="!expanded ? link.label : undefined"
+          :aria-label="t(link.label)"
+          :title="t(!expanded ? link.label : undefined)"
         >
           <AppIcon :name="link.icon" />
-          <span v-if="expanded">{{ link.label }}</span>
+          <span v-if="expanded">{{ t(link.label) }}</span>
           <span
             v-if="expanded && route.path === link.to"
             class="active-dot"
@@ -243,11 +253,11 @@ async function logout() {
           :to="link.to"
           class="nav-link"
           :class="{ 'is-active': route.path === link.to }"
-          :aria-label="link.label"
-          :title="!expanded ? link.label : undefined"
+          :aria-label="t(link.label)"
+          :title="t(!expanded ? link.label : undefined)"
         >
           <AppIcon :name="link.icon" />
-          <span v-if="expanded">{{ link.label }}</span>
+          <span v-if="expanded">{{ t(link.label) }}</span>
           <span
             v-if="expanded && route.path === link.to"
             class="active-dot"
@@ -262,13 +272,13 @@ async function logout() {
             'is-active': ['/cashbooks', '/cashbook-transactions'].includes(route.path),
           }"
           type="button"
-          aria-label="Cashbooks"
-          title="Cashbooks"
+          :aria-label="t('Cashbooks')"
+          :title="t('Cashbooks')"
           :aria-expanded="cashbooksOpen"
           aria-controls="cashbook-links"
           @click="toggleCashbooks"
         >
-          <AppIcon name="cashbooks" :size="20" /><span v-if="expanded">Cashbooks</span
+          <AppIcon name="cashbooks" :size="20" /><span v-if="expanded"> {{ t('Cashbooks') }} </span
           ><AppIcon
             v-if="expanded"
             name="chevronDown"
@@ -284,17 +294,21 @@ async function logout() {
             :class="{ 'is-active': route.path === '/cashbooks' }"
             to="/cashbooks"
           >
-            <AppIcon name="cashbooks" :size="15" /><span>Manage cashbooks</span
+            <AppIcon name="cashbooks" :size="15" /><span> {{ t('Manage cashbooks') }} </span
             ><AppIcon name="chevronRight" :size="14" />
           </RouterLink>
-          <p v-if="cashbooksLoading" class="cashbook-message" role="status">Loading cashbooks…</p>
+          <p v-if="cashbooksLoading" class="cashbook-message" role="status">
+            {{ t('Loading cashbooks…') }}
+          </p>
           <div
             v-else-if="cashbooksError"
             class="cashbook-message cashbook-message--error"
             role="alert"
           >
-            {{ cashbooksError
-            }}<button type="button" class="cashbook-retry" @click="loadCashbooks">Retry</button>
+            {{ t(cashbooksError)
+            }}<button type="button" class="cashbook-retry" @click="loadCashbooks">
+              {{ t('Retry') }}
+            </button>
           </div>
           <template v-else>
             <RouterLink
@@ -315,7 +329,7 @@ async function logout() {
                 ><small>{{ book.code }}</small></span
               ></RouterLink
             >
-            <p v-if="!cashbooks.length" class="cashbook-message">No cashbooks found.</p>
+            <p v-if="!cashbooks.length" class="cashbook-message">{{ t('No cashbooks found.') }}</p>
           </template>
         </div>
         <RouterLink
@@ -323,7 +337,9 @@ async function logout() {
           class="nav-link"
           to="/cashbook-transfers"
           :class="{ 'is-active': route.path === '/cashbook-transfers' }"
-          ><AppIcon name="cashbooks" /><span v-if="expanded">Cashbook transfers</span></RouterLink
+          ><AppIcon name="cashbooks" /><span v-if="expanded">
+            {{ t('Cashbook transfers') }}
+          </span></RouterLink
         >
         <div class="closing-group">
           <button
@@ -333,13 +349,13 @@ async function logout() {
             :aria-expanded="closingsOpen"
             @click="toggleClosings"
           >
-            <AppIcon name="cashbooks" /><span v-if="expanded">Cashbook closings</span
+            <AppIcon name="cashbooks" /><span v-if="expanded"> {{ t('Cashbook closings') }} </span
             ><AppIcon v-if="expanded" name="chevronDown" />
           </button>
           <div v-if="closingsOpen && expanded" class="cashbook-links">
-            <p v-if="cashbooksLoading">Loading cashbooks…</p>
+            <p v-if="cashbooksLoading">{{ t('Loading cashbooks…') }}</p>
             <p v-else-if="cashbooksError" role="alert">
-              {{ cashbooksError }}<button @click="loadCashbooks">Retry</button>
+              {{ t(cashbooksError) }}<button @click="loadCashbooks">{{ t('Retry') }}</button>
             </p>
             <RouterLink
               v-if="can('cashbooks.view')"
@@ -366,11 +382,11 @@ async function logout() {
           :to="link.to"
           class="nav-link"
           :class="{ 'is-active': route.path === link.to }"
-          :aria-label="link.label"
-          :title="!expanded ? link.label : undefined"
+          :aria-label="t(link.label)"
+          :title="t(!expanded ? link.label : undefined)"
         >
           <AppIcon :name="link.icon" />
-          <span v-if="expanded">{{ link.label }}</span>
+          <span v-if="expanded">{{ t(link.label) }}</span>
           <span
             v-if="expanded && route.path === link.to"
             class="active-dot"
@@ -382,8 +398,10 @@ async function logout() {
           to="/reports/profit-and-loss"
           class="nav-link"
           :class="{ 'is-active': route.path === '/reports/profit-and-loss' }"
-          title="Financial Report"
-          ><AppIcon name="ledger" /><span v-if="expanded">Financial Report</span></RouterLink
+          :title="t('Financial Report')"
+          ><AppIcon name="ledger" /><span v-if="expanded">
+            {{ t('Financial Report') }}
+          </span></RouterLink
         >
         <div>
           <button
@@ -392,10 +410,10 @@ async function logout() {
             :class="{ 'is-active': reportLinks.some((link) => link.to === route.path) }"
             :aria-expanded="reportsOpen"
             aria-controls="report-links"
-            title="Reports"
+            :title="t('Reports')"
             @click="toggleReports"
           >
-            <AppIcon name="ledger" /><span v-if="expanded">Reports</span
+            <AppIcon name="ledger" /><span v-if="expanded"> {{ t('Reports') }} </span
             ><AppIcon v-if="expanded" name="chevronDown" />
           </button>
           <div
@@ -409,7 +427,7 @@ async function logout() {
               :to="link.to"
               class="cashbook-link"
               :class="{ 'is-active': route.path === link.to }"
-              >{{ link.title }}</RouterLink
+              >{{ t(link.title) }}</RouterLink
             >
           </div>
         </div>
@@ -430,11 +448,11 @@ async function logout() {
           :to="link.to"
           class="nav-link"
           :class="{ 'is-active': route.path === link.to }"
-          :aria-label="link.label"
-          :title="!expanded ? link.label : undefined"
+          :aria-label="t(link.label)"
+          :title="t(!expanded ? link.label : undefined)"
         >
           <AppIcon :name="link.icon" />
-          <span v-if="expanded">{{ link.label }}</span>
+          <span v-if="expanded">{{ t(link.label) }}</span>
           <span
             v-if="expanded && route.path === link.to"
             class="active-dot"
@@ -444,29 +462,29 @@ async function logout() {
       </nav>
       <div v-if="expanded" class="sidebar-footer">
         <span class="footer-mark" aria-hidden="true">✦</span
-        ><span>Every stay, thoughtfully managed.</span>
+        ><span> {{ t('Every stay, thoughtfully managed.') }} </span>
       </div>
     </aside>
     <button
       v-if="mobile && mobileOpen"
       class="sidebar-backdrop"
       type="button"
-      aria-label="Close sidebar"
+      :aria-label="t('Close sidebar')"
       @click="closeMobile"
     ></button>
 
     <main id="main-content" class="main-content" tabindex="-1">
       <div class="page-context">
-        <span>Workspace</span><span aria-hidden="true">/</span><strong>{{ currentPage }}</strong>
+        <span> {{ t('Workspace') }} </span><span aria-hidden="true">/</span
+        ><strong>{{ t(currentPage) }}</strong>
       </div>
-      <p v-if="logoutError" role="alert" class="logout-error">{{ logoutError }}</p>
+      <p v-if="logoutError" role="alert" class="logout-error">{{ t(logoutError) }}</p>
       <RouterView v-if="!signedOut" />
     </main>
   </div>
 </template>
 
 <style scoped>
-
 /* Cashbook group follows the sidebar's navy and warm gold palette. */
 .nav-link.cashbook-toggle {
   width: 100%;
@@ -590,6 +608,10 @@ async function logout() {
   padding: 4px 10px;
   background: #24394a;
   color: #f1e1c5;
+}
+@media (max-width: 480px) {
+  .user-details { display: none; }
+  .account { gap: 8px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .cashbook-chevron,
@@ -914,6 +936,10 @@ nav {
   .main-content :deep(h1) {
     font-size: 23px;
   }
+}
+@media (max-width: 480px) {
+  .user-details { display: none; }
+  .account { gap: 8px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .sidebar,

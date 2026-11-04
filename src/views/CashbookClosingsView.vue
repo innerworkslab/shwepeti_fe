@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import { usePermissions } from '@/composables/usePermissions'
 const { can } = usePermissions()
 
@@ -132,11 +133,11 @@ onBeforeUnmount(() => {
 </script>
 <template>
   <main class="closings-page">
-    <h1>Cashbook Closings</h1>
-    <p v-if="notice" role="status">{{ notice }}</p>
-    <p v-if="optionsLoading" role="status">Loading cashbooks…</p>
+    <h1>{{ t('Cashbook Closings') }}</h1>
+    <p v-if="notice" role="status">{{ t(notice) }}</p>
+    <p v-if="optionsLoading" role="status">{{ t('Loading cashbooks…') }}</p>
     <p v-if="optionsError" role="alert">
-      {{ optionsError }} <button @click="loadOptions">Retry cashbooks</button>
+      {{ t(optionsError) }} <button @click="loadOptions">{{ t('Retry cashbooks') }}</button>
     </p>
     <DataTable
       :rows="rows"
@@ -148,7 +149,7 @@ onBeforeUnmount(() => {
       :loading="loading"
       :error="error"
       :searchable="false"
-      caption="Cashbook closings"
+      :caption="t('Cashbook closings')"
       @update:page="setPage"
       @update:per-page="setPerPage"
       @refresh="refresh"
@@ -160,18 +161,21 @@ onBeforeUnmount(() => {
           :disabled="!selected || optionsLoading || !!optionsError || saving"
           @click="openClosing"
         >
-          <AppIcon name="add" :size="16" />Close cashbook
+          <AppIcon name="add" :size="16" /> {{ t('Close cashbook') }}
         </button></template
       >
       <template #filters
-        ><label
-          >Cashbook<select
+        ><label>
+          {{ t('Cashbook') }}
+          <select
             name="cashbook_id"
             :value="filters.cashbook_id ?? ''"
             :disabled="optionsLoading || saving"
             @change="selectBook"
           >
-            <option v-if="!books.length" value="" disabled>No cashbooks available</option>
+            <option v-if="!books.length" value="" disabled>
+              {{ t('No cashbooks available') }}
+            </option>
             <option v-for="book in books" :key="book.id" :value="book.id">
               {{ book.name }} ({{ book.code }})
             </option>
@@ -181,21 +185,23 @@ onBeforeUnmount(() => {
     </DataTable>
     <dialog ref="dialog" aria-labelledby="closing-title" @cancel.prevent="dismiss">
       <header>
-        <h2 id="closing-title">Close cashbook</h2>
-        <button aria-label="Close modal" :disabled="saving" @click="dismiss">
+        <h2 id="closing-title">{{ t('Close cashbook') }}</h2>
+        <button :aria-label="t('Close modal')" :disabled="saving" @click="dismiss">
           <AppIcon name="close" />
         </button>
       </header>
       <p>
-        Cashbook: <strong>{{ closingName }}</strong>
+        {{ t('Cashbook:') }} <strong>{{ closingName }}</strong>
       </p>
-      <p v-if="formError" role="alert">{{ formError }}</p>
+      <p v-if="formError" role="alert">{{ t(formError) }}</p>
       <form @submit.prevent="submit">
-        <label>Remark<textarea v-model="remark" name="remark" :disabled="saving" /></label>
+        <label>
+          {{ t('Remark') }} <textarea v-model="remark" name="remark" :disabled="saving" />
+        </label>
         <footer>
-          <button type="button" :disabled="saving" @click="dismiss">Cancel</button
+          <button type="button" :disabled="saving" @click="dismiss">{{ t('Cancel') }}</button
           ><button type="submit" class="primary" :disabled="saving">
-            {{ saving ? 'Saving…' : 'Save closing' }}
+            {{ saving ? t('Saving…') : t('Save closing') }}
           </button>
         </footer>
       </form>

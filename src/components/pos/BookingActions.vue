@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import { usePermissions } from '@/composables/usePermissions'
 const { can } = usePermissions()
 
@@ -334,10 +335,11 @@ function submit() {
 </script>
 <template>
   <section class="booking-actions">
-    <h3>Stay &amp; payments</h3>
-    <p v-if="loading" role="status">Loading booking balance…</p>
+    <h3>{{ t('Stay & payments') }}</h3>
+    <p v-if="loading" role="status">{{ t('Loading booking balance…') }}</p>
     <p v-if="error" class="error" role="alert">
-      {{ error }} <button v-if="!booking && !loading" type="button" @click="load">Retry</button>
+      {{ t(error) }}
+      <button v-if="!booking && !loading" type="button" @click="load">{{ t('Retry') }}</button>
     </p>
     <button
       v-if="recordedPayment"
@@ -345,31 +347,31 @@ function submit() {
       :disabled="saving || disabled"
       @click="retryCompletion"
     >
-      Retry payment completion
+      {{ t('Retry payment completion') }}
     </button>
     <template v-if="booking && !loading"
       ><dl>
-        <dt>Subtotal</dt>
+        <dt>{{ t('Subtotal') }}</dt>
         <dd>{{ invoice?.subtotal }}</dd>
-        <dt>Discount</dt>
+        <dt>{{ t('Discount') }}</dt>
         <dd>{{ invoice?.discount_amount }}</dd>
-        <dt>Tax</dt>
+        <dt>{{ t('Tax') }}</dt>
         <dd>{{ invoice?.tax_amount ?? '0.00' }}</dd>
-        <dt>Service charge</dt>
+        <dt>{{ t('Service charge') }}</dt>
         <dd>{{ invoice?.service_charge_amount ?? '0.00' }}</dd>
-        <dt>Room total</dt>
+        <dt>{{ t('Room total') }}</dt>
         <dd>{{ invoice?.room_total_amount ?? invoice?.total_amount }}</dd>
-        <dt>Food orders</dt>
+        <dt>{{ t('Food orders') }}</dt>
         <dd>{{ invoice?.food_order_amount ?? '0.00' }}</dd>
-        <dt>Service orders</dt>
+        <dt>{{ t('Service orders') }}</dt>
         <dd>{{ invoice?.service_order_amount ?? '0.00' }}</dd>
-        <dt>Orders total</dt>
+        <dt>{{ t('Orders total') }}</dt>
         <dd>{{ invoice?.order_amount ?? '?' }}</dd>
-        <dt>Grand total</dt>
+        <dt>{{ t('Grand total') }}</dt>
         <dd>{{ invoice?.grand_total_amount ?? invoice?.total_amount }}</dd>
-        <dt>Paid</dt>
+        <dt>{{ t('Paid') }}</dt>
         <dd>{{ invoice?.paid_amount }}</dd>
-        <dt>Balance</dt>
+        <dt>{{ t('Balance') }}</dt>
         <dd>{{ invoice?.balance_amount }}</dd>
       </dl>
       <div class="actions">
@@ -379,7 +381,7 @@ function submit() {
           :disabled="saving || disabled || !!recordedPayment"
           @click="save('check-in')"
         >
-          Check in</button
+          {{ t('Check in') }}</button
         ><button
           v-if="
             can('bookings.record_payment') &&
@@ -390,14 +392,14 @@ function submit() {
           :disabled="saving || disabled || !!recordedPayment"
           @click="start('partial')"
         >
-          Partial payment</button
+          {{ t('Partial payment') }}</button
         ><button
           v-if="booking.status === 'checked_in' && can(['bookings.checkout', 'bookings.check_out'])"
           type="button"
           :disabled="saving || disabled || !!recordedPayment"
           @click="start('checkout')"
         >
-          Check out
+          {{ t('Check out') }}
         </button>
       </div>
       <form
@@ -412,18 +414,19 @@ function submit() {
         novalidate
         @submit.prevent="submit"
       >
-        <h4>{{ mode === 'checkout' ? 'Checkout payment' : 'Partial payment' }}</h4>
+        <h4>{{ mode === 'checkout' ? t('Checkout payment') : t('Partial payment') }}</h4>
         <fieldset :disabled="saving || disabled || !!recordedPayment">
           <div>
-            <label
-              >Cashbook<select
+            <label>
+              {{ t('Cashbook') }}
+              <select
                 v-model="form.cashbook_id"
                 name="cashbook_id"
                 :disabled="cashbooksLoading"
                 required
               >
                 <option value="">
-                  {{ cashbooksLoading ? 'Loading cashbooks…' : 'Choose a cashbook' }}
+                  {{ cashbooksLoading ? t('Loading cashbooks…') : t('Choose a cashbook') }}
                 </option>
                 <option v-for="cashbook in cashbooks" :key="cashbook.id" :value="cashbook.id">
                   {{ cashbook.name }} ({{ cashbook.code }})
@@ -431,14 +434,15 @@ function submit() {
               </select></label
             >
             <p v-if="cashbookError" role="alert" class="error">
-              {{ cashbookError }}
-              <button type="button" @click="loadCashbooks">Retry cashbooks</button>
+              {{ t(cashbookError) }}
+              <button type="button" @click="loadCashbooks">{{ t('Retry cashbooks') }}</button>
             </p>
-            <p v-else-if="!cashbooksLoading && !cashbooks.length">No cashbooks found.</p>
+            <p v-else-if="!cashbooksLoading && !cashbooks.length">{{ t('No cashbooks found.') }}</p>
           </div>
           <template v-if="mode === 'checkout'">
-            <label
-              >Tax (%)<input
+            <label>
+              {{ t('Tax (%)') }}
+              <input
                 v-model.number="form.tax_percentage"
                 name="tax_percentage"
                 type="number"
@@ -446,8 +450,9 @@ function submit() {
                 max="100"
                 step="any"
             /></label>
-            <label
-              >Service charge (%)<input
+            <label>
+              {{ t('Service charge (%)') }}
+              <input
                 v-model.number="form.service_charge_percentage"
                 name="service_charge_percentage"
                 type="number"
@@ -455,54 +460,60 @@ function submit() {
                 max="100"
                 step="any"
             /></label>
-            <label
-              >Tax amount<input
-                :value="charges.tax_amount"
-                name="tax_amount"
-                type="number"
-                readonly
+            <label>
+              {{ t('Tax amount') }}
+              <input :value="charges.tax_amount" name="tax_amount" type="number" readonly
             /></label>
-            <label
-              >Service charge amount<input
+            <label>
+              {{ t('Service charge amount') }}
+              <input
                 :value="charges.service_charge_amount"
                 name="service_charge_amount"
                 type="number"
                 readonly
             /></label>
             <p>
-              Charges apply to the subtotal after discount. Amount due includes these charges and
-              deducts payments already made.
+              {{
+                t(
+                  'Charges apply to the subtotal after discount. Amount due includes these charges and deducts payments already made.',
+                )
+              }}
             </p>
           </template>
-          <label
-            >Payment method<select v-model="form.payment_method" name="payment_method">
+          <label>
+            {{ t('Payment method') }}
+            <select v-model="form.payment_method" name="payment_method">
               <option v-for="method in bookingPaymentMethods" :key="method" :value="method">
-                {{ method }}
+                {{ t(method) }}
               </option>
             </select></label
-          ><label
-            >Amount<input
+          ><label>
+            {{ t('Amount') }}
+            <input
               v-model="form.amount"
               name="amount"
               :readonly="mode === 'checkout'"
               type="number"
               min="0"
               step="any" /></label
-          ><label
-            >Paid at<input
-              v-model="form.paid_at"
-              name="paid_at"
-              type="datetime-local"
-              step="1" /></label
-          ><label>Note<textarea v-model="form.note" name="note" rows="2" /></label>
+          ><label>
+            {{ t('Paid at') }}
+            <input v-model="form.paid_at" name="paid_at" type="datetime-local" step="1" /></label
+          ><label> {{ t('Note') }} <textarea v-model="form.note" name="note" rows="2" /></label>
           <div class="actions">
-            <button type="button" @click="mode = null">Cancel</button
+            <button type="button" @click="mode = null">{{ t('Cancel') }}</button
             ><button
               type="submit"
               class="primary"
               :disabled="cashbooksLoading || !!cashbookError || !cashbooks.length"
             >
-              {{ saving ? 'Saving…' : mode === 'checkout' ? 'Confirm checkout' : 'Record payment' }}
+              {{
+                saving
+                  ? t('Saving…')
+                  : mode === 'checkout'
+                    ? t('Confirm checkout')
+                    : t('Record payment')
+              }}
             </button>
           </div>
         </fieldset>

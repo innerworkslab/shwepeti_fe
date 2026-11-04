@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import { usePermissions } from '@/composables/usePermissions'
 const { can } = usePermissions()
 
@@ -170,10 +171,10 @@ onBeforeUnmount(() => {
 </script>
 <template>
   <main class="transfer-page">
-    <h1>Cashbook Transfers</h1>
-    <p v-if="message" role="status">{{ message }}</p>
+    <h1>{{ t('Cashbook Transfers') }}</h1>
+    <p v-if="message" role="status">{{ t(message) }}</p>
     <p v-if="optionsError" role="alert">
-      {{ optionsError }} <button @click="loadOptions">Retry cashbooks</button>
+      {{ t(optionsError) }} <button @click="loadOptions">{{ t('Retry cashbooks') }}</button>
     </p>
     <DataTable
       :rows="rows"
@@ -187,42 +188,47 @@ onBeforeUnmount(() => {
       :loading="loading"
       :error="error"
       :searchable="false"
-      caption="Cashbook transfers"
+      :caption="t('Cashbook transfers')"
       @update:page="setPage"
       @update:per-page="setPerPage"
       @refresh="refresh"
     >
       <template #toolbar
         ><button v-if="can('cashbook_transfers.create')" class="primary" @click="openCreate">
-          <AppIcon name="add" :size="16" />New transfer
+          <AppIcon name="add" :size="16" /> {{ t('New transfer') }}
         </button></template
       >
       <template #filters
         ><form class="filters" @submit.prevent="applyFilters">
-          <label
-            >Cashbook<select
+          <label>
+            {{ t('Cashbook') }}
+            <select
               v-model="filters.cashbook_id"
               name="filter_cashbook_id"
               :disabled="optionsLoading"
             >
-              <option value="">All cashbooks</option>
+              <option value="">{{ t('All cashbooks') }}</option>
               <option v-for="book in cashbooks" :key="book.id" :value="book.id">
                 {{ book.name }}
               </option>
             </select></label
           >
-          <label>From date<input v-model="filters.date_from" type="date" name="date_from" /></label
-          ><label>To date<input v-model="filters.date_to" type="date" name="date_to" /></label>
-          <button type="submit">Apply filters</button
-          ><button type="button" @click="clearFilters">Clear filters</button>
-          <p v-if="filterError" role="alert">{{ filterError }}</p>
+          <label>
+            {{ t('From date') }}
+            <input v-model="filters.date_from" type="date" name="date_from" /></label
+          ><label>
+            {{ t('To date') }} <input v-model="filters.date_to" type="date" name="date_to"
+          /></label>
+          <button type="submit">{{ t('Apply filters') }}</button
+          ><button type="button" @click="clearFilters">{{ t('Clear filters') }}</button>
+          <p v-if="filterError" role="alert">{{ t(filterError) }}</p>
         </form></template
       >
       <template #cell-actions="{ row }"
         ><button
           v-if="can('cashbook_transfers.view')"
-          :aria-label="`View transfer ${row.reference_no}`"
-          title="View transfer"
+          :aria-label="t('View transfer {0}', [row.reference_no])"
+          :title="t('View transfer')"
           @click="loadDetail(row.id)"
         >
           <AppIcon name="availability" :size="18" /></button
@@ -231,34 +237,36 @@ onBeforeUnmount(() => {
     <dialog ref="dialog" aria-labelledby="transfer-title" @cancel.prevent="close">
       <header>
         <h2 id="transfer-title">
-          {{ mode === 'create' ? 'New cashbook transfer' : 'Transfer details' }}
+          {{ mode === 'create' ? t('New cashbook transfer') : t('Transfer details') }}
         </h2>
-        <button aria-label="Close" :disabled="saving" @click="close">
+        <button :aria-label="t('Close')" :disabled="saving" @click="close">
           <AppIcon name="close" />
         </button>
       </header>
       <p v-if="formError" role="alert">
-        {{ formError }}
+        {{ t(formError) }}
         <button
           v-if="mode === 'detail' && selectedId && can('cashbook_transfers.view')"
           @click="loadDetail(selectedId)"
         >
-          Retry
+          {{ t('Retry') }}
         </button>
       </p>
       <form v-if="mode === 'create'" @submit.prevent="submit">
         <fieldset :disabled="saving || optionsLoading || !!optionsError">
-          <label
-            >From cashbook<select v-model="form.from_cashbook_id" name="from_cashbook_id">
-              <option value="">Choose cashbook</option>
+          <label>
+            {{ t('From cashbook') }}
+            <select v-model="form.from_cashbook_id" name="from_cashbook_id">
+              <option value="">{{ t('Choose cashbook') }}</option>
               <option v-for="book in cashbooks" :key="book.id" :value="book.id">
                 {{ book.name }} ({{ book.code }})
               </option>
             </select></label
           >
-          <label
-            >To cashbook<select v-model="form.to_cashbook_id" name="to_cashbook_id">
-              <option value="">Choose cashbook</option>
+          <label>
+            {{ t('To cashbook') }}
+            <select v-model="form.to_cashbook_id" name="to_cashbook_id">
+              <option value="">{{ t('Choose cashbook') }}</option>
               <option
                 v-for="book in cashbooks"
                 :key="book.id"
@@ -269,56 +277,54 @@ onBeforeUnmount(() => {
               </option>
             </select></label
           >
-          <label
-            >Amount<input v-model="form.amount" name="amount" type="number" min="0.01" step="0.01"
+          <label>
+            {{ t('Amount') }}
+            <input v-model="form.amount" name="amount" type="number" min="0.01" step="0.01"
           /></label>
-          <label
-            >Transfer date<input
-              v-model="form.transfer_date"
-              name="transfer_date"
-              type="datetime-local"
-              step="1"
+          <label>
+            {{ t('Transfer date') }}
+            <input v-model="form.transfer_date" name="transfer_date" type="datetime-local" step="1"
           /></label>
-          <label>Remark<textarea v-model="form.remark" name="remark" /></label>
+          <label> {{ t('Remark') }} <textarea v-model="form.remark" name="remark" /></label>
           <button type="submit" class="primary">
-            {{ saving ? 'Saving…' : 'Create transfer' }}
+            {{ saving ? t('Saving…') : t('Create transfer') }}
           </button>
         </fieldset>
       </form>
-      <p v-else-if="detailLoading" role="status">Loading transfer…</p>
+      <p v-else-if="detailLoading" role="status">{{ t('Loading transfer…') }}</p>
       <template v-else-if="detail">
         <dl>
-          <dt>Reference</dt>
+          <dt>{{ t('Reference') }}</dt>
           <dd>{{ detail.reference_no }}</dd>
-          <dt>Request ID</dt>
+          <dt>{{ t('Request ID') }}</dt>
           <dd>{{ detail.request_id }}</dd>
-          <dt>From</dt>
+          <dt>{{ t('From') }}</dt>
           <dd>{{ detail.from_cashbook?.name }} ({{ detail.from_cashbook?.code }})</dd>
-          <dt>To</dt>
+          <dt>{{ t('To') }}</dt>
           <dd>{{ detail.to_cashbook?.name }} ({{ detail.to_cashbook?.code }})</dd>
-          <dt>Amount</dt>
+          <dt>{{ t('Amount') }}</dt>
           <dd>{{ detail.amount }}</dd>
-          <dt>Date</dt>
+          <dt>{{ t('Date') }}</dt>
           <dd>{{ detail.transfer_date }}</dd>
-          <dt>Remark</dt>
+          <dt>{{ t('Remark') }}</dt>
           <dd>{{ detail.remark || '—' }}</dd>
-          <dt>Created by</dt>
+          <dt>{{ t('Created by') }}</dt>
           <dd>{{ detail.creator?.name }} {{ detail.creator?.email }}</dd>
-          <dt>Created at</dt>
+          <dt>{{ t('Created at') }}</dt>
           <dd>{{ detail.created_at }}</dd>
         </dl>
-        <h3>Ledger entries</h3>
+        <h3>{{ t('Ledger entries') }}</h3>
         <div class="entries">
           <table>
             <thead>
               <tr>
-                <th>Reference</th>
-                <th>Cashbook</th>
-                <th>Type</th>
-                <th>Amount</th>
-                <th>Balance after</th>
-                <th>Date</th>
-                <th>Remark</th>
+                <th>{{ t('Reference') }}</th>
+                <th>{{ t('Cashbook') }}</th>
+                <th>{{ t('Type') }}</th>
+                <th>{{ t('Amount') }}</th>
+                <th>{{ t('Balance after') }}</th>
+                <th>{{ t('Date') }}</th>
+                <th>{{ t('Remark') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -327,7 +333,7 @@ onBeforeUnmount(() => {
                 <td>
                   {{ cashbooks.find((c) => c.id === entry.cashbook_id)?.name ?? entry.cashbook_id }}
                 </td>
-                <td>{{ entry.transaction_type }}</td>
+                <td>{{ t(entry.transaction_type) }}</td>
                 <td>{{ entry.amount }}</td>
                 <td>{{ entry.balance_after }}</td>
                 <td>{{ entry.transaction_date }}</td>

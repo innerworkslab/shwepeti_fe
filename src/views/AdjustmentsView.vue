@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import { usePermissions } from '@/composables/usePermissions'
 const { can } = usePermissions()
 
@@ -77,9 +78,9 @@ function pageSaved() {
 </script>
 <template>
   <section v-show="route.path.replace(/\/+$/, '') === '/inventory-adjustments'">
-    <h1>Adjustments</h1>
-    <p>View inventory adjustments by transaction date.</p>
-    <p v-if="notice" role="status" class="notice">{{ notice }}</p>
+    <h1>{{ t('Adjustments') }}</h1>
+    <p>{{ t('View inventory adjustments by transaction date.') }}</p>
+    <p v-if="notice" role="status" class="notice">{{ t(notice) }}</p>
     <DataTable
       :rows="rows"
       :columns="
@@ -94,8 +95,8 @@ function pageSaved() {
       :search="search"
       :loading="loading"
       :error="error"
-      caption="Adjustments"
-      search-placeholder="Search adjustments…"
+      :caption="t('Adjustments')"
+      :search-placeholder="t('Search adjustments…')"
       @update:page="setPage"
       @update:per-page="setPerPage"
       @update:search="setSearch"
@@ -108,23 +109,24 @@ function pageSaved() {
           class="primary"
           @click="openForm()"
         >
-          <AppIcon name="add" :size="16" />Add adjustment
+          <AppIcon name="add" :size="16" /> {{ t('Add adjustment') }}
         </button></template
       >
       <template #cell-actions="{ row }"
         ><button
           v-if="can('inventory_adjustments.update_status')"
           type="button"
-          :aria-label="`Update status for adjustment #${row.id}`"
-          title="Update status"
+          :aria-label="t('Update status for adjustment #{0}', [row.id])"
+          :title="t('Update status')"
           @click="openForm(row)"
         >
           <AppIcon name="status" :size="18" /></button
       ></template>
       <template #filters>
         <form class="date-filters" @submit.prevent="applyDates">
-          <label :for="`${prefix}-from`"
-            >From date<input
+          <label :for="`${prefix}-from`">
+            {{ t('From date') }}
+            <input
               :id="`${prefix}-from`"
               name="date_from"
               v-model="dates.date_from"
@@ -132,8 +134,9 @@ function pageSaved() {
               :aria-invalid="!!dateError"
               :aria-describedby="dateError ? `${prefix}-date-error` : undefined"
           /></label>
-          <label :for="`${prefix}-to`"
-            >To date<input
+          <label :for="`${prefix}-to`">
+            {{ t('To date') }}
+            <input
               :id="`${prefix}-to`"
               name="date_to"
               v-model="dates.date_to"
@@ -141,10 +144,10 @@ function pageSaved() {
               :aria-invalid="!!dateError"
               :aria-describedby="dateError ? `${prefix}-date-error` : undefined"
           /></label>
-          <button type="submit">Apply dates</button
-          ><button type="button" @click="clearDates">Clear dates</button>
+          <button type="submit">{{ t('Apply dates') }}</button
+          ><button type="button" @click="clearDates">{{ t('Clear dates') }}</button>
           <p v-if="dateError" :id="`${prefix}-date-error`" class="error" role="alert">
-            {{ dateError }}
+            {{ t(dateError) }}
           </p>
         </form>
       </template>

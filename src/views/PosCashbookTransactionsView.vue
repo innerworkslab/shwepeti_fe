@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import DataTable from '@/components/common/DataTable.vue'
@@ -46,11 +47,11 @@ watch(cashbookId, (id) => setFilters({ cashbook_id: id }))
 </script>
 <template>
   <main class="ledger-page">
-    <h1>Cashbook transactions</h1>
-    <p>{{ rows[0]?.cashbook?.name ?? `Cashbook #${cashbookId}` }}</p>
-    <dl aria-label="Opening balance">
-      <dt>Opening balance</dt>
-      <dd>{{ loading || error ? '—' : (balances.opening_balance ?? '—') }}</dd>
+    <h1>{{ t('Cashbook transactions') }}</h1>
+    <p>{{ rows[0]?.cashbook?.name ?? t('Cashbook #{0}', [cashbookId]) }}</p>
+    <dl :aria-label="t('Opening balance')">
+      <dt>{{ t('Opening balance') }}</dt>
+      <dd>{{ t(loading || error ? '—' : (balances.opening_balance ?? '—')) }}</dd>
     </dl>
     <DataTable
       :rows="rows"
@@ -62,14 +63,14 @@ watch(cashbookId, (id) => setFilters({ cashbook_id: id }))
       :loading="loading"
       :error="error"
       :searchable="false"
-      caption="Cashbook transactions"
+      :caption="t('Cashbook transactions')"
       @update:page="setPage"
       @update:per-page="setPerPage"
       @refresh="refresh"
     />
-    <dl aria-label="Closing balance">
-      <dt>Closing balance</dt>
-      <dd>{{ loading || error ? '—' : (balances.closing_balance ?? '—') }}</dd>
+    <dl :aria-label="t('Closing balance')">
+      <dt>{{ t('Closing balance') }}</dt>
+      <dd>{{ t(loading || error ? '—' : (balances.closing_balance ?? '—')) }}</dd>
     </dl>
   </main>
 </template>

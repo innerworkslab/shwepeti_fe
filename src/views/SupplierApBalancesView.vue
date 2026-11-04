@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import { usePermissions } from '@/composables/usePermissions'
 const { can } = usePermissions()
 
@@ -54,9 +55,9 @@ const { rows, total, page, perPage, loading, error, setPage, setPerPage, refresh
 </script>
 <template>
   <section>
-    <h1>Supplier AP</h1>
-    <p>Supplier accounts payable balances.</p>
-    <p v-if="route.query.saved === 'created'" role="status">Supplier payment created.</p>
+    <h1>{{ t('Supplier AP') }}</h1>
+    <p>{{ t('Supplier accounts payable balances.') }}</p>
+    <p v-if="route.query.saved === 'created'" role="status">{{ t('Supplier payment created.') }}</p>
     <DataTable
       :rows="rows"
       :columns="
@@ -73,7 +74,7 @@ const { rows, total, page, perPage, loading, error, setPage, setPerPage, refresh
       :loading="loading"
       :error="error"
       :searchable="false"
-      caption="Supplier AP balances"
+      :caption="t('Supplier AP balances')"
       @update:page="setPage"
       @update:per-page="setPerPage"
       @refresh="refresh"
@@ -83,28 +84,28 @@ const { rows, total, page, perPage, loading, error, setPage, setPerPage, refresh
           v-if="can('supplier_ap_payments.create')"
           class="action primary"
           to="/supplier-ap-payments/create"
-          ><AppIcon name="add" :size="16" />Add payment</RouterLink
-        ></template
+          ><AppIcon name="add" :size="16" /> {{ t('Add payment') }}
+        </RouterLink></template
       >
       <template #cell-actions="{ row }"
         ><RouterLink
           v-if="can('supplier_ap_ledgers.view')"
           class="action"
           :to="`/suppliers/${row.supplier_id}/ap-ledgers`"
-          title="View AP ledger"
-          ><AppIcon name="ledger" :size="18" /><span class="action-label"
-            >AP ledger</span
-          ></RouterLink
+          :title="t('View AP ledger')"
+          ><AppIcon name="ledger" :size="18" /><span class="action-label">
+            {{ t('AP ledger') }}
+          </span></RouterLink
         >
         <RouterLink
           v-if="can('supplier_ap_payments.view')"
           class="action"
           :to="`/suppliers/${row.supplier_id}/ap-payments`"
-          title="View AP payment history"
-          aria-label="View AP payment history"
-          ><AppIcon name="cashbooks" :size="18" /><span class="action-label"
-            >AP payment history</span
-          ></RouterLink
+          :title="t('View AP payment history')"
+          :aria-label="t('View AP payment history')"
+          ><AppIcon name="cashbooks" :size="18" /><span class="action-label">
+            {{ t('AP payment history') }}
+          </span></RouterLink
         ></template
       >
     </DataTable>

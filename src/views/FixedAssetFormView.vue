@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import { usePermissions } from '@/composables/usePermissions'
 const { can } = usePermissions()
 import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from 'vue'
@@ -196,18 +197,18 @@ function removeDocument(index: number) {
 </script>
 <template>
   <section class="supplier-page">
-    <h1>{{ editing ? 'Edit fixed asset' : 'Add fixed asset' }}</h1>
-    <p>Record purchase details and supporting documents.</p>
-    <p v-if="loading || optionsLoading" role="status">Loading asset details...</p>
+    <h1>{{ editing ? t('Edit fixed asset') : t('Add fixed asset') }}</h1>
+    <p>{{ t('Record purchase details and supporting documents.') }}</p>
+    <p v-if="loading || optionsLoading" role="status">{{ t('Loading asset details...') }}</p>
     <div v-else-if="loadError || optionsError" role="alert" class="error">
-      <p>{{ loadError || optionsError }}</p>
-      <button type="button" @click="load">Try again</button>
+      <p>{{ t(loadError || optionsError) }}</p>
+      <button type="button" @click="load">{{ t('Try again') }}</button>
     </div>
     <form v-else ref="formElement" novalidate :aria-busy="saving" @submit.prevent="submit">
-      <p v-if="saveError" role="alert" class="error">{{ saveError }}</p>
+      <p v-if="saveError" role="alert" class="error">{{ t(saveError) }}</p>
       <fieldset :disabled="saving">
         <div class="field">
-          <label for="asset-asset_code">Asset code</label
+          <label for="asset-asset_code"> {{ t('Asset code') }} </label
           ><input
             id="asset-asset_code"
             name="asset_code"
@@ -215,21 +216,21 @@ function removeDocument(index: number) {
             :aria-invalid="!!errors.asset_code"
             :aria-describedby="errors.asset_code ? 'asset-asset_code-error' : undefined"
           /><span v-if="errors.asset_code" id="asset-asset_code-error" class="error">{{
-            errors.asset_code
+            t(errors.asset_code)
           }}</span>
         </div>
         <div class="field">
-          <label for="asset-name">Name</label
+          <label for="asset-name"> {{ t('Name') }} </label
           ><input
             id="asset-name"
             name="name"
             v-model="form.name"
             :aria-invalid="!!errors.name"
             :aria-describedby="errors.name ? 'asset-name-error' : undefined"
-          /><span v-if="errors.name" id="asset-name-error" class="error">{{ errors.name }}</span>
+          /><span v-if="errors.name" id="asset-name-error" class="error">{{ t(errors.name) }}</span>
         </div>
         <div class="field">
-          <label for="asset-serial_number">Serial number</label
+          <label for="asset-serial_number"> {{ t('Serial number') }} </label
           ><input
             id="asset-serial_number"
             name="serial_number"
@@ -237,11 +238,11 @@ function removeDocument(index: number) {
             :aria-invalid="!!errors.serial_number"
             :aria-describedby="errors.serial_number ? 'asset-serial_number-error' : undefined"
           /><span v-if="errors.serial_number" id="asset-serial_number-error" class="error">{{
-            errors.serial_number
+            t(errors.serial_number)
           }}</span>
         </div>
         <div class="field">
-          <label for="asset-purchase_date">Purchase date</label
+          <label for="asset-purchase_date"> {{ t('Purchase date') }} </label
           ><input
             id="asset-purchase_date"
             name="purchase_date"
@@ -251,11 +252,11 @@ function removeDocument(index: number) {
             :aria-invalid="!!errors.purchase_date"
             :aria-describedby="errors.purchase_date ? 'asset-purchase_date-error' : undefined"
           /><span v-if="errors.purchase_date" id="asset-purchase_date-error" class="error">{{
-            errors.purchase_date
+            t(errors.purchase_date)
           }}</span>
         </div>
         <div class="field">
-          <label for="asset-purchase_amount">Purchase amount</label
+          <label for="asset-purchase_amount"> {{ t('Purchase amount') }} </label
           ><input
             id="asset-purchase_amount"
             name="purchase_amount"
@@ -266,11 +267,11 @@ function removeDocument(index: number) {
             :aria-invalid="!!errors.purchase_amount"
             :aria-describedby="errors.purchase_amount ? 'asset-purchase_amount-error' : undefined"
           /><span v-if="errors.purchase_amount" id="asset-purchase_amount-error" class="error">{{
-            errors.purchase_amount
+            t(errors.purchase_amount)
           }}</span>
         </div>
         <div class="field">
-          <label for="asset-location">Location</label
+          <label for="asset-location"> {{ t('Location') }} </label
           ><input id="asset-location" name="location" v-model="form.location" />
         </div>
         <div class="field">
@@ -281,22 +282,22 @@ function removeDocument(index: number) {
               type="checkbox"
               v-model="form.depreciation_enabled"
             />
-            Enable depreciation</label
-          >
+            {{ t('Enable depreciation') }}
+          </label>
         </div>
         <template v-if="form.depreciation_enabled">
           <div class="field">
-            <label for="asset-depreciation-start">Depreciation start date</label
+            <label for="asset-depreciation-start"> {{ t('Depreciation start date') }} </label
             ><input
               id="asset-depreciation-start"
               name="depreciation_start_date"
               :disabled="editing && !can('fixed_assets.update_depreciation_settings')"
               type="date"
               v-model="form.depreciation_start_date"
-            /><span class="error">{{ errors.depreciation_start_date }}</span>
+            /><span class="error">{{ t(errors.depreciation_start_date) }}</span>
           </div>
           <div class="field">
-            <label for="asset-life">Useful life (months)</label
+            <label for="asset-life"> {{ t('Useful life (months)') }} </label
             ><input
               id="asset-life"
               name="useful_life_months"
@@ -305,10 +306,10 @@ function removeDocument(index: number) {
               min="1"
               step="1"
               v-model="form.useful_life_months"
-            /><span class="error">{{ errors.useful_life_months }}</span>
+            /><span class="error">{{ t(errors.useful_life_months) }}</span>
           </div>
           <div class="field">
-            <label for="asset-residual">Residual value</label
+            <label for="asset-residual"> {{ t('Residual value') }} </label
             ><input
               id="asset-residual"
               name="residual_value"
@@ -317,11 +318,11 @@ function removeDocument(index: number) {
               min="0"
               step="0.01"
               v-model="form.residual_value"
-            /><span class="error">{{ errors.residual_value }}</span>
+            /><span class="error">{{ t(errors.residual_value) }}</span>
           </div>
         </template>
         <div class="field">
-          <label for="asset-remark">Remark</label
+          <label for="asset-remark"> {{ t('Remark') }} </label
           ><input
             id="asset-remark"
             name="remark"
@@ -329,11 +330,11 @@ function removeDocument(index: number) {
             :aria-invalid="!!errors.remark"
             :aria-describedby="errors.remark ? 'asset-remark-error' : undefined"
           /><span v-if="errors.remark" id="asset-remark-error" class="error">{{
-            errors.remark
+            t(errors.remark)
           }}</span>
         </div>
         <div class="field">
-          <label for="asset-asset_category_id">Asset category</label
+          <label for="asset-asset_category_id"> {{ t('Asset category') }} </label
           ><select
             id="asset-asset_category_id"
             name="asset_category_id"
@@ -344,17 +345,17 @@ function removeDocument(index: number) {
               errors.asset_category_id ? 'asset-asset_category_id-error' : undefined
             "
           >
-            <option value="" disabled>Choose asset category</option>
+            <option value="" disabled>{{ t('Choose asset category') }}</option>
             <option v-for="option in categories" :key="option.id" :value="option.id">
               {{ option.name }}
             </option></select
           ><span v-if="errors.asset_category_id" id="asset-asset_category_id-error" class="error">{{
-            errors.asset_category_id
+            t(errors.asset_category_id)
           }}</span
-          ><span v-if="!categories.length">No asset category options available.</span>
+          ><span v-if="!categories.length"> {{ t('No asset category options available.') }} </span>
         </div>
         <div class="field">
-          <label for="asset-cashbook_id">Cashbook</label
+          <label for="asset-cashbook_id"> {{ t('Cashbook') }} </label
           ><select
             id="asset-cashbook_id"
             name="cashbook_id"
@@ -363,20 +364,23 @@ function removeDocument(index: number) {
             :aria-invalid="!!errors.cashbook_id"
             :aria-describedby="errors.cashbook_id ? 'asset-cashbook_id-error' : undefined"
           >
-            <option value="" disabled>Choose cashbook</option>
+            <option value="" disabled>{{ t('Choose cashbook') }}</option>
             <option v-for="option in cashbooks" :key="option.id" :value="option.id">
               {{ option.name }}
             </option></select
           ><span v-if="errors.cashbook_id" id="asset-cashbook_id-error" class="error">{{
-            errors.cashbook_id
+            t(errors.cashbook_id)
           }}</span
-          ><span v-if="!cashbooks.length">No cashbook options available.</span>
+          ><span v-if="!cashbooks.length"> {{ t('No cashbook options available.') }} </span>
         </div>
         <section class="documents">
-          <h2>Documents</h2>
+          <h2>{{ t('Documents') }}</h2>
           <p>
-            Add the name and stored path of each document. Full HTTP(S) links can be opened for
-            preview.
+            {{
+              t(
+                'Add the name and stored path of each document. Full HTTP(S) links can be opened for preview.',
+              )
+            }}
           </p>
           <div v-for="(document, index) in form.documents" :key="document.key" class="document-row">
             <a
@@ -384,15 +388,15 @@ function removeDocument(index: number) {
               :href="documentUrl(document.path)"
               target="_blank"
               rel="noopener noreferrer"
-              :aria-label="`Preview ${document.name || 'document'}`"
+              :aria-label="t('Preview {0}', [document.name || 'document'])"
               class="document-icon"
               ><AppIcon name="document" :size="32"
             /></a>
-            <span v-else class="document-icon" title="Preview needs the document's full URL"
+            <span v-else class="document-icon" :title="t('Preview needs the document\'s full URL')"
               ><AppIcon name="document" :size="32"
             /></span>
             <div class="field">
-              <label :for="`document-name-${document.key}`">Document name</label
+              <label :for="`document-name-${document.key}`"> {{ t('Document name') }} </label
               ><input
                 :id="`document-name-${document.key}`"
                 v-model="document.name"
@@ -407,11 +411,11 @@ function removeDocument(index: number) {
                 v-if="errors[`documents[${index}].name`]"
                 :id="`document-name-error-${document.key}`"
                 class="error"
-                >{{ errors[`documents[${index}].name`] }}</span
+                >{{ t(errors[`documents[${index}].name`]) }}</span
               >
             </div>
             <div class="field">
-              <label :for="`document-path-${document.key}`">Upload document</label
+              <label :for="`document-path-${document.key}`"> {{ t('Upload document') }} </label
               ><input
                 :id="`document-path-${document.key}`"
                 type="file"
@@ -427,35 +431,37 @@ function removeDocument(index: number) {
                 v-if="errors[`documents[${index}].path`]"
                 :id="`document-path-error-${document.key}`"
                 class="error"
-                >{{ errors[`documents[${index}].path`] }}</span
+                >{{ t(errors[`documents[${index}].path`]) }}</span
               >
             </div>
             <button
               type="button"
-              :aria-label="`Remove document ${index + 1}`"
+              :aria-label="t('Remove document {0}', [index + 1])"
               @click="removeDocument(index)"
             >
               <AppIcon name="remove" />
             </button>
           </div>
-          <button type="button" @click="addDocument"><AppIcon name="add" /> Add document</button>
+          <button type="button" @click="addDocument">
+            <AppIcon name="add" /> {{ t('Add document') }}
+          </button>
         </section>
       </fieldset>
       <footer>
         <button type="button" :disabled="saving" @click="router.push('/fixed-assets')">
-          Cancel</button
+          {{ t('Cancel') }}</button
         ><button
           type="submit"
           class="primary"
           :disabled="saving || !categories.length || !cashbooks.length"
         >
-          {{ saving ? 'Saving...' : editing ? 'Save changes' : 'Create asset' }}
+          {{ saving ? t('Saving...') : editing ? t('Save changes') : t('Create asset') }}
         </button>
       </footer>
     </form>
-    <RouterLink v-if="loadError || optionsError" to="/fixed-assets"
-      >Back to fixed assets</RouterLink
-    >
+    <RouterLink v-if="loadError || optionsError" to="/fixed-assets">
+      {{ t('Back to fixed assets') }}
+    </RouterLink>
   </section>
 </template>
 <style scoped>

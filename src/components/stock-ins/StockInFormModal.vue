@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, useId } from 'vue'
 import { ValidationError } from 'yup'
 import AppIcon from '@/components/common/AppIcon.vue'
@@ -190,32 +191,32 @@ async function submit() {
     <form novalidate :aria-busy="loading || saving" @submit.prevent="submit">
       <header>
         <component :is="page ? 'h1' : 'h2'" :id="`${prefix}-title`">
-          {{ statusOnly ? 'Update stock in status' : 'Add stock in' }}
+          {{ statusOnly ? t('Update stock in status') : t('Add stock in') }}
         </component>
         <button
           type="button"
-          :aria-label="page ? 'Back to list' : 'Close dialog'"
+          :aria-label="page ? t('Back to list') : t('Close dialog')"
           :disabled="saving"
           @click="close"
         >
           <AppIcon name="close" />
         </button>
       </header>
-      <p v-if="loading" role="status">Loading stock in options...</p>
+      <p v-if="loading" role="status">{{ t('Loading stock in options...') }}</p>
       <div v-else-if="loadError" role="alert" class="error">
-        <p>{{ loadError }}</p>
-        <button type="button" @click="load">Try again</button>
+        <p>{{ t(loadError) }}</p>
+        <button type="button" @click="load">{{ t('Try again') }}</button>
       </div>
       <template v-else
-        ><p v-if="saveError" role="alert" class="error">{{ saveError }}</p>
+        ><p v-if="saveError" role="alert" class="error">{{ t(saveError) }}</p>
         <fieldset :disabled="saving">
           <template v-if="statusOnly"
             ><p>
-              Stock in #{{ stockIn?.id }} &middot; Current status:
-              {{ stockIn?.status ?? 'Unknown' }}
+              {{ t('Stock in #') }} {{ stockIn?.id }} {{ t('· Current status:') }}
+              {{ stockIn?.status ?? t('Unknown') }}
             </p>
             <div class="field">
-              <label :for="`${prefix}-status`">Status</label
+              <label :for="`${prefix}-status`"> {{ t('Status') }} </label
               ><select
                 :id="`${prefix}-status`"
                 name="status"
@@ -224,17 +225,17 @@ async function submit() {
                 :aria-describedby="errors.status ? `${prefix}-status-error` : undefined"
                 required
               >
-                <option value="" disabled>Choose status</option>
-                <option value="posted">Posted</option>
-                <option value="cancelled">Cancelled</option></select
+                <option value="" disabled>{{ t('Choose status') }}</option>
+                <option value="posted">{{ t('Posted') }}</option>
+                <option value="cancelled">{{ t('Cancelled') }}</option></select
               ><span v-if="errors.status" :id="`${prefix}-status-error`" class="error">{{
-                errors.status
+                t(errors.status)
               }}</span>
             </div></template
           >
           <template v-else
             ><div class="field">
-              <label :for="`${prefix}-warehouse_id`">Warehouse</label
+              <label :for="`${prefix}-warehouse_id`"> {{ t('Warehouse') }} </label
               ><select
                 :id="`${prefix}-warehouse_id`"
                 name="warehouse_id"
@@ -243,17 +244,17 @@ async function submit() {
                 :aria-describedby="errors.warehouse_id ? `${prefix}-warehouse_id-error` : undefined"
                 required
               >
-                <option value="" disabled>Choose a warehouse</option>
+                <option value="" disabled>{{ t('Choose a warehouse') }}</option>
                 <option v-for="warehouse in warehouses" :key="warehouse.id" :value="warehouse.id">
                   {{ warehouse.name }} ({{ warehouse.code }})
                 </option></select
-              ><small v-if="!warehouses.length"
-                >No warehouses found. Create a warehouse first.</small
+              ><small v-if="!warehouses.length">
+                {{ t('No warehouses found. Create a warehouse first.') }} </small
               ><span
                 v-if="errors.warehouse_id"
                 :id="`${prefix}-warehouse_id-error`"
                 class="error"
-                >{{ errors.warehouse_id }}</span
+                >{{ t(errors.warehouse_id) }}</span
               >
             </div>
             <div
@@ -262,7 +263,7 @@ async function submit() {
               class="field"
             >
               <label :for="`${prefix}-${field}`">{{
-                field === 'supplier_id' ? 'Supplier' : 'Cashbook'
+                field === 'supplier_id' ? t('Supplier') : t('Cashbook')
               }}</label>
               <select
                 :id="`${prefix}-${field}`"
@@ -272,7 +273,7 @@ async function submit() {
                 :aria-invalid="!!errors[field]"
               >
                 <option value="">
-                  Select {{ field === 'supplier_id' ? 'supplier' : 'cashbook' }}
+                  {{ t('Select') }} {{ field === 'supplier_id' ? t('Supplier') : t('Cashbook') }}
                 </option>
                 <option
                   v-for="option in field === 'supplier_id' ? suppliers : cashbooks"
@@ -281,7 +282,7 @@ async function submit() {
                 >
                   {{ option.name }}
                 </option></select
-              ><span v-if="errors[field]" class="error">{{ errors[field] }}</span>
+              ><span v-if="errors[field]" class="error">{{ t(errors[field]) }}</span>
             </div>
             <div
               v-for="field in ['total_amount', 'paid_amount'] as const"
@@ -289,7 +290,7 @@ async function submit() {
               class="field"
             >
               <label :for="`${prefix}-${field}`">{{
-                field === 'total_amount' ? 'Total amount' : 'Paid amount'
+                field === 'total_amount' ? t('Total amount') : t('Paid amount')
               }}</label>
               <input
                 :id="`${prefix}-${field}`"
@@ -301,10 +302,11 @@ async function submit() {
                 required
                 :aria-invalid="!!errors[field]"
               />
-              <span v-if="errors[field]" class="error">{{ errors[field] }}</span>
+              <span v-if="errors[field]" class="error">{{ t(errors[field]) }}</span>
             </div>
             <div class="field">
-              <label :for="`${prefix}-transaction_date`">Transaction date and time</label
+              <label :for="`${prefix}-transaction_date`">
+                {{ t('Transaction date and time') }} </label
               ><input
                 :id="`${prefix}-transaction_date`"
                 name="transaction_date"
@@ -316,24 +318,24 @@ async function submit() {
                 type="datetime-local"
                 step="1"
                 required
-              /><small>Use the warehouse’s local date and time.</small
+              /><small> {{ t('Use the warehouse’s local date and time.') }} </small
               ><span
                 v-if="errors.transaction_date"
                 :id="`${prefix}-transaction_date-error`"
                 class="error"
-                >{{ errors.transaction_date }}</span
+                >{{ t(errors.transaction_date) }}</span
               >
             </div>
-            <section class="lines" aria-label="Stock in items">
-              <h3>Items</h3>
-              <small v-if="!items.length">No items found. Create an item first.</small
-              ><small>Units are based on the selected item.</small>
-              <p v-if="errors.items" role="alert" class="error">{{ errors.items }}</p>
+            <section class="lines" :aria-label="t('Stock in items')">
+              <h3>{{ t('Items') }}</h3>
+              <small v-if="!items.length"> {{ t('No items found. Create an item first.') }} </small
+              ><small> {{ t('Units are based on the selected item.') }} </small>
+              <p v-if="errors.items" role="alert" class="error">{{ t(errors.items) }}</p>
               <div v-for="(row, index) in form.items" :key="row.key" class="item-row">
-                <h4>Item {{ index + 1 }}</h4>
+                <h4>{{ t('Item') }} {{ index + 1 }}</h4>
                 <div class="line-fields">
                   <div class="field">
-                    <label :for="`${prefix}-item-${row.key}-item_id`">Item</label
+                    <label :for="`${prefix}-item-${row.key}-item_id`"> {{ t('Item') }} </label
                     ><select
                       :id="`${prefix}-item-${row.key}-item_id`"
                       :name="`items[${index}].item_id`"
@@ -347,7 +349,7 @@ async function submit() {
                       "
                       required
                     >
-                      <option value="" disabled>Choose item</option>
+                      <option value="" disabled>{{ t('Choose item') }}</option>
                       <option v-for="option in items" :key="option.id" :value="option.id">
                         {{ option.name }} ({{ option.code }})
                       </option></select
@@ -355,11 +357,11 @@ async function submit() {
                       v-if="errors[`items[${index}].item_id`]"
                       :id="`${prefix}-item-${row.key}-item_id-error`"
                       class="error"
-                      >{{ errors[`items[${index}].item_id`] }}</span
+                      >{{ t(errors[`items[${index}].item_id`]) }}</span
                     >
                   </div>
                   <div class="field">
-                    <label :for="`${prefix}-item-${row.key}-unit_id`">Unit</label
+                    <label :for="`${prefix}-item-${row.key}-unit_id`"> {{ t('Unit') }} </label
                     ><select
                       :id="`${prefix}-item-${row.key}-unit_id`"
                       :name="`items[${index}].unit_id`"
@@ -373,7 +375,7 @@ async function submit() {
                       "
                       required
                     >
-                      <option value="" disabled>Choose unit</option>
+                      <option value="" disabled>{{ t('Choose unit') }}</option>
                       <option
                         v-for="option in itemUnits(row.item_id)"
                         :key="option.id"
@@ -385,11 +387,11 @@ async function submit() {
                       v-if="errors[`items[${index}].unit_id`]"
                       :id="`${prefix}-item-${row.key}-unit_id-error`"
                       class="error"
-                      >{{ errors[`items[${index}].unit_id`] }}</span
+                      >{{ t(errors[`items[${index}].unit_id`]) }}</span
                     >
                   </div>
                   <div class="field">
-                    <label :for="`${prefix}-item-${row.key}-quantity`">Quantity</label
+                    <label :for="`${prefix}-item-${row.key}-quantity`"> {{ t('Quantity') }} </label
                     ><input
                       :id="`${prefix}-item-${row.key}-quantity`"
                       :name="`items[${index}].quantity`"
@@ -408,11 +410,12 @@ async function submit() {
                       v-if="errors[`items[${index}].quantity`]"
                       :id="`${prefix}-item-${row.key}-quantity-error`"
                       class="error"
-                      >{{ errors[`items[${index}].quantity`] }}</span
+                      >{{ t(errors[`items[${index}].quantity`]) }}</span
                     >
                   </div>
                   <div class="field">
-                    <label :for="`${prefix}-item-${row.key}-unit_cost`">Unit cost</label
+                    <label :for="`${prefix}-item-${row.key}-unit_cost`">
+                      {{ t('Unit cost') }} </label
                     ><input
                       :id="`${prefix}-item-${row.key}-unit_cost`"
                       :name="`items[${index}].unit_cost`"
@@ -431,29 +434,29 @@ async function submit() {
                       v-if="errors[`items[${index}].unit_cost`]"
                       :id="`${prefix}-item-${row.key}-unit_cost-error`"
                       class="error"
-                      >{{ errors[`items[${index}].unit_cost`] }}</span
+                      >{{ t(errors[`items[${index}].unit_cost`]) }}</span
                     >
                   </div>
                 </div>
                 <button
                   type="button"
-                  :aria-label="`Remove item ${index + 1}`"
+                  :aria-label="t('Remove item {0}', [index + 1])"
                   @click="removeItem(index)"
                 >
-                  <AppIcon name="remove" :size="16" /> Remove item
+                  <AppIcon name="remove" :size="16" /> {{ t('Remove item') }}
                 </button>
               </div>
               <button type="button" @click="addItem">
-                <AppIcon name="add" :size="16" /> Add item
+                <AppIcon name="add" :size="16" /> {{ t('Add item') }}
               </button>
             </section></template
           >
         </fieldset></template
       >
       <footer>
-        <button type="button" :disabled="saving" @click="close">Cancel</button
+        <button type="button" :disabled="saving" @click="close">{{ t('Cancel') }}</button
         ><button type="submit" class="primary" :disabled="saving || loading || !!loadError">
-          {{ saving ? 'Saving...' : statusOnly ? 'Update status' : 'Create stock in' }}
+          {{ saving ? t('Saving...') : statusOnly ? t('Update status') : t('Create stock in') }}
         </button>
       </footer>
     </form>

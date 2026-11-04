@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import { usePermissions } from '@/composables/usePermissions'
 const { can } = usePermissions()
 
@@ -71,9 +72,9 @@ function pageSaved() {
 
 <template>
   <section v-show="route.path.replace(/\/+$/, '') === '/inventory-transfers'">
-    <h1>Transfers</h1>
-    <p>Transfer inventory between warehouses.</p>
-    <p v-if="notice" role="status" class="notice">{{ notice }}</p>
+    <h1>{{ t('Transfers') }}</h1>
+    <p>{{ t('Transfer inventory between warehouses.') }}</p>
+    <p v-if="notice" role="status" class="notice">{{ t(notice) }}</p>
     <DataTable
       :rows="rows"
       :columns="
@@ -88,8 +89,8 @@ function pageSaved() {
       :search="search"
       :loading="loading"
       :error="error"
-      caption="Transfers"
-      search-placeholder="Search transfer…"
+      :caption="t('Transfers')"
+      :search-placeholder="t('Search transfer…')"
       @update:page="setPage"
       @update:per-page="setPerPage"
       @update:search="setSearch"
@@ -102,12 +103,12 @@ function pageSaved() {
           class="primary"
           @click="openForm()"
         >
-          <AppIcon name="add" :size="16" />Add transfer
+          <AppIcon name="add" :size="16" /> {{ t('Add transfer') }}
         </button></template
       >
       <template #cell-status="{ row }">
         <span class="status" :class="{ active: row.status === 'posted' }">{{
-          row.status ?? '—'
+          t(row.status ?? '—')
         }}</span>
       </template>
       <template #cell-actions="{ row }">
@@ -115,8 +116,8 @@ function pageSaved() {
           <button
             v-if="can('inventory_transfers.update_status')"
             type="button"
-            :aria-label="`Update status for transfer #${row.id}`"
-            title="Update status"
+            :aria-label="t('Update status for transfer #{0}', [row.id])"
+            :title="t('Update status')"
             class="icon-button"
             @click="openForm(row)"
           >

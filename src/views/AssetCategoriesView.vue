@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import { usePermissions } from '@/composables/usePermissions'
 const { can } = usePermissions()
 
@@ -99,9 +100,9 @@ function saved() {
 
 <template>
   <section>
-    <h1>Asset categories</h1>
-    <p>Manage asset category names, codes, parent categories, and status.</p>
-    <p v-if="notice" role="status" class="notice">{{ notice }}</p>
+    <h1>{{ t('Asset categories') }}</h1>
+    <p>{{ t('Manage asset category names, codes, parent categories, and status.') }}</p>
+    <p v-if="notice" role="status" class="notice">{{ t(notice) }}</p>
     <DataTable
       :rows="rows"
       :columns="
@@ -118,16 +119,16 @@ function saved() {
       :search="search"
       :loading="loading"
       :error="error"
-      caption="Asset categories"
-      search-placeholder="Search categories..."
+      :caption="t('Asset categories')"
+      :search-placeholder="t('Search categories...')"
       @update:page="setPage"
       @update:per-page="setPerPage"
       @update:search="setSearch"
       @refresh="refresh"
     >
       <template #filters>
-        <label for="asset-parent-filter"
-          >Parent category
+        <label for="asset-parent-filter">
+          {{ t('Parent category') }}
           <select
             id="asset-parent-filter"
             name="parent_filter"
@@ -135,16 +136,16 @@ function saved() {
             :disabled="optionsLoading || !!optionsError"
             @change="filterParent"
           >
-            <option value="">All parents</option>
+            <option value="">{{ t('All parents') }}</option>
             <option v-for="category in parentCategories" :key="category.id" :value="category.id">
               {{ category.name }} ({{ category.code }})
             </option>
           </select>
         </label>
-        <p v-if="optionsLoading" role="status">Loading parent categories...</p>
+        <p v-if="optionsLoading" role="status">{{ t('Loading parent categories...') }}</p>
         <div v-if="optionsError" role="alert">
-          {{ optionsError }}
-          <button type="button" @click="loadOptions">Retry parent categories</button>
+          {{ t(optionsError) }}
+          <button type="button" @click="loadOptions">{{ t('Retry parent categories') }}</button>
         </div>
       </template>
       <template #toolbar
@@ -154,12 +155,12 @@ function saved() {
           class="primary"
           @click="openForm()"
         >
-          <AppIcon name="add" :size="16" />Add asset category
+          <AppIcon name="add" :size="16" /> {{ t('Add asset category') }}
         </button></template
       >
       <template #cell-status="{ row }">
         <span class="status" :class="{ active: row.is_active === true }">{{
-          row.is_active === undefined ? '-' : row.is_active ? 'Active' : 'Inactive'
+          row.is_active === undefined ? '-' : row.is_active ? t('Active') : t('Inactive')
         }}</span>
       </template>
       <template #cell-actions="{ row }">
@@ -167,17 +168,17 @@ function saved() {
           <button
             v-if="can('asset_categories.update')"
             type="button"
-            :aria-label="`Edit ${row.name}`"
+            :aria-label="t('Edit {0}', [row.name])"
             @click="openForm(row)"
-            :title="`Edit ${row.name}`"
+            :title="t('Edit {0}', [row.name])"
           >
-            <AppIcon name="pencil" :size="18" /><span class="action-label">Edit</span>
+            <AppIcon name="pencil" :size="18" /><span class="action-label"> {{ t('Edit') }} </span>
           </button>
           <button
             v-if="can('asset_categories.toggle_active')"
             type="button"
-            :aria-label="`Update status for ${row.name}`"
-            title="Update status"
+            :aria-label="t('Update status for {0}', [row.name])"
+            :title="t('Update status')"
             class="icon-button"
             @click="openForm(row, true)"
           >

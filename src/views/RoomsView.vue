@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import { usePermissions } from '@/composables/usePermissions'
 const { can } = usePermissions()
 
@@ -88,9 +89,9 @@ function pageSaved() {
 
 <template>
   <section v-show="route.path.replace(/\/+$/, '') === '/rooms'">
-    <h1>Rooms</h1>
-    <p>Manage room categories, pricing, beds, and status.</p>
-    <p v-if="notice" role="status" class="notice">{{ notice }}</p>
+    <h1>{{ t('Rooms') }}</h1>
+    <p>{{ t('Manage room categories, pricing, beds, and status.') }}</p>
+    <p v-if="notice" role="status" class="notice">{{ t(notice) }}</p>
     <DataTable
       :rows="rows"
       :columns="
@@ -105,33 +106,33 @@ function pageSaved() {
       :search="search"
       :loading="loading"
       :error="error"
-      caption="Rooms"
-      search-placeholder="Search rooms..."
+      :caption="t('Rooms')"
+      :search-placeholder="t('Search rooms...')"
       @update:page="setPage"
       @update:per-page="setPerPage"
       @update:search="setSearch"
       @refresh="refresh"
     >
       <template #filters>
-        <label class="room-filter"
-          >Status
+        <label class="room-filter">
+          {{ t('Status') }}
           <select :value="filters.status ?? ''" @change="changeStatus">
-            <option value="">All statuses</option>
+            <option value="">{{ t('All statuses') }}</option>
             <option v-for="status in roomStatuses" :key="status" :value="status">
-              {{ statusLabel(status) }}
+              {{ t(statusLabel(status)) }}
             </option>
           </select>
         </label>
       </template>
       <template #toolbar
-        ><button type="button" @click="reset">Reset</button
+        ><button type="button" @click="reset">{{ t('Reset') }}</button
         ><button v-if="can('rooms.create')" type="button" class="primary" @click="openForm()">
-          <AppIcon name="add" :size="16" />Add room
+          <AppIcon name="add" :size="16" /> {{ t('Add room') }}
         </button></template
       >
       <template #cell-status="{ row }"
         ><span class="status-badge" :style="statusStyle(row.status || '')">{{
-          row.status ? statusLabel(row.status) : '-'
+          t(row.status ? statusLabel(row.status) : '-')
         }}</span></template
       >
       <template #cell-actions="{ row }">
@@ -139,17 +140,17 @@ function pageSaved() {
           <button
             v-if="can('rooms.update')"
             type="button"
-            :aria-label="`Edit ${row.name}`"
+            :aria-label="t('Edit {0}', [row.name])"
             @click="openForm(row.id)"
-            :title="`Edit ${row.name}`"
+            :title="t('Edit {0}', [row.name])"
           >
-            <AppIcon name="pencil" :size="18" /><span class="action-label">Edit</span>
+            <AppIcon name="pencil" :size="18" /><span class="action-label"> {{ t('Edit') }} </span>
           </button>
           <button
             v-if="can('rooms.update_status')"
             type="button"
-            :aria-label="`Update status for ${row.name}`"
-            title="Update status"
+            :aria-label="t('Update status for {0}', [row.name])"
+            :title="t('Update status')"
             class="icon-button"
             @click="openForm(row.id, true)"
           >

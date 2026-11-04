@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import { computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import DataTable from '@/components/common/DataTable.vue'
@@ -37,9 +38,12 @@ watch(assetId, (id) => setFilters({ asset_id: id }))
 </script>
 <template>
   <section>
-    <RouterLink to="/fixed-assets">Back to fixed assets</RouterLink>
-    <h1>Depreciation History</h1>
-    <p>Fixed asset #{{ route.params.id }} · Depreciation by period and remaining book value.</p>
+    <RouterLink to="/fixed-assets"> {{ t('Back to fixed assets') }} </RouterLink>
+    <h1>{{ t('Depreciation History') }}</h1>
+    <p>
+      {{ t('Fixed asset #') }} {{ route.params.id }}
+      {{ t('· Depreciation by period and remaining book value.') }}
+    </p>
     <DataTable
       :rows="rows"
       :columns="columns"
@@ -50,7 +54,7 @@ watch(assetId, (id) => setFilters({ asset_id: id }))
       :loading="loading"
       :error="error"
       :searchable="false"
-      caption="Fixed asset depreciation history"
+      :caption="t('Fixed asset depreciation history')"
       @update:page="setPage"
       @update:per-page="setPerPage"
       @refresh="refresh"

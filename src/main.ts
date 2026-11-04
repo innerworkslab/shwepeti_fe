@@ -1,3 +1,4 @@
+import '@/i18n/validation'
 import { installAuthorization } from '@/services/api/authorization'
 import { apiClient } from '@/services/api/client'
 import { posApiClient } from '@/services/api/pos-client'

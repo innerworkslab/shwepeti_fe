@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import { usePermissions } from '@/composables/usePermissions'
 const { can } = usePermissions()
 
@@ -78,11 +79,11 @@ watch(supplierId, (id) => setFilters({ supplier_id: id }))
 </script>
 <template>
   <section>
-    <RouterLink to="/supplier-ap-balances">Back to Supplier AP</RouterLink>
-    <h1>Supplier #{{ route.params.id }} AP Payment History</h1>
-    <p>Payment history for this supplier.</p>
-    <p v-if="statusError" role="alert">{{ statusError }}</p>
-    <p v-if="notice" role="status">{{ notice }}</p>
+    <RouterLink to="/supplier-ap-balances"> {{ t('Back to Supplier AP') }} </RouterLink>
+    <h1>{{ t('Supplier #') }} {{ route.params.id }} {{ t('AP Payment History') }}</h1>
+    <p>{{ t('Payment history for this supplier.') }}</p>
+    <p v-if="statusError" role="alert">{{ t(statusError) }}</p>
+    <p v-if="notice" role="status">{{ t(notice) }}</p>
     <DataTable
       :rows="rows"
       :columns="
@@ -97,7 +98,7 @@ watch(supplierId, (id) => setFilters({ supplier_id: id }))
       :loading="loading"
       :error="error"
       :searchable="false"
-      caption="Supplier AP payment history"
+      :caption="t('Supplier AP payment history')"
       @update:page="setPage"
       @update:per-page="setPerPage"
       @refresh="refresh"
@@ -108,12 +109,12 @@ watch(supplierId, (id) => setFilters({ supplier_id: id }))
           class="post-payment"
           type="button"
           :disabled="postingId !== null"
-          :aria-label="`Post payment #${row.id}`"
-          title="Post payment"
+          :aria-label="t('Post payment #{0}', [row.id])"
+          :title="t('Post payment')"
           @click="postPayment(row)"
         >
           <AppIcon name="availability" :size="18" /><span>{{
-            postingId === row.id ? 'Posting…' : 'Post payment'
+            postingId === row.id ? t('Posting…') : t('Post payment')
           }}</span>
         </button>
         <span v-else>—</span>

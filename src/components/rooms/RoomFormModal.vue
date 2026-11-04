@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import { roomStatuses, statusLabel } from '@/constants/hotel-status'
 import AppIcon from '@/components/common/AppIcon.vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, useId } from 'vue'
@@ -173,29 +174,29 @@ async function submit() {
     <form novalidate :aria-busy="loading || saving" @submit.prevent="submit">
       <header>
         <component :is="page ? 'h1' : 'h2'" :id="`${prefix}-title`">
-          {{ statusOnly ? 'Update room status' : editing ? 'Edit room' : 'Add room' }}
+          {{ statusOnly ? t('Update room status') : editing ? t('Edit room') : t('Add room') }}
         </component>
         <button
           type="button"
-          :aria-label="page ? 'Back to list' : 'Close dialog'"
+          :aria-label="page ? t('Back to list') : t('Close dialog')"
           :disabled="saving"
           @click="close"
         >
           <AppIcon name="close" />
         </button>
       </header>
-      <p v-if="loading" role="status">Loading room information...</p>
+      <p v-if="loading" role="status">{{ t('Loading room information...') }}</p>
       <div v-else-if="loadError" role="alert" class="error">
-        <p>{{ loadError }}</p>
-        <button type="button" @click="load">Try again</button>
+        <p>{{ t(loadError) }}</p>
+        <button type="button" @click="load">{{ t('Try again') }}</button>
       </div>
       <template v-else>
-        <p v-if="saveError" role="alert" class="error">{{ saveError }}</p>
+        <p v-if="saveError" role="alert" class="error">{{ t(saveError) }}</p>
         <fieldset :disabled="saving">
           <template v-if="statusOnly">
-            <p>{{ form.name }} &middot; ID {{ roomId }}</p>
+            <p>{{ form.name }} {{ t('· ID') }} {{ roomId }}</p>
             <div class="field">
-              <label :for="`${prefix}-status`">Status</label>
+              <label :for="`${prefix}-status`"> {{ t('Status') }} </label>
               <select
                 :id="`${prefix}-status`"
                 v-model="form.status"
@@ -204,19 +205,19 @@ async function submit() {
                 :aria-invalid="!!errors.status"
                 :aria-describedby="errors.status ? `${prefix}-status-error` : undefined"
               >
-                <option value="" disabled>Select status</option>
+                <option value="" disabled>{{ t('Select status') }}</option>
                 <option v-for="status in roomStatuses" :key="status" :value="status">
-                  {{ statusLabel(status) }}
+                  {{ t(statusLabel(status)) }}
                 </option>
               </select>
               <span v-if="errors.status" :id="`${prefix}-status-error`" class="error">{{
-                errors.status
+                t(errors.status)
               }}</span>
             </div>
           </template>
           <template v-else>
             <div class="field">
-              <label :for="`${prefix}-name`">Room name</label>
+              <label :for="`${prefix}-name`"> {{ t('Room name') }} </label>
               <input
                 :id="`${prefix}-name`"
                 v-model="form.name"
@@ -226,11 +227,11 @@ async function submit() {
                 :aria-describedby="errors.name ? `${prefix}-name-error` : undefined"
               />
               <span v-if="errors.name" :id="`${prefix}-name-error`" class="error">{{
-                errors.name
+                t(errors.name)
               }}</span>
             </div>
             <div class="field">
-              <label :for="`${prefix}-category`">Room category</label>
+              <label :for="`${prefix}-category`"> {{ t('Room category') }} </label>
               <select
                 :id="`${prefix}-category`"
                 v-model="form.room_category_id"
@@ -239,23 +240,23 @@ async function submit() {
                 :aria-invalid="!!errors.room_category_id"
                 :aria-describedby="errors.room_category_id ? `${prefix}-category-error` : undefined"
               >
-                <option value="" disabled>Choose a category</option>
+                <option value="" disabled>{{ t('Choose a category') }}</option>
                 <option v-if="missingCategory" :value="form.room_category_id">
-                  Category #{{ form.room_category_id }} (not in list)
+                  {{ t('Category #') }} {{ form.room_category_id }} {{ t('(not in list)') }}
                 </option>
                 <option v-for="category in categories" :key="category.id" :value="category.id">
                   {{ category.name }}
                 </option>
               </select>
-              <small v-if="!categories.length"
-                >No room categories found. Create a category first.</small
-              >
+              <small v-if="!categories.length">
+                {{ t('No room categories found. Create a category first.') }}
+              </small>
               <span v-if="errors.room_category_id" :id="`${prefix}-category-error`" class="error">{{
-                errors.room_category_id
+                t(errors.room_category_id)
               }}</span>
             </div>
             <div class="field">
-              <label :for="`${prefix}-price`">Price</label>
+              <label :for="`${prefix}-price`"> {{ t('Price') }} </label>
               <input
                 :id="`${prefix}-price`"
                 v-model="form.price"
@@ -268,17 +269,19 @@ async function submit() {
                 :aria-describedby="errors.price ? `${prefix}-price-error` : undefined"
               />
               <span v-if="errors.price" :id="`${prefix}-price-error`" class="error">{{
-                errors.price
+                t(errors.price)
               }}</span>
             </div>
             <div class="beds-heading">
-              <h3>Beds</h3>
-              <button type="button" @click="addBed">Add bed</button>
+              <h3>{{ t('Beds') }}</h3>
+              <button type="button" @click="addBed">{{ t('Add bed') }}</button>
             </div>
-            <p v-if="errors.room_beds" role="alert" class="error">{{ errors.room_beds }}</p>
+            <p v-if="errors.room_beds" role="alert" class="error">{{ t(errors.room_beds) }}</p>
             <div v-for="(bed, index) in form.room_beds" :key="bed.key" class="bed-row">
               <div class="field">
-                <label :for="`${prefix}-bed-${bed.key}`">Bed type {{ index + 1 }}</label>
+                <label :for="`${prefix}-bed-${bed.key}`">
+                  {{ t('Bed type') }} {{ index + 1 }}</label
+                >
                 <input
                   :id="`${prefix}-bed-${bed.key}`"
                   v-model="bed.bed_type"
@@ -296,11 +299,11 @@ async function submit() {
                   v-if="errors[`room_beds[${index}].bed_type`]"
                   :id="`${prefix}-bed-${bed.key}-error`"
                   class="error"
-                  >{{ errors[`room_beds[${index}].bed_type`] }}</span
+                  >{{ t(errors[`room_beds[${index}].bed_type`]) }}</span
                 >
               </div>
               <div class="field">
-                <label :for="`${prefix}-qty-${bed.key}`">Quantity</label>
+                <label :for="`${prefix}-qty-${bed.key}`"> {{ t('Quantity') }} </label>
                 <input
                   :id="`${prefix}-qty-${bed.key}`"
                   v-model="bed.qty"
@@ -318,35 +321,35 @@ async function submit() {
                   v-if="errors[`room_beds[${index}].qty`]"
                   :id="`${prefix}-qty-${bed.key}-error`"
                   class="error"
-                  >{{ errors[`room_beds[${index}].qty`] }}</span
+                  >{{ t(errors[`room_beds[${index}].qty`]) }}</span
                 >
               </div>
               <button
                 type="button"
-                :aria-label="`Remove bed ${index + 1}`"
+                :aria-label="t('Remove bed {0}', [index + 1])"
                 @click="removeBed(index)"
               >
-                Remove
+                {{ t('Remove') }}
               </button>
             </div>
             <datalist :id="`${prefix}-bed-types`">
-              <option value="king_bed">King bed</option>
-              <option value="single_bed">Single bed</option>
+              <option value="king_bed">{{ t('King bed') }}</option>
+              <option value="single_bed">{{ t('Single bed') }}</option>
             </datalist>
           </template>
         </fieldset>
       </template>
       <footer>
-        <button type="button" :disabled="saving" @click="close">Cancel</button
+        <button type="button" :disabled="saving" @click="close">{{ t('Cancel') }}</button
         ><button type="submit" class="primary" :disabled="saving || loading || !!loadError">
           {{
             saving
-              ? 'Saving...'
+              ? t('Saving...')
               : statusOnly
-                ? 'Update status'
+                ? t('Update status')
                 : editing
-                  ? 'Save changes'
-                  : 'Create room'
+                  ? t('Save changes')
+                  : t('Create room')
           }}
         </button>
       </footer>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import AppIcon from '@/components/common/AppIcon.vue'
 import { nextTick, onBeforeUnmount, onMounted, reactive, ref, useId } from 'vue'
 import { ValidationError } from 'yup'
@@ -102,21 +103,21 @@ async function submit() {
   >
     <form novalidate :aria-busy="loading || saving" @submit.prevent="submit">
       <header>
-        <h2 :id="`${prefix}-title`">Update asset status</h2>
-        <button type="button" aria-label="Close dialog" :disabled="saving" @click="close">
+        <h2 :id="`${prefix}-title`">{{ t('Update asset status') }}</h2>
+        <button type="button" :aria-label="t('Close dialog')" :disabled="saving" @click="close">
           <AppIcon name="close" />
         </button>
       </header>
-      <p v-if="loading" role="status">Loading asset...</p>
+      <p v-if="loading" role="status">{{ t('Loading asset...') }}</p>
       <div v-else-if="loadError" role="alert" class="error">
-        <p>{{ loadError }}</p>
-        <button type="button" @click="load">Try again</button>
+        <p>{{ t(loadError) }}</p>
+        <button type="button" @click="load">{{ t('Try again') }}</button>
       </div>
       <template v-else>
-        <p>{{ form.name }} (ID {{ assetId }})</p>
-        <p v-if="saveError" role="alert" class="error">{{ saveError }}</p>
+        <p>{{ form.name }} {{ t('(ID') }} {{ assetId }})</p>
+        <p v-if="saveError" role="alert" class="error">{{ t(saveError) }}</p>
         <fieldset :disabled="saving">
-          <label :for="`${prefix}-status`">Status</label
+          <label :for="`${prefix}-status`"> {{ t('Status') }} </label
           ><select
             :id="`${prefix}-status`"
             name="status"
@@ -124,18 +125,18 @@ async function submit() {
             :aria-invalid="!!errors.status"
             :aria-describedby="errors.status ? `${prefix}-error` : undefined"
           >
-            <option value="" disabled>Choose status</option>
-            <option value="posted">Posted</option>
-            <option value="cancelled">Cancelled</option></select
+            <option value="" disabled>{{ t('Choose status') }}</option>
+            <option value="posted">{{ t('Posted') }}</option>
+            <option value="cancelled">{{ t('Cancelled') }}</option></select
           ><span v-if="errors.status" :id="`${prefix}-error`" class="error">{{
-            errors.status
+            t(errors.status)
           }}</span>
         </fieldset>
       </template>
       <footer>
-        <button type="button" :disabled="saving" @click="close">Cancel</button>
+        <button type="button" :disabled="saving" @click="close">{{ t('Cancel') }}</button>
         <button type="submit" class="primary" :disabled="saving || loading || !!loadError">
-          {{ saving ? 'Saving...' : 'Update status' }}
+          {{ saving ? t('Saving...') : t('Update status') }}
         </button>
       </footer>
     </form>

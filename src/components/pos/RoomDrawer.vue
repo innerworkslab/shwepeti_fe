@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import { usePermissions } from '@/composables/usePermissions'
 const { can } = usePermissions()
 
@@ -114,47 +115,47 @@ function backdrop(event: MouseEvent) {
   >
     <header>
       <div>
-        <span class="eyebrow">ROOM DETAILS</span>
-        <h2 id="room-drawer-title">{{ room?.name || `Room #${roomId}` }}</h2>
+        <span class="eyebrow"> {{ t('ROOM DETAILS') }} </span>
+        <h2 id="room-drawer-title">{{ room?.name || t('Room #{0}', [roomId]) }}</h2>
       </div>
-      <button type="button" :disabled="busy" aria-label="Close room details" @click="close()">
+      <button type="button" :disabled="busy" :aria-label="t('Close room details')" @click="close()">
         <AppIcon name="close" />
       </button>
     </header>
     <div class="drawer-body" :aria-busy="loading">
-      <p v-if="loading" role="status" class="muted">Loading room details...</p>
+      <p v-if="loading" role="status" class="muted">{{ t('Loading room details...') }}</p>
       <div v-else-if="error" role="alert" class="error">
-        <p>{{ error }}</p>
-        <button type="button" @click="load()">Try again</button>
+        <p>{{ t(error) }}</p>
+        <button type="button" @click="load()">{{ t('Try again') }}</button>
       </div>
       <template v-else-if="room">
-        <p v-if="refreshing" role="status">Updating room invoice…</p>
+        <p v-if="refreshing" role="status">{{ t('Updating room invoice…') }}</p>
         <p v-if="refreshError" role="alert">
-          {{ refreshError }}
-          <button type="button" @click="orderSaved">Retry invoice refresh</button>
+          {{ t(refreshError) }}
+          <button type="button" @click="orderSaved">{{ t('Retry invoice refresh') }}</button>
         </p>
         <div class="room-summary">
           <span class="room-symbol"><AppIcon name="rooms" :size="30" /></span>
           <div>
             <span class="muted">{{
-              room.room_category?.name || `Category #${room.room_category_id}`
+              room.room_category?.name || t('Category #{0}', [room.room_category_id])
             }}</span>
             <h3>{{ room.name }}</h3>
           </div>
           <span class="status" :class="room.status" :style="statusStyle(room.status)">{{
-            statusLabel(room.status)
+            t(statusLabel(room.status))
           }}</span>
         </div>
         <details>
-          <summary>Room information</summary>
+          <summary>{{ t('Room information') }}</summary>
           <dl>
-            <dt>Room ID</dt>
+            <dt>{{ t('Room ID') }}</dt>
             <dd>{{ room.id }}</dd>
-            <dt>Category</dt>
+            <dt>{{ t('Category') }}</dt>
             <dd>{{ room.room_category?.name || '-' }}</dd>
-            <dt>Price</dt>
+            <dt>{{ t('Price') }}</dt>
             <dd class="price">{{ room.price }}</dd>
-            <dt>Last updated</dt>
+            <dt>{{ t('Last updated') }}</dt>
             <dd>{{ room.updated_at }}</dd>
           </dl>
           <p v-if="room.room_category?.description" class="description">
@@ -162,23 +163,25 @@ function backdrop(event: MouseEvent) {
           </p>
         </details>
         <section v-if="bookingId && can('bookings.view')">
-          <h3>Current booking</h3>
+          <h3>{{ t('Current booking') }}</h3>
           <div v-if="bookingId" class="booking-info">
-            <strong>{{ room.current_booking?.guest_name || `Booking #${bookingId}` }}</strong>
+            <strong>{{
+              room.current_booking?.guest_name || t('Booking #{0}', [bookingId])
+            }}</strong>
             <p>{{ room.current_booking?.booking_no }}</p>
             <p>
-              Check-in date/time:
+              {{ t('Check-in date/time:') }}
               {{
                 room.current_booking?.checked_in_at ??
                 room.current_booking?.expected_check_in_at ??
                 '—'
               }}
             </p>
-            <span>{{ statusLabel(String(room.current_booking?.status || '')) }}</span>
+            <span>{{ t(statusLabel(String(room.current_booking?.status || ''))) }}</span>
           </div>
           <div v-else class="booking-state">
             <AppIcon name="calendar" :size="22" />
-            <p>No active booking</p>
+            <p>{{ t('No active booking') }}</p>
           </div>
         </section>
         <BookingActions
@@ -191,7 +194,7 @@ function backdrop(event: MouseEvent) {
           @busy="busy = $event"
           @saved="bookingSaved"
         />
-        <nav v-if="bookingId" class="service-tabs" aria-label="Room services">
+        <nav v-if="bookingId" class="service-tabs" :aria-label="t('Room services')">
           <button
             v-show="
               can(
@@ -207,7 +210,13 @@ function backdrop(event: MouseEvent) {
             :aria-pressed="serviceTab === tab"
             @click="selectService(tab)"
           >
-            {{ tab === 'food' ? 'Food & beverages' : tab === 'amenity' ? 'Amenities' : 'Laundry' }}
+            {{
+              tab === 'food'
+                ? t('Food & beverages')
+                : tab === 'amenity'
+                  ? t('Amenities')
+                  : t('Laundry')
+            }}
           </button>
         </nav>
         <template v-for="type in ['amenity', 'laundry'] as const" :key="type">
@@ -238,7 +247,7 @@ function backdrop(event: MouseEvent) {
       </template>
     </div>
     <footer>
-      <button :disabled="busy" type="button" @click="close()">Back to calendar</button>
+      <button :disabled="busy" type="button" @click="close()">{{ t('Back to calendar') }}</button>
     </footer>
   </dialog>
 </template>

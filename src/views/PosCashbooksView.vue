@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import DataTable from '@/components/common/DataTable.vue'
 import { useDataTable } from '@/composables/useDataTable'
 import { posCashbookService, type PosCashbook } from '@/services/pos-cashbook.service'
@@ -44,8 +45,8 @@ const {
 </script>
 <template>
   <main class="cashbooks-page">
-    <h1>Cashbooks</h1>
-    <p>View cash and bank account balances.</p>
+    <h1>{{ t('Cashbooks') }}</h1>
+    <p>{{ t('View cash and bank account balances.') }}</p>
     <DataTable
       :rows="rows"
       :columns="columns"
@@ -56,8 +57,8 @@ const {
       :search="search"
       :loading="loading"
       :error="error"
-      caption="POS cashbooks"
-      search-placeholder="Search cashbooks"
+      :caption="t('POS cashbooks')"
+      :search-placeholder="t('Search cashbooks')"
       @update:page="setPage"
       @update:per-page="setPerPage"
       @update:search="setSearch"

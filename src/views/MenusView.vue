@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import { usePermissions } from '@/composables/usePermissions'
 const { can } = usePermissions()
 
@@ -92,9 +93,9 @@ function pageSaved() {
 
 <template>
   <section v-show="route.path.replace(/\/+$/, '') === '/menus'">
-    <h1>Menus</h1>
-    <p>Manage menus, recipes, pricing, and availability.</p>
-    <p v-if="notice" role="status" class="notice">{{ notice }}</p>
+    <h1>{{ t('Menus') }}</h1>
+    <p>{{ t('Manage menus, recipes, pricing, and availability.') }}</p>
+    <p v-if="notice" role="status" class="notice">{{ t(notice) }}</p>
     <DataTable
       :rows="rows"
       :columns="
@@ -111,16 +112,17 @@ function pageSaved() {
       :search="search"
       :loading="loading"
       :error="error"
-      caption="Menus"
-      search-placeholder="Search menus…"
+      :caption="t('Menus')"
+      :search-placeholder="t('Search menus…')"
       @update:page="setPage"
       @update:per-page="setPerPage"
       @update:search="setSearch"
       @refresh="refresh"
     >
       <template #filters
-        ><label class="active-filter"
-          >Status<select
+        ><label class="active-filter">
+          {{ t('Status') }}
+          <select
             name="is_active_filter"
             :value="filters.is_active ?? ''"
             @change="
@@ -132,20 +134,20 @@ function pageSaved() {
               })
             "
           >
-            <option value="">All</option>
-            <option value="1">Active</option>
-            <option value="0">Inactive</option>
+            <option value="">{{ t('All') }}</option>
+            <option value="1">{{ t('Active') }}</option>
+            <option value="0">{{ t('Inactive') }}</option>
           </select></label
         ></template
       >
       <template #toolbar
         ><button v-if="can('menus.create')" type="button" class="primary" @click="openForm()">
-          <AppIcon name="add" :size="16" />Add menu</button
+          <AppIcon name="add" :size="16" /> {{ t('Add menu') }}</button
         ><ExcelImportButton v-if="can('menus.import')" resource="menus" @imported="imported"
       /></template>
       <template #cell-status="{ row }">
         <span class="status" :class="{ active: row.is_active === true }">{{
-          row.is_active === undefined ? '—' : row.is_active ? 'Active' : 'Inactive'
+          row.is_active === undefined ? '—' : row.is_active ? t('Active') : t('Inactive')
         }}</span>
       </template>
       <template #cell-actions="{ row }">
@@ -153,17 +155,17 @@ function pageSaved() {
           <button
             v-if="can('menus.update')"
             type="button"
-            :aria-label="`Edit ${row.name}`"
+            :aria-label="t('Edit {0}', [row.name])"
             @click="openForm(row)"
-            :title="`Edit ${row.name}`"
+            :title="t('Edit {0}', [row.name])"
           >
-            <AppIcon name="pencil" :size="18" /><span class="action-label">Edit</span>
+            <AppIcon name="pencil" :size="18" /><span class="action-label"> {{ t('Edit') }} </span>
           </button>
           <button
             v-if="can('menus.toggle_active')"
             type="button"
-            :aria-label="`Update status for ${row.name}`"
-            title="Update status"
+            :aria-label="t('Update status for {0}', [row.name])"
+            :title="t('Update status')"
             class="icon-button"
             @click="openForm(row, 'status')"
           >
@@ -172,8 +174,8 @@ function pageSaved() {
           <button
             v-if="can('menus.toggle_available')"
             type="button"
-            :aria-label="`Update availability for ${row.name}`"
-            title="Update availability"
+            :aria-label="t('Update availability for {0}', [row.name])"
+            :title="t('Update availability')"
             class="icon-button"
             @click="openForm(row, 'availability')"
           >

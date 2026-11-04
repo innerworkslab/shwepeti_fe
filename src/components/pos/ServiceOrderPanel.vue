@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import { usePermissions } from '@/composables/usePermissions'
 const { can } = usePermissions()
 
@@ -212,21 +213,22 @@ onBeforeUnmount(() => {
 </script>
 <template>
   <div class="food-panel">
-    <p v-if="notice" role="status" class="notice">{{ notice }}</p>
-    <p v-if="error" role="alert" class="error">{{ error }}</p>
+    <p v-if="notice" role="status" class="notice">{{ t(notice) }}</p>
+    <p v-if="error" role="alert" class="error">{{ t(error) }}</p>
     <form v-if="canOrder && can('service_orders.create')" novalidate @submit.prevent="submit">
       <fieldset :disabled="busy">
-        <legend>{{ serviceType === 'amenity' ? 'Amenities' : 'Laundry' }}</legend>
+        <legend>{{ serviceType === 'amenity' ? t('Amenities') : t('Laundry') }}</legend>
         <label class="search"
           ><AppIcon name="search" :size="16" /><input
             v-model="query"
             type="search"
-            placeholder="Search services"
-            aria-label="Search services"
+            :placeholder="t('Search services')"
+            :aria-label="t('Search services')"
         /></label>
-        <p v-if="loadingMenus" role="status">Loading services…</p>
+        <p v-if="loadingMenus" role="status">{{ t('Loading services…') }}</p>
         <p v-else-if="menuError" class="error" role="alert">
-          {{ menuError }} <button type="button" @click="loadMenus">Retry services</button>
+          {{ t(menuError) }}
+          <button type="button" @click="loadMenus">{{ t('Retry services') }}</button>
         </p>
         <div v-else class="menu-grid">
           <article v-for="menu in visibleMenus" :key="menu.id" class="menu-card">
@@ -239,52 +241,56 @@ onBeforeUnmount(() => {
               >
             </div>
             <p v-if="menu.description" class="menu-description">{{ menu.description }}</p>
-            <button type="button" :aria-label="`Add ${menu.name}`" @click="add(menu)">
-              <AppIcon name="add" :size="14" /> Add
+            <button type="button" :aria-label="t('Add {0}', [menu.name])" @click="add(menu)">
+              <AppIcon name="add" :size="14" /> {{ t('Add') }}
             </button>
           </article>
-          <p v-if="!visibleMenus.length">No matching active service items.</p>
+          <p v-if="!visibleMenus.length">{{ t('No matching active service items.') }}</p>
         </div>
         <section class="summary">
           <h3>
-            <AppIcon name="ledger" :size="16" /> Order summary
-            <small>{{ cart.length }} items</small>
+            <AppIcon name="ledger" :size="16" /> {{ t('Order summary') }}
+            <small>{{ cart.length }} {{ t('items') }} </small>
           </h3>
-          <p v-if="!cart.length">Select services above.</p>
+          <p v-if="!cart.length">{{ t('Select services above.') }}</p>
           <article v-for="item in cart" :key="item.item_id" class="cart-line">
             <strong>{{ itemName(item.item_id) }}</strong
             ><button
               type="button"
-              :aria-label="`Remove ${itemName(item.item_id)}`"
+              :aria-label="t('Remove {0}', [itemName(item.item_id)])"
               @click="cart = cart.filter((row) => row.item_id !== item.item_id)"
             >
               <AppIcon name="remove" :size="15" />
             </button>
-            <label
-              >Quantity<input
+            <label>
+              {{ t('Quantity') }}
+              <input
                 v-model.number="item.qty"
                 :name="`qty-${item.item_id}`"
                 type="number"
                 min="1"
                 step="1"
             /></label>
-            <label
-              >Item note<input
+            <label>
+              {{ t('Item note') }}
+              <input
                 v-model="item.note"
                 :name="`note-${item.item_id}`"
-                placeholder="Special instructions"
+                :placeholder="t('Special instructions')"
             /></label>
           </article>
           <div class="amounts">
-            <label
-              >Discount amount<input
+            <label>
+              {{ t('Discount amount') }}
+              <input
                 v-model.number="form.discount_amount"
                 name="discount_amount"
                 type="number"
                 min="0"
                 step="any" /></label
-            ><label
-              >Tax (%)<input
+            ><label>
+              {{ t('Tax (%)') }}
+              <input
                 v-model.number="form.tax_percentage"
                 name="tax_percentage"
                 type="number"
@@ -292,8 +298,9 @@ onBeforeUnmount(() => {
                 max="100"
                 step="any"
             /></label>
-            <label
-              >Service charge (%)<input
+            <label>
+              {{ t('Service charge (%)') }}
+              <input
                 v-model.number="form.service_charge_percentage"
                 name="service_charge_percentage"
                 type="number"
@@ -301,15 +308,17 @@ onBeforeUnmount(() => {
                 max="100"
                 step="any"
             /></label>
-            <label
-              >Service charge amount<input
+            <label>
+              {{ t('Service charge amount') }}
+              <input
                 :value="charges.service_charge_amount"
                 name="service_charge_amount"
                 type="number"
                 readonly
             /></label>
-            <label
-              >Tax amount<input
+            <label>
+              {{ t('Tax amount') }}
+              <input
                 :value="charges.tax_amount"
                 readonly
                 name="tax_amount"
@@ -318,96 +327,95 @@ onBeforeUnmount(() => {
                 step="any"
             /></label>
           </div>
-          <label
-            >Order note<textarea
-              v-model="form.note"
-              name="note"
-              rows="2"
-              placeholder="Send to room"
-            />
+          <label>
+            {{ t('Order note') }}
+            <textarea v-model="form.note" name="note" rows="2" :placeholder="t('Send to room')" />
           </label>
           <dl>
-            <dt>Subtotal</dt>
+            <dt>{{ t('Subtotal') }}</dt>
             <dd>{{ money(subtotal) }}</dd>
-            <dt>Estimated order total</dt>
+            <dt>{{ t('Estimated order total') }}</dt>
             <dd>{{ money(estimate) }}</dd>
           </dl>
-          <small>Final amounts are confirmed by the server.</small>
+          <small> {{ t('Final amounts are confirmed by the server.') }} </small>
         </section>
         <button
           class="primary"
           type="submit"
           :disabled="busy || !cart.length || loadingMenus || !!menuError"
         >
-          {{ busy ? 'Saving…' : 'Create service order' }}
+          {{ busy ? t('Saving…') : t('Create service order') }}
         </button>
       </fieldset>
     </form>
     <section v-if="can('service_orders.view')" class="existing">
       <h3>
-        Ordered services
+        {{ t('Ordered services') }}
         <button
           type="button"
-          aria-label="Refresh service orders"
+          :aria-label="t('Refresh service orders')"
           :disabled="busy || loadingOrders"
           @click="loadOrders"
         >
           <AppIcon name="refresh" :size="15" />
         </button>
       </h3>
-      <p v-if="loadingOrders" role="status">Loading orders…</p>
+      <p v-if="loadingOrders" role="status">{{ t('Loading orders…') }}</p>
       <p v-else-if="orderError" class="error" role="alert">
-        {{ orderError }} <button type="button" @click="loadOrders">Retry orders</button>
+        {{ t(orderError) }}
+        <button type="button" @click="loadOrders">{{ t('Retry orders') }}</button>
       </p>
       <template v-else
-        ><p v-if="!orders.length">No service orders for this booking.</p>
+        ><p v-if="!orders.length">{{ t('No service orders for this booking.') }}</p>
         <article v-for="order in orders" :key="order.id" class="order-card">
           <h4>
-            {{ order.order_no || `Order #${order.id}` }}
-            <span>{{ statusLabel(order.status) }}</span>
+            {{ order.order_no || t('Order #{0}', [order.id]) }}
+            <span>{{ t(statusLabel(order.status)) }}</span>
           </h4>
           <ul v-if="order.items?.length">
             <li v-for="(item, index) in order.items" :key="item.id || index">
               {{ item.qty }} × {{ item.item?.name || itemName(item.item_id)
-              }}<small v-if="item.unit_price != null">Unit price: {{ item.unit_price }}</small
-              ><strong v-if="item.total != null" class="line-total"
-                >Line total: {{ item.total }}</strong
+              }}<small v-if="item.unit_price != null">
+                {{ t('Unit price:') }} {{ item.unit_price }}</small
+              ><strong v-if="item.total != null" class="line-total">
+                {{ t('Line total:') }} {{ item.total }}</strong
               ><small v-if="item.note">{{ item.note }}</small>
             </li>
           </ul>
           <p v-if="order.note">{{ order.note }}</p>
           <dl class="order-totals">
             <template v-if="order.subtotal != null"
-              ><dt>Subtotal</dt>
+              ><dt>{{ t('Subtotal') }}</dt>
               <dd>{{ order.subtotal }}</dd></template
             >
             <template v-if="order.discount_amount != null"
-              ><dt>Discount</dt>
+              ><dt>{{ t('Discount') }}</dt>
               <dd>{{ order.discount_amount }}</dd></template
             >
             <template v-if="order.tax_amount != null"
-              ><dt>Tax</dt>
+              ><dt>{{ t('Tax') }}</dt>
               <dd>{{ order.tax_amount }}</dd></template
             >
             <template v-if="order.service_charge_amount != null"
-              ><dt>Service charge</dt>
+              ><dt>{{ t('Service charge') }}</dt>
               <dd>{{ order.service_charge_amount }}</dd></template
             >
             <template v-if="order.total_amount != null"
-              ><dt>Total</dt>
+              ><dt>{{ t('Total') }}</dt>
               <dd>{{ order.total_amount }}</dd></template
             >
           </dl>
           <div v-if="can('service_orders.update_status')" class="status-controls">
-            <label
-              >Status<select
+            <label>
+              {{ t('Status') }}
+              <select
                 v-if="can('service_orders.update_status')"
                 v-model="statuses[order.id]"
-                :aria-label="`Status for order ${order.id}`"
+                :aria-label="t('Status for order {0}', [order.id])"
                 :disabled="busy"
               >
                 <option v-for="status in serviceOrderStatuses" :key="status" :value="status">
-                  {{ statusLabel(status) }}
+                  {{ t(statusLabel(status)) }}
                 </option>
               </select></label
             ><button
@@ -416,7 +424,7 @@ onBeforeUnmount(() => {
               v-show="can('service_orders.update_status')"
               @click="update(order)"
             >
-              Update
+              {{ t('Update') }}
             </button>
           </div>
         </article>

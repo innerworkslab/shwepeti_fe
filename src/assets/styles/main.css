@@ -10,3 +10,25 @@
 body {
   margin: 0;
 }
+
+/* Myanmar Unicode needs a font with full shaping support and more vertical room. */
+html[lang='my'] body {
+  font-family: 'Myanmar Text', 'Noto Sans Myanmar', 'Padauk', system-ui, sans-serif;
+  line-height: 1.75;
+}
+html[lang='my'] button,
+html[lang='my'] input,
+html[lang='my'] select,
+html[lang='my'] textarea {
+  font-family: inherit;
+}
+html[lang='my'] .nav-link,
+html[lang='my'] .cashbook-link {
+  letter-spacing: normal;
+  line-height: 1.7;
+}
+html[lang='my'] th,
+html[lang='my'] label,
+html[lang='my'] button {
+  letter-spacing: normal;
+}

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import AppIcon from '@/components/common/AppIcon.vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, useId } from 'vue'
 import { ValidationError } from 'yup'
@@ -150,25 +151,25 @@ async function submit() {
     <form novalidate :aria-busy="loading || saving" @submit.prevent="submit">
       <header>
         <h2 :id="`${prefix}-title`">
-          {{ statusOnly ? 'Update unit status' : editing ? 'Edit unit' : 'Add unit' }}
+          {{ statusOnly ? t('Update unit status') : editing ? t('Edit unit') : t('Add unit') }}
         </h2>
-        <button type="button" aria-label="Close dialog" :disabled="saving" @click="close">
+        <button type="button" :aria-label="t('Close dialog')" :disabled="saving" @click="close">
           <AppIcon name="close" />
         </button>
       </header>
-      <p v-if="loading" role="status">Loading unit...</p>
+      <p v-if="loading" role="status">{{ t('Loading unit...') }}</p>
       <div v-else-if="loadError" role="alert" class="error">
-        <p>{{ loadError }}</p>
-        <button type="button" @click="load">Try again</button>
+        <p>{{ t(loadError) }}</p>
+        <button type="button" @click="load">{{ t('Try again') }}</button>
       </div>
       <template v-else>
-        <p v-if="saveError" role="alert" class="error">{{ saveError }}</p>
-        <p v-if="errors.id" role="alert" class="error">{{ errors.id }}</p>
+        <p v-if="saveError" role="alert" class="error">{{ t(saveError) }}</p>
+        <p v-if="errors.id" role="alert" class="error">{{ t(errors.id) }}</p>
         <fieldset :disabled="saving">
           <template v-if="statusOnly">
-            <p>{{ form.name }} &middot; ID {{ unitId }}</p>
+            <p>{{ form.name }} {{ t('· ID') }} {{ unitId }}</p>
             <div class="field">
-              <label :for="`${prefix}-status`">Status</label>
+              <label :for="`${prefix}-status`"> {{ t('Status') }} </label>
               <select
                 :id="`${prefix}-status`"
                 v-model="form.is_active"
@@ -177,18 +178,18 @@ async function submit() {
                 :aria-invalid="!!errors.is_active"
                 :aria-describedby="errors.is_active ? `${prefix}-status-error` : undefined"
               >
-                <option :value="undefined" disabled>Choose status</option>
-                <option :value="true">Active</option>
-                <option :value="false">Inactive</option>
+                <option :value="undefined" disabled>{{ t('Choose status') }}</option>
+                <option :value="true">{{ t('Active') }}</option>
+                <option :value="false">{{ t('Inactive') }}</option>
               </select>
               <span v-if="errors.is_active" :id="`${prefix}-status-error`" class="error">{{
-                errors.is_active
+                t(errors.is_active)
               }}</span>
             </div>
           </template>
           <template v-else>
             <div class="field">
-              <label :for="`${prefix}-name`">Name</label>
+              <label :for="`${prefix}-name`"> {{ t('Name') }} </label>
               <input
                 :id="`${prefix}-name`"
                 v-model="form.name"
@@ -198,11 +199,11 @@ async function submit() {
                 :aria-describedby="errors.name ? `${prefix}-name-error` : undefined"
               />
               <span v-if="errors.name" :id="`${prefix}-name-error`" class="error">{{
-                errors.name
+                t(errors.name)
               }}</span>
             </div>
             <div class="field">
-              <label :for="`${prefix}-symbol`">Symbol</label>
+              <label :for="`${prefix}-symbol`"> {{ t('Symbol') }} </label>
               <input
                 :id="`${prefix}-symbol`"
                 v-model="form.symbol"
@@ -212,11 +213,11 @@ async function submit() {
                 :aria-describedby="errors.symbol ? `${prefix}-symbol-error` : undefined"
               />
               <span v-if="errors.symbol" :id="`${prefix}-symbol-error`" class="error">{{
-                errors.symbol
+                t(errors.symbol)
               }}</span>
             </div>
             <div class="field">
-              <label :for="`${prefix}-group`">Unit group</label>
+              <label :for="`${prefix}-group`"> {{ t('Unit group') }} </label>
               <select
                 :id="`${prefix}-group`"
                 v-model="form.unit_group_id"
@@ -225,17 +226,19 @@ async function submit() {
                 :aria-invalid="!!errors.unit_group_id"
                 :aria-describedby="errors.unit_group_id ? `${prefix}-group-error` : undefined"
               >
-                <option value="" disabled>Choose a unit group</option>
+                <option value="" disabled>{{ t('Choose a unit group') }}</option>
                 <option v-if="missingGroup" :value="form.unit_group_id">
-                  Group #{{ form.unit_group_id }} (not in list)
+                  {{ t('Group #') }} {{ form.unit_group_id }} {{ t('(not in list)') }}
                 </option>
                 <option v-for="group in groups" :key="group.id" :value="group.id">
                   {{ group.name }}
                 </option>
               </select>
-              <small v-if="!groups.length">No unit groups found. Create a unit group first.</small>
+              <small v-if="!groups.length">
+                {{ t('No unit groups found. Create a unit group first.') }}
+              </small>
               <span v-if="errors.unit_group_id" :id="`${prefix}-group-error`" class="error">{{
-                errors.unit_group_id
+                t(errors.unit_group_id)
               }}</span>
             </div>
             <div class="field">
@@ -248,26 +251,26 @@ async function submit() {
                   :aria-invalid="!!errors.is_base"
                   :aria-describedby="errors.is_base ? `${prefix}-base-error` : undefined"
                 />
-                Base unit</label
-              >
+                {{ t('Base unit') }}
+              </label>
               <span v-if="errors.is_base" :id="`${prefix}-base-error`" class="error">{{
-                errors.is_base
+                t(errors.is_base)
               }}</span>
             </div>
           </template>
         </fieldset>
       </template>
       <footer>
-        <button type="button" :disabled="saving" @click="close">Cancel</button>
+        <button type="button" :disabled="saving" @click="close">{{ t('Cancel') }}</button>
         <button type="submit" class="primary" :disabled="saving || loading || !!loadError">
           {{
             saving
-              ? 'Saving...'
+              ? t('Saving...')
               : statusOnly
-                ? 'Update status'
+                ? t('Update status')
                 : editing
-                  ? 'Save changes'
-                  : 'Create unit'
+                  ? t('Save changes')
+                  : t('Create unit')
           }}
         </button>
       </footer>

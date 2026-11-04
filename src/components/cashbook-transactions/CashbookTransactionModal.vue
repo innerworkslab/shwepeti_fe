@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import { nextTick, onBeforeUnmount, onMounted, reactive, ref, useId } from 'vue'
 import { ValidationError } from 'yup'
 import AppIcon from '@/components/common/AppIcon.vue'
@@ -109,54 +110,54 @@ async function submit() {
     <form novalidate :aria-busy="loading || saving" @submit.prevent="submit">
       <header>
         <h2 :id="`${prefix}-title`">
-          {{ transactionId != null ? 'Transaction details' : 'Add cashbook transaction' }}
+          {{ transactionId != null ? t('Transaction details') : t('Add cashbook transaction') }}
         </h2>
-        <button type="button" aria-label="Close dialog" :disabled="saving" @click="close">
+        <button type="button" :aria-label="t('Close dialog')" :disabled="saving" @click="close">
           <AppIcon name="close" />
         </button>
       </header>
-      <p v-if="loading" role="status">Loading...</p>
+      <p v-if="loading" role="status">{{ t('Loading...') }}</p>
       <div v-else-if="loadError" class="error" role="alert">
-        <p>{{ loadError }}</p>
-        <button type="button" @click="load">Try again</button>
+        <p>{{ t(loadError) }}</p>
+        <button type="button" @click="load">{{ t('Try again') }}</button>
       </div>
       <dl v-else-if="detail">
         <dt>ID</dt>
         <dd>{{ detail.id }}</dd>
-        <dt>Cashbook</dt>
+        <dt>{{ t('Cashbook') }}</dt>
         <dd>{{ detail.cashbook?.name ?? `#${detail.cashbook_id}` }}</dd>
-        <dt>Transaction type</dt>
-        <dd>{{ detail.transaction_type }}</dd>
-        <dt>Amount</dt>
+        <dt>{{ t('Transaction type') }}</dt>
+        <dd>{{ t(detail.transaction_type) }}</dd>
+        <dt>{{ t('Amount') }}</dt>
         <dd>{{ detail.amount }}</dd>
-        <dt>Transaction date</dt>
+        <dt>{{ t('Transaction date') }}</dt>
         <dd>{{ detail.transaction_date }}</dd>
-        <dt>Reference</dt>
+        <dt>{{ t('Reference') }}</dt>
         <dd>{{ detail.reference_no ?? '-' }}</dd>
-        <dt>Balance after</dt>
+        <dt>{{ t('Balance after') }}</dt>
         <dd>{{ detail.balance_after ?? '-' }}</dd>
-        <dt>Reference type / ID</dt>
-        <dd>{{ detail.reference_type ?? '-' }} / {{ detail.reference_id ?? '-' }}</dd>
-        <dt>Cashbook code / type</dt>
-        <dd>{{ detail.cashbook?.code }} / {{ detail.cashbook?.type }}</dd>
-        <dt>Opening balance</dt>
+        <dt>{{ t('Reference type / ID') }}</dt>
+        <dd>{{ t(detail.reference_type ?? '-') }} / {{ detail.reference_id ?? '-' }}</dd>
+        <dt>{{ t('Cashbook code / type') }}</dt>
+        <dd>{{ detail.cashbook?.code }} / {{ t(detail.cashbook?.type) }}</dd>
+        <dt>{{ t('Opening balance') }}</dt>
         <dd>{{ detail.cashbook?.opening_balance ?? '-' }}</dd>
-        <dt>Current balance</dt>
+        <dt>{{ t('Current balance') }}</dt>
         <dd>{{ detail.cashbook?.current_balance ?? '-' }}</dd>
-        <dt>Created by</dt>
+        <dt>{{ t('Created by') }}</dt>
         <dd>{{ detail.creator?.name ?? '-' }} {{ detail.creator?.email }}</dd>
-        <dt>Created at</dt>
+        <dt>{{ t('Created at') }}</dt>
         <dd>{{ detail.created_at ?? '-' }}</dd>
-        <dt>Updated at</dt>
+        <dt>{{ t('Updated at') }}</dt>
         <dd>{{ detail.updated_at ?? '-' }}</dd>
-        <dt>Remark</dt>
+        <dt>{{ t('Remark') }}</dt>
         <dd>{{ detail.remark || '-' }}</dd>
       </dl>
       <template v-else>
-        <p v-if="saveError" class="error" role="alert">{{ saveError }}</p>
+        <p v-if="saveError" class="error" role="alert">{{ t(saveError) }}</p>
         <fieldset :disabled="saving">
           <div class="field">
-            <label :for="`${prefix}-cashbook_id`">Cashbook</label>
+            <label :for="`${prefix}-cashbook_id`"> {{ t('Cashbook') }} </label>
             <select
               :id="`${prefix}-cashbook_id`"
               v-model="form.cashbook_id"
@@ -165,18 +166,20 @@ async function submit() {
               :aria-invalid="!!errors.cashbook_id"
               :aria-describedby="errors.cashbook_id ? `${prefix}-cashbook_id-error` : undefined"
             >
-              <option value="" disabled>Choose cashbook</option>
+              <option value="" disabled>{{ t('Choose cashbook') }}</option>
               <option v-for="cashbook in cashbooks" :key="cashbook.id" :value="cashbook.id">
                 {{ cashbook.name }} ({{ cashbook.code }})
               </option>
             </select>
             <span v-if="errors.cashbook_id" :id="`${prefix}-cashbook_id-error`" class="error">{{
-              errors.cashbook_id
+              t(errors.cashbook_id)
             }}</span>
-            <p v-if="!cashbooks.length">No cashbooks available. Create a cashbook first.</p>
+            <p v-if="!cashbooks.length">
+              {{ t('No cashbooks available. Create a cashbook first.') }}
+            </p>
           </div>
           <div class="field">
-            <label :for="`${prefix}-transaction_type`">Transaction type</label
+            <label :for="`${prefix}-transaction_type`"> {{ t('Transaction type') }} </label
             ><input
               :id="`${prefix}-transaction_type`"
               v-model="form.transaction_type"
@@ -191,11 +194,11 @@ async function submit() {
               v-if="errors.transaction_type"
               :id="`${prefix}-transaction_type-error`"
               class="error"
-              >{{ errors.transaction_type }}</span
+              >{{ t(errors.transaction_type) }}</span
             >
           </div>
           <div class="field">
-            <label :for="`${prefix}-amount`">Amount</label
+            <label :for="`${prefix}-amount`"> {{ t('Amount') }} </label
             ><input
               :id="`${prefix}-amount`"
               v-model="form.amount"
@@ -207,11 +210,11 @@ async function submit() {
               :aria-invalid="!!errors.amount"
               :aria-describedby="errors.amount ? `${prefix}-amount-error` : undefined"
             /><span v-if="errors.amount" :id="`${prefix}-amount-error`" class="error">{{
-              errors.amount
+              t(errors.amount)
             }}</span>
           </div>
           <div class="field">
-            <label :for="`${prefix}-transaction_date`">Transaction date</label
+            <label :for="`${prefix}-transaction_date`"> {{ t('Transaction date') }} </label
             ><input
               :id="`${prefix}-transaction_date`"
               v-model="form.transaction_date"
@@ -227,11 +230,11 @@ async function submit() {
               v-if="errors.transaction_date"
               :id="`${prefix}-transaction_date-error`"
               class="error"
-              >{{ errors.transaction_date }}</span
+              >{{ t(errors.transaction_date) }}</span
             >
           </div>
           <div class="field">
-            <label :for="`${prefix}-remark`">Remark</label
+            <label :for="`${prefix}-remark`"> {{ t('Remark') }} </label
             ><textarea
               :id="`${prefix}-remark`"
               v-model="form.remark"
@@ -240,7 +243,7 @@ async function submit() {
               :aria-describedby="errors.remark ? `${prefix}-remark-error` : undefined"
             ></textarea
             ><span v-if="errors.remark" :id="`${prefix}-remark-error`" class="error">{{
-              errors.remark
+              t(errors.remark)
             }}</span>
           </div>
           <datalist :id="`${prefix}-types`"><option value="income" /></datalist>
@@ -248,14 +251,14 @@ async function submit() {
       </template>
       <footer>
         <button type="button" :disabled="saving" @click="close">
-          {{ transactionId != null ? 'Close' : 'Cancel' }}</button
+          {{ transactionId != null ? t('Close') : t('Cancel') }}</button
         ><button
           v-if="transactionId == null"
           type="submit"
           class="primary"
           :disabled="loading || saving || !!loadError || !cashbooks.length"
         >
-          {{ saving ? 'Saving...' : 'Create transaction' }}
+          {{ saving ? t('Saving...') : t('Create transaction') }}
         </button>
       </footer>
     </form>

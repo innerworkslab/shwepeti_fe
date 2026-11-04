@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
+import LanguageSwitch from '@/components/common/LanguageSwitch.vue'
 import { onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ValidationError } from 'yup'
@@ -64,18 +66,19 @@ async function submit() {
 
 <template>
   <main class="login-page">
+    <div class="login-language"><LanguageSwitch /></div>
     <section class="login-card" aria-labelledby="login-title">
       <div class="login-brand">SP<span>SHWE PETIT POS</span></div>
-      <h1 id="login-title">POS sign in</h1>
-      <p>Sign in to your hotel workspace.</p>
+      <h1 id="login-title">{{ t('POS sign in') }}</h1>
+      <p>{{ t('Sign in to your hotel workspace.') }}</p>
       <div v-if="session.user" class="signed-in" role="status">
-        <h2>Signed in to POS</h2>
-        <p>Welcome, {{ session.user.name }}.</p>
+        <h2>{{ t('Signed in to POS') }}</h2>
+        <p>{{ t('Welcome,') }} {{ session.user.name }}.</p>
       </div>
       <form v-else novalidate :aria-busy="submitting" @submit.prevent="submit">
-        <p v-if="error" role="alert" class="error">{{ error }}</p>
+        <p v-if="error" role="alert" class="error">{{ t(error) }}</p>
         <fieldset :disabled="submitting">
-          <label for="login-email">Email</label>
+          <label for="login-email"> {{ t('Email') }} </label>
           <input
             id="login-email"
             v-model="form.email"
@@ -86,8 +89,8 @@ async function submit() {
             :aria-invalid="!!errors.email"
             :aria-describedby="errors.email ? 'email-error' : undefined"
           />
-          <span v-if="errors.email" id="email-error" class="error">{{ errors.email }}</span>
-          <label for="login-password">Password</label>
+          <span v-if="errors.email" id="email-error" class="error">{{ t(errors.email) }}</span>
+          <label for="login-password"> {{ t('Password') }} </label>
           <input
             id="login-password"
             v-model="form.password"
@@ -99,11 +102,11 @@ async function submit() {
             :aria-describedby="errors.password ? 'password-error' : undefined"
           />
           <span v-if="errors.password" id="password-error" class="error">{{
-            errors.password
+            t(errors.password)
           }}</span>
         </fieldset>
         <button type="submit" :disabled="submitting">
-          {{ submitting ? 'Signing in...' : 'Sign in' }}
+          {{ submitting ? t('Signing in...') : t('Sign in') }}
         </button>
       </form>
     </section>
@@ -111,6 +114,11 @@ async function submit() {
 </template>
 
 <style scoped>
+.login-language {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+}
 .login-page {
   min-height: 100dvh;
   display: grid;

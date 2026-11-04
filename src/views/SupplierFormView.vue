@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import { supplierTypes } from '@/constants/admin-options'
 import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import { onBeforeRouteLeave, onBeforeRouteUpdate, useRoute, useRouter } from 'vue-router'
@@ -119,18 +120,18 @@ async function submit() {
 </script>
 <template>
   <section class="supplier-page">
-    <h1>{{ editing ? 'Edit supplier' : 'Add supplier' }}</h1>
-    <p>Enter supplier contact, banking, and credit details.</p>
-    <p v-if="loading" role="status">Loading supplier...</p>
+    <h1>{{ editing ? t('Edit supplier') : t('Add supplier') }}</h1>
+    <p>{{ t('Enter supplier contact, banking, and credit details.') }}</p>
+    <p v-if="loading" role="status">{{ t('Loading supplier...') }}</p>
     <div v-else-if="loadError" role="alert" class="error">
-      <p>{{ loadError }}</p>
-      <button type="button" @click="load">Try again</button>
+      <p>{{ t(loadError) }}</p>
+      <button type="button" @click="load">{{ t('Try again') }}</button>
     </div>
     <form v-else ref="formElement" novalidate :aria-busy="saving" @submit.prevent="submit">
-      <p v-if="saveError" role="alert" class="error">{{ saveError }}</p>
+      <p v-if="saveError" role="alert" class="error">{{ t(saveError) }}</p>
       <fieldset :disabled="saving">
         <div class="field">
-          <label for="supplier-supplier_code">Supplier code *</label
+          <label for="supplier-supplier_code"> {{ t('Supplier code *') }} </label
           ><input
             id="supplier-supplier_code"
             name="supplier_code"
@@ -139,11 +140,11 @@ async function submit() {
             :aria-invalid="!!errors.supplier_code"
             :aria-describedby="errors.supplier_code ? 'supplier-supplier_code-error' : undefined"
           /><span v-if="errors.supplier_code" id="supplier-supplier_code-error" class="error">{{
-            errors.supplier_code
+            t(errors.supplier_code)
           }}</span>
         </div>
         <div class="field">
-          <label for="supplier-name">Name *</label
+          <label for="supplier-name"> {{ t('Name *') }} </label
           ><input
             id="supplier-name"
             name="name"
@@ -151,10 +152,12 @@ async function submit() {
             required
             :aria-invalid="!!errors.name"
             :aria-describedby="errors.name ? 'supplier-name-error' : undefined"
-          /><span v-if="errors.name" id="supplier-name-error" class="error">{{ errors.name }}</span>
+          /><span v-if="errors.name" id="supplier-name-error" class="error">{{
+            t(errors.name)
+          }}</span>
         </div>
         <div class="field">
-          <label for="supplier-phone_number">Phone number</label
+          <label for="supplier-phone_number"> {{ t('Phone number') }} </label
           ><input
             id="supplier-phone_number"
             name="phone_number"
@@ -163,11 +166,11 @@ async function submit() {
             :aria-invalid="!!errors.phone_number"
             :aria-describedby="errors.phone_number ? 'supplier-phone_number-error' : undefined"
           /><span v-if="errors.phone_number" id="supplier-phone_number-error" class="error">{{
-            errors.phone_number
+            t(errors.phone_number)
           }}</span>
         </div>
         <div class="field">
-          <label for="supplier-email">Email</label
+          <label for="supplier-email"> {{ t('Email') }} </label
           ><input
             id="supplier-email"
             name="email"
@@ -176,11 +179,11 @@ async function submit() {
             :aria-invalid="!!errors.email"
             :aria-describedby="errors.email ? 'supplier-email-error' : undefined"
           /><span v-if="errors.email" id="supplier-email-error" class="error">{{
-            errors.email
+            t(errors.email)
           }}</span>
         </div>
         <div class="field">
-          <label for="supplier-address">Address</label
+          <label for="supplier-address"> {{ t('Address') }} </label
           ><textarea
             id="supplier-address"
             name="address"
@@ -189,11 +192,11 @@ async function submit() {
             :aria-describedby="errors.address ? 'supplier-address-error' : undefined"
           ></textarea
           ><span v-if="errors.address" id="supplier-address-error" class="error">{{
-            errors.address
+            t(errors.address)
           }}</span>
         </div>
         <div class="field">
-          <label for="supplier-bank_account_no">Bank account number</label
+          <label for="supplier-bank_account_no"> {{ t('Bank account number') }} </label
           ><input
             id="supplier-bank_account_no"
             name="bank_account_no"
@@ -204,11 +207,11 @@ async function submit() {
               errors.bank_account_no ? 'supplier-bank_account_no-error' : undefined
             "
           /><span v-if="errors.bank_account_no" id="supplier-bank_account_no-error" class="error">{{
-            errors.bank_account_no
+            t(errors.bank_account_no)
           }}</span>
         </div>
         <div class="field">
-          <label for="supplier-credit_limit_amount">Credit limit amount *</label
+          <label for="supplier-credit_limit_amount"> {{ t('Credit limit amount *') }} </label
           ><input
             id="supplier-credit_limit_amount"
             name="credit_limit_amount"
@@ -225,11 +228,11 @@ async function submit() {
             v-if="errors.credit_limit_amount"
             id="supplier-credit_limit_amount-error"
             class="error"
-            >{{ errors.credit_limit_amount }}</span
+            >{{ t(errors.credit_limit_amount) }}</span
           >
         </div>
         <div class="field">
-          <label for="supplier-supplier_type">Supplier type *</label
+          <label for="supplier-supplier_type"> {{ t('Supplier type *') }} </label
           ><select
             id="supplier-supplier_type"
             name="supplier_type"
@@ -239,15 +242,15 @@ async function submit() {
             :aria-describedby="errors.supplier_type ? 'supplier-supplier_type-error' : undefined"
           >
             <option v-for="type in supplierTypes" :key="type" :value="type">
-              {{ type }}
+              {{ t(type) }}
             </option></select
           ><span v-if="errors.supplier_type" id="supplier-supplier_type-error" class="error">{{
-            errors.supplier_type
+            t(errors.supplier_type)
           }}</span>
         </div>
 
         <div class="field">
-          <label for="supplier-status">Status *</label
+          <label for="supplier-status"> {{ t('Status *') }} </label
           ><select
             id="supplier-status"
             name="is_active"
@@ -255,21 +258,22 @@ async function submit() {
             :aria-invalid="!!errors.is_active"
             :aria-describedby="errors.is_active ? 'supplier-status-error' : undefined"
           >
-            <option :value="true">Active</option>
-            <option :value="false">Inactive</option></select
+            <option :value="true">{{ t('Active') }}</option>
+            <option :value="false">{{ t('Inactive') }}</option></select
           ><span v-if="errors.is_active" id="supplier-status-error" class="error">{{
-            errors.is_active
+            t(errors.is_active)
           }}</span>
         </div>
       </fieldset>
       <footer>
-        <button type="button" :disabled="saving" @click="router.push('/suppliers')">Cancel</button
+        <button type="button" :disabled="saving" @click="router.push('/suppliers')">
+          {{ t('Cancel') }}</button
         ><button type="submit" class="primary" :disabled="saving">
-          {{ saving ? 'Saving...' : editing ? 'Save changes' : 'Create supplier' }}
+          {{ saving ? t('Saving...') : editing ? t('Save changes') : t('Create supplier') }}
         </button>
       </footer>
     </form>
-    <RouterLink v-if="loadError" to="/suppliers">Back to suppliers</RouterLink>
+    <RouterLink v-if="loadError" to="/suppliers"> {{ t('Back to suppliers') }} </RouterLink>
   </section>
 </template>
 <style scoped>

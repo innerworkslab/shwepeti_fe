@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import { nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
 import { ValidationError } from 'yup'
@@ -88,18 +89,18 @@ async function submit() {
 </script>
 <template>
   <section class="supplier-page">
-    <h1>Add supplier AP payment</h1>
-    <p>Record a payment against a supplier account.</p>
-    <p v-if="loading" role="status">Loading suppliers and cashbooks...</p>
+    <h1>{{ t('Add supplier AP payment') }}</h1>
+    <p>{{ t('Record a payment against a supplier account.') }}</p>
+    <p v-if="loading" role="status">{{ t('Loading suppliers and cashbooks...') }}</p>
     <div v-else-if="loadError" class="error" role="alert">
-      <p>{{ loadError }}</p>
-      <button type="button" @click="load">Try again</button>
+      <p>{{ t(loadError) }}</p>
+      <button type="button" @click="load">{{ t('Try again') }}</button>
     </div>
     <form v-else ref="formElement" novalidate :aria-busy="saving" @submit.prevent="submit">
-      <p v-if="saveError" role="alert" class="error">{{ saveError }}</p>
+      <p v-if="saveError" role="alert" class="error">{{ t(saveError) }}</p>
       <fieldset :disabled="saving">
         <div class="field">
-          <label for="payment-supplier_id">Supplier</label
+          <label for="payment-supplier_id"> {{ t('Supplier') }} </label
           ><select
             id="payment-supplier_id"
             name="supplier_id"
@@ -108,17 +109,17 @@ async function submit() {
             :aria-invalid="!!errors.supplier_id"
             :aria-describedby="errors.supplier_id ? 'payment-supplier_id-error' : undefined"
           >
-            <option value="" disabled>Choose supplier</option>
+            <option value="" disabled>{{ t('Choose supplier') }}</option>
             <option v-for="option in suppliers" :key="option.id" :value="option.id">
               {{ option.name }} ({{ option.supplier_code }})
             </option></select
           ><span v-if="errors.supplier_id" id="payment-supplier_id-error" class="error">{{
-            errors.supplier_id
+            t(errors.supplier_id)
           }}</span>
-          <p v-if="!suppliers.length">No suppliers available.</p>
+          <p v-if="!suppliers.length">{{ t('No suppliers available.') }}</p>
         </div>
         <div class="field">
-          <label for="payment-cashbook_id">Cashbook</label
+          <label for="payment-cashbook_id"> {{ t('Cashbook') }} </label
           ><select
             id="payment-cashbook_id"
             name="cashbook_id"
@@ -127,17 +128,17 @@ async function submit() {
             :aria-invalid="!!errors.cashbook_id"
             :aria-describedby="errors.cashbook_id ? 'payment-cashbook_id-error' : undefined"
           >
-            <option value="" disabled>Choose cashbook</option>
+            <option value="" disabled>{{ t('Choose cashbook') }}</option>
             <option v-for="option in cashbooks" :key="option.id" :value="option.id">
               {{ option.name }} ({{ option.code }})
             </option></select
           ><span v-if="errors.cashbook_id" id="payment-cashbook_id-error" class="error">{{
-            errors.cashbook_id
+            t(errors.cashbook_id)
           }}</span>
-          <p v-if="!cashbooks.length">No cashbooks available.</p>
+          <p v-if="!cashbooks.length">{{ t('No cashbooks available.') }}</p>
         </div>
         <div class="field">
-          <label for="payment-amount">Amount</label
+          <label for="payment-amount"> {{ t('Amount') }} </label
           ><input
             id="payment-amount"
             name="amount"
@@ -149,11 +150,11 @@ async function submit() {
             :aria-invalid="!!errors.amount"
             :aria-describedby="errors.amount ? 'payment-amount-error' : undefined"
           /><span v-if="errors.amount" id="payment-amount-error" class="error">{{
-            errors.amount
+            t(errors.amount)
           }}</span>
         </div>
         <div class="field">
-          <label for="payment-payment_date">Payment date</label
+          <label for="payment-payment_date"> {{ t('Payment date') }} </label
           ><input
             id="payment-payment_date"
             name="payment_date"
@@ -164,11 +165,11 @@ async function submit() {
             :aria-invalid="!!errors.payment_date"
             :aria-describedby="errors.payment_date ? 'payment-payment_date-error' : undefined"
           /><span v-if="errors.payment_date" id="payment-payment_date-error" class="error">{{
-            errors.payment_date
+            t(errors.payment_date)
           }}</span>
         </div>
         <div class="field">
-          <label for="payment-remark">Remark</label
+          <label for="payment-remark"> {{ t('Remark') }} </label
           ><textarea
             id="payment-remark"
             name="remark"
@@ -177,23 +178,25 @@ async function submit() {
             :aria-describedby="errors.remark ? 'payment-remark-error' : undefined"
           ></textarea
           ><span v-if="errors.remark" id="payment-remark-error" class="error">{{
-            errors.remark
+            t(errors.remark)
           }}</span>
         </div>
       </fieldset>
       <footer>
         <button type="button" :disabled="saving" @click="router.push('/supplier-ap-balances')">
-          Cancel</button
+          {{ t('Cancel') }}</button
         ><button
           type="submit"
           class="primary"
           :disabled="saving || !suppliers.length || !cashbooks.length"
         >
-          {{ saving ? 'Saving...' : 'Create payment' }}
+          {{ saving ? t('Saving...') : t('Create payment') }}
         </button>
       </footer>
     </form>
-    <RouterLink v-if="loadError" to="/supplier-ap-balances">Back to Supplier AP</RouterLink>
+    <RouterLink v-if="loadError" to="/supplier-ap-balances">
+      {{ t('Back to Supplier AP') }}
+    </RouterLink>
   </section>
 </template>
 <style scoped>

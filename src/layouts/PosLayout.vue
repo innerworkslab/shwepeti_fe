@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
+import LanguageSwitch from '@/components/common/LanguageSwitch.vue'
 import { usePermissions } from '@/composables/usePermissions'
 const { can, canVisit } = usePermissions()
 
@@ -97,18 +99,23 @@ onBeforeUnmount(() => drawer.value?.close())
     <div class="pos-navigation">
       <button
         type="button"
-        aria-label="Open POS navigation"
+        :aria-label="t('Open POS navigation')"
         aria-controls="pos-navigation-drawer"
         :aria-expanded="opened"
         @click="open"
       >
-        <AppIcon name="expand" :size="20" /> Menu</button
+        <AppIcon name="expand" :size="20" /> {{ t('Menu') }}</button
       ><span>SHWE PETIT <strong>POS</strong></span>
-      <button class="logout" type="button" :disabled="loggingOut" @click="logout">
-        <AppIcon name="logout" :size="18" />{{ loggingOut ? 'Logging out…' : 'Log out' }}
-      </button>
+      <div class="pos-account">
+        <LanguageSwitch /><span class="pos-profile"
+          ><AppIcon name="user" :size="24" /><span>{{ session.user?.name }}</span></span
+        >
+        <button class="logout" type="button" :disabled="loggingOut" @click="logout">
+          <AppIcon name="logout" :size="18" />{{ loggingOut ? t('Logging out…') : t('Log out') }}
+        </button>
+      </div>
     </div>
-    <p v-if="logoutError" class="logout-error" role="alert">{{ logoutError }}</p>
+    <p v-if="logoutError" class="logout-error" role="alert">{{ t(logoutError) }}</p>
     <dialog
       id="pos-navigation-drawer"
       ref="drawer"
@@ -120,34 +127,34 @@ onBeforeUnmount(() => drawer.value?.close())
       <header>
         <div>
           <small>SHWE PETIT</small>
-          <h2 id="pos-nav-title">POS workspace</h2>
+          <h2 id="pos-nav-title">{{ t('POS workspace') }}</h2>
         </div>
-        <button type="button" aria-label="Close POS navigation" @click="close">
+        <button type="button" :aria-label="t('Close POS navigation')" @click="close">
           <AppIcon name="close" />
         </button>
       </header>
-      <nav aria-label="POS navigation">
+      <nav :aria-label="t('POS navigation')">
         <RouterLink
           v-if="canVisit('/pos')"
           to="/pos"
           :class="{ active: route.path === '/pos' }"
           @click="close"
-          ><AppIcon name="rooms" />POS Terminal</RouterLink
+          ><AppIcon name="rooms" /> {{ t('POS Terminal') }} </RouterLink
         ><RouterLink
           v-if="canVisit('/pos/bookings')"
           to="/pos/bookings"
           :class="{ active: route.path.startsWith('/pos/bookings') }"
           @click="close"
-          ><AppIcon name="calendar" />Bookings</RouterLink
-        >
+          ><AppIcon name="calendar" /> {{ t('Bookings') }}
+        </RouterLink>
         <RouterLink
           v-if="canVisit('/pos/cashbook-transfers')"
           class="cashbook-manage"
           to="/pos/cashbook-transfers"
           :class="{ active: route.path === '/pos/cashbook-transfers' }"
           @click="close"
-          ><AppIcon name="cashbooks" />Cashbook transfers</RouterLink
-        >
+          ><AppIcon name="cashbooks" /> {{ t('Cashbook transfers') }}
+        </RouterLink>
         <div class="closing-group">
           <button
             v-if="can('cashbooks.view')"
@@ -156,12 +163,12 @@ onBeforeUnmount(() => drawer.value?.close())
             :aria-expanded="closingsOpen"
             @click="toggleClosings"
           >
-            <AppIcon name="cashbooks" />Cashbook closings<AppIcon name="chevronDown" />
+            <AppIcon name="cashbooks" /> {{ t('Cashbook closings') }} <AppIcon name="chevronDown" />
           </button>
           <div v-if="closingsOpen" class="cashbook-links">
-            <p v-if="cashbooksLoading">Loading cashbooks…</p>
+            <p v-if="cashbooksLoading">{{ t('Loading cashbooks…') }}</p>
             <p v-else-if="cashbooksError" role="alert">
-              {{ cashbooksError }}<button @click="loadCashbooks">Retry</button>
+              {{ t(cashbooksError) }}<button @click="loadCashbooks">{{ t('Retry') }}</button>
             </p>
             <RouterLink
               v-if="can('cashbooks.view')"
@@ -191,20 +198,18 @@ onBeforeUnmount(() => drawer.value?.close())
             aria-controls="pos-cashbook-links"
             @click="toggleCashbooks"
           >
-            <AppIcon name="cashbooks" />Cashbooks<AppIcon
-              name="chevronDown"
-              :class="{ rotated: cashbooksOpen }"
-            />
+            <AppIcon name="cashbooks" /> {{ t('Cashbooks') }}
+            <AppIcon name="chevronDown" :class="{ rotated: cashbooksOpen }" />
           </button>
           <div v-if="cashbooksOpen" id="pos-cashbook-links" class="cashbook-links">
-            <p v-if="cashbooksLoading" role="status">Loading cashbooks…</p>
+            <p v-if="cashbooksLoading" role="status">{{ t('Loading cashbooks…') }}</p>
             <p v-else-if="cashbooksError" role="alert">
-              {{ cashbooksError }} <button @click="loadCashbooks">Retry</button>
+              {{ t(cashbooksError) }} <button @click="loadCashbooks">{{ t('Retry') }}</button>
             </p>
             <template v-else>
-              <RouterLink v-if="canVisit('/pos/cashbooks')" to="/pos/cashbooks" @click="close"
-                >All cashbooks</RouterLink
-              >
+              <RouterLink v-if="canVisit('/pos/cashbooks')" to="/pos/cashbooks" @click="close">
+                {{ t('All cashbooks') }}
+              </RouterLink>
               <RouterLink
                 v-if="can('cashbook_transactions.view')"
                 v-for="book in cashbooks"
@@ -221,7 +226,7 @@ onBeforeUnmount(() => drawer.value?.close())
                   >{{ book.name }}<small>{{ book.code }}</small></span
                 >
               </RouterLink>
-              <p v-if="!cashbooks.length">No cashbooks found.</p>
+              <p v-if="!cashbooks.length">{{ t('No cashbooks found.') }}</p>
             </template>
           </div>
         </div>
@@ -231,6 +236,31 @@ onBeforeUnmount(() => drawer.value?.close())
   </div>
 </template>
 <style scoped>
+.pos-account {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.pos-profile {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: 0;
+}
+.pos-navigation button { white-space: nowrap; flex-shrink: 0; }
+@media (max-width: 480px) {
+  .pos-navigation > span { display: none; }
+  .pos-navigation { gap: 10px; padding-inline: 12px; }
+}
+@media (max-width: 640px) {
+  .pos-profile span {
+    display: none;
+  }
+  .pos-account {
+    gap: 6px;
+  }
+}
 .cashbook-toggle {
   width: 100%;
   padding: 14px;

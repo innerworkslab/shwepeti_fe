@@ -1,4 +1,5 @@
 <script setup lang="ts" generic="Row extends object">
+import { t, enumLabel } from '@/i18n'
 import { computed } from 'vue'
 import AppIcon from './AppIcon.vue'
 import type { DataTableColumn } from '@/types/data-table'
@@ -62,6 +63,28 @@ const end = computed(() =>
   props.rows.length ? Math.min(start.value + props.rows.length - 1, props.total) : 0,
 )
 
+const enumColumns = new Set([
+  'status',
+  'type',
+  'transaction_type',
+  'reference_type',
+  'supplier_type',
+  'role',
+  'portal_access',
+  'booking_type',
+  'charge_type',
+  'stay_type',
+  'payment_status',
+  'payment_method',
+  'payment_type',
+  'is_base',
+  'base',
+  'active',
+])
+function displayCell(row: Row, column: DataTableColumn<Row>) {
+  const value = cellValue(row, column)
+  return enumColumns.has(column.key) && value != null ? enumLabel(value) : (value ?? '—')
+}
 function cellValue(row: Row, column: DataTableColumn<Row>) {
   return column.format ? column.format(row) : column.field ? row[column.field] : ''
 }
@@ -75,15 +98,15 @@ function updatePerPage(event: Event) {
 </script>
 
 <template>
-  <section class="data-table" :aria-label="caption">
+  <section class="data-table" :aria-label="t(caption)">
     <div class="data-table__toolbar">
       <label v-if="searchable" class="data-table__search">
-        <span>Search</span>
+        <span> {{ t('Search') }} </span>
         <div class="data-table__search-input">
           <AppIcon name="search" :size="18" /><input
             type="search"
             :value="search"
-            :placeholder="searchPlaceholder"
+            :placeholder="t(searchPlaceholder)"
             @input="updateSearch"
           />
         </div>
@@ -92,40 +115,44 @@ function updatePerPage(event: Event) {
       <div class="data-table__actions">
         <slot name="toolbar" />
         <button type="button" :disabled="loading" @click="emit('refresh')">
-          <AppIcon name="refresh" :size="16" />Refresh
+          <AppIcon name="refresh" :size="16" /> {{ t('Refresh') }}
         </button>
       </div>
     </div>
 
     <div v-if="$slots.filters" class="data-table__filters">
       <div class="data-table__filter-heading">
-        <AppIcon name="filters" :size="16" /><span>Filters</span>
+        <AppIcon name="filters" :size="16" /><span> {{ t('Filters') }} </span>
       </div>
       <div class="data-table__filter-controls"><slot name="filters" /></div>
     </div>
     <div v-if="error && !loading" class="data-table__error" role="alert">
       <slot name="error" :error="error" :retry="() => emit('refresh')">
-        <span>{{ error.message }}</span>
-        <button type="button" @click="emit('refresh')">Try again</button>
+        <span>{{ t(error.message) }}</span>
+        <button type="button" @click="emit('refresh')">{{ t('Try again') }}</button>
       </slot>
     </div>
 
     <p class="data-table__status" role="status" aria-live="polite">
       {{
-        loading ? 'Loading records…' : error ? 'Could not load records.' : `${total} records found.`
+        loading
+          ? t('Loading records…')
+          : error
+            ? t('Could not load records.')
+            : t('{0} records found.', [total])
       }}
     </p>
     <div
       class="data-table__scroll"
       role="region"
-      :aria-label="`${caption} table`"
+      :aria-label="t('{0} table', [t(caption)])"
       tabindex="0"
       :aria-busy="loading"
     >
       <table>
         <caption>
           {{
-            caption
+            t(caption)
           }}
         </caption>
         <thead>
@@ -136,24 +163,26 @@ function updatePerPage(event: Event) {
               scope="col"
               :style="{ textAlign: column.align ?? 'left' }"
             >
-              <slot :name="`header-${column.key}`" :column="column">{{ column.label }}</slot>
+              <slot :name="`header-${column.key}`" :column="column">{{ t(column.label) }}</slot>
             </th>
           </tr>
         </thead>
         <tbody>
           <tr v-if="loading">
             <td :colspan="Math.max(columns.length, 1)" class="data-table__placeholder">
-              <slot name="loading">Loading records…</slot>
+              <slot name="loading"> {{ t('Loading records…') }} </slot>
             </td>
           </tr>
           <tr v-else-if="error">
             <td :colspan="Math.max(columns.length, 1)" class="data-table__placeholder">
-              Records unavailable.
+              {{ t('Records unavailable.') }}
             </td>
           </tr>
           <tr v-else-if="!rows.length">
             <td :colspan="Math.max(columns.length, 1)" class="data-table__placeholder">
-              <slot name="empty">No records found. Try changing your search or filters.</slot>
+              <slot name="empty">
+                {{ t('No records found. Try changing your search or filters.') }}
+              </slot>
             </td>
           </tr>
           <template v-else>
@@ -179,7 +208,7 @@ function updatePerPage(event: Event) {
                   :column="column"
                   :value="cellValue(row, column)"
                 >
-                  {{ cellValue(row, column) ?? '—' }}
+                  {{ displayCell(row, column) }}
                 </slot>
               </td>
             </tr>
@@ -190,45 +219,45 @@ function updatePerPage(event: Event) {
 
     <footer class="data-table__footer">
       <label>
-        Rows per page
+        {{ t('Rows per page') }}
         <select :value="perPage" :disabled="loading" @change="updatePerPage">
           <option v-for="size in sizes" :key="size" :value="size">{{ size }}</option>
         </select>
       </label>
-      <span v-if="!loading && !error">{{ start }}–{{ end }} of {{ total }}</span>
-      <nav aria-label="Table pagination">
+      <span v-if="!loading && !error">{{ t('{0}–{1} of {2}', [start, end, total]) }}</span>
+      <nav :aria-label="t('Table pagination')">
         <button
           type="button"
-          aria-label="First page"
+          :aria-label="t('First page')"
           :disabled="loading || !!error || page <= 1"
           @click="emit('update:page', 1)"
         >
-          First
+          {{ t('First') }}
         </button>
         <button
           type="button"
-          aria-label="Previous page"
+          :aria-label="t('Previous page')"
           :disabled="loading || !!error || page <= 1"
           @click="emit('update:page', page - 1)"
         >
-          Previous
+          {{ t('Previous') }}
         </button>
-        <span v-if="!loading && !error">Page {{ page }} of {{ totalPages }}</span>
+        <span v-if="!loading && !error"> {{ t('Page {0} of {1}', [page, totalPages]) }}</span>
         <button
           type="button"
-          aria-label="Next page"
+          :aria-label="t('Next page')"
           :disabled="loading || !!error || page >= totalPages"
           @click="emit('update:page', page + 1)"
         >
-          Next
+          {{ t('Next') }}
         </button>
         <button
           type="button"
-          aria-label="Last page"
+          :aria-label="t('Last page')"
           :disabled="loading || !!error || page >= totalPages"
           @click="emit('update:page', totalPages)"
         >
-          Last
+          {{ t('Last') }}
         </button>
       </nav>
     </footer>

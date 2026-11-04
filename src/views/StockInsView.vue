@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import { usePermissions } from '@/composables/usePermissions'
 const { can } = usePermissions()
 
@@ -112,9 +113,9 @@ function pageSaved() {
 
 <template>
   <section v-show="route.path.replace(/\/+$/, '') === '/stock-ins'">
-    <h1>Stock In</h1>
-    <p>Record incoming inventory and update transaction status.</p>
-    <p v-if="notice" role="status" class="notice">{{ notice }}</p>
+    <h1>{{ t('Stock In') }}</h1>
+    <p>{{ t('Record incoming inventory and update transaction status.') }}</p>
+    <p v-if="notice" role="status" class="notice">{{ t(notice) }}</p>
     <DataTable
       :rows="rows"
       :columns="
@@ -130,8 +131,8 @@ function pageSaved() {
       :search="search"
       :loading="loading"
       :error="error"
-      caption="Stock In"
-      search-placeholder="Search stock in…"
+      :caption="t('Stock In')"
+      :search-placeholder="t('Search stock in…')"
       @update:page="setPage"
       @update:per-page="setPerPage"
       @update:search="setSearch"
@@ -139,14 +140,14 @@ function pageSaved() {
     >
       <template #toolbar
         ><button v-if="can('stock_ins.create')" type="button" class="primary" @click="openForm()">
-          <AppIcon name="add" :size="16" />Add stock in
+          <AppIcon name="add" :size="16" /> {{ t('Add stock in') }}
         </button></template
       >
       <template #cell-status="{ row }">
         <span
           class="status"
           :class="{ active: row.status === 'posted', cancelled: row.status === 'cancelled' }"
-          >{{ row.status ?? '—' }}</span
+          >{{ t(row.status ?? '—') }}</span
         >
       </template>
       <template #cell-actions="{ row }">
@@ -154,8 +155,8 @@ function pageSaved() {
           <button
             type="button"
             class="icon-button"
-            :aria-label="`View stock in #${row.id}`"
-            title="View details"
+            :aria-label="t('View stock in #{0}', [row.id])"
+            :title="t('View details')"
             @click="router.push(`/stock-ins/${row.id}`)"
           >
             <AppIcon name="availability" :size="18" />
@@ -163,8 +164,8 @@ function pageSaved() {
           <button
             v-if="can('stock_ins.update_status')"
             type="button"
-            :aria-label="`Update status for stock in #${row.id}`"
-            title="Update status"
+            :aria-label="t('Update status for stock in #{0}', [row.id])"
+            :title="t('Update status')"
             class="icon-button"
             @click="openForm(row)"
           >

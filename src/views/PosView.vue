@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t, dateLabel } from '@/i18n'
 import { usePermissions } from '@/composables/usePermissions'
 const { can } = usePermissions()
 
@@ -7,7 +8,6 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import AppIcon from '@/components/common/AppIcon.vue'
 import RoomDrawer from '@/components/pos/RoomDrawer.vue'
-import { usePosSessionStore } from '@/stores/pos-session'
 import { posDashboardService } from '@/services/pos-dashboard.service'
 import { toApiError } from '@/services/api/api-error'
 import type { BookingDashboard, DashboardRoom, DashboardBooking } from '@/types/pos-dashboard'
@@ -21,7 +21,6 @@ function openBooking(booking: DashboardBooking) {
   const id = dashboardBookingId(booking)
   if (id) void router.push(`/pos/bookings/${id}`)
 }
-const session = usePosSessionStore()
 const today = new Date()
 today.setHours(0, 0, 0, 0)
 const start = ref(new Date(today.getFullYear(), today.getMonth(), 1))
@@ -106,12 +105,12 @@ const dayCount = computed(() => days.value.length)
 const years = computed(() =>
   Array.from({ length: 9 }, (_, i) => calendarMonth.value.getFullYear() - 4 + i),
 )
-const months = Array.from({ length: 12 }, (_, i) =>
-  new Date(2026, i, 1).toLocaleString('en', { month: 'short' }),
+const months = computed(() =>
+  Array.from({ length: 12 }, (_, i) => dateLabel(new Date(2026, i, 1), { month: 'short' })),
 )
 const rangeLabel = computed(() => {
   const format = (date: Date) =>
-    date.toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' })
+    dateLabel(date, { month: 'short', day: 'numeric', year: 'numeric' })
   return dateKey(start.value) === dateKey(end.value)
     ? format(start.value)
     : `${format(start.value)} – ${format(end.value)}`
@@ -260,42 +259,44 @@ onBeforeUnmount(() => {
         <span class="brand-mark">SP</span>
         <div>
           <span class="eyebrow">SHWE PETIT</span>
-          <h1>Reservation calendar</h1>
+          <h1>{{ t('Reservation calendar') }}</h1>
         </div>
       </div>
-      <div class="staff">
-        <span class="demo-badge">Room overview</span
-        ><span class="staff-avatar"><AppIcon name="user" :size="20" /></span
-        ><span>{{ session.user?.name || 'POS Staff' }}<small>Front desk workspace</small></span>
-      </div>
+      <span class="demo-badge">{{ t('Room overview') }}</span>
     </header>
-    <section class="calendar-card" aria-label="Room booking calendar">
+    <section class="calendar-card" :aria-label="t('Room booking calendar')">
       <div class="toolbar">
-        <nav class="workspace-tools" aria-label="Calendar tools">
+        <nav class="workspace-tools" :aria-label="t('Calendar tools')">
           <button
             v-for="tool in ['Housekeeping', 'Facilities', 'Room types', 'Booking options']"
             :key="tool"
             @click="openPanel(tool)"
           >
-            {{ tool }}<AppIcon name="chevronDown" :size="12" />
+            {{ t(tool) }}<AppIcon name="chevronDown" :size="12" />
           </button>
         </nav>
         <div class="booking-tools">
           <label class="available-filter"
-            ><input v-model="availableOnly" type="checkbox" /> Currently available rooms only</label
-          ><button type="button" :disabled="loading" aria-label="Refresh rooms" @click="loadRooms">
+            ><input v-model="availableOnly" type="checkbox" />
+            {{ t('Currently available rooms only') }} </label
+          ><button
+            type="button"
+            :disabled="loading"
+            :aria-label="t('Refresh rooms')"
+            @click="loadRooms"
+          >
             <AppIcon name="refresh" :size="16" />
           </button>
           <label class="search"
             ><AppIcon name="search" :size="16" /><input
               v-model="query"
               type="search"
-              aria-label="Search rooms"
-              placeholder="Search rooms or guests" /></label
+              :aria-label="t('Search rooms')"
+              :placeholder="t('Search rooms or guests')" /></label
           ><button
             class="icon-button"
-            title="Calendar display options"
-            aria-label="Calendar display options"
+            :title="t('Calendar display options')"
+            :aria-label="t('Calendar display options')"
             @click="openPanel('Booking options')"
           >
             <AppIcon name="filters" :size="17" /></button
@@ -304,40 +305,44 @@ onBeforeUnmount(() => {
             class="checkin-button"
             to="/pos/bookings/create?type=walk_in"
           >
-            <AppIcon name="users" :size="15" />Create walk-in</RouterLink
+            <AppIcon name="users" :size="15" /> {{ t('Create walk-in') }} </RouterLink
           ><RouterLink
             v-if="can('bookings.create')"
             class="primary"
             to="/pos/bookings/create?type=reservation"
           >
-            <AppIcon name="add" :size="16" />Create booking
+            <AppIcon name="add" :size="16" /> {{ t('Create booking') }}
           </RouterLink>
         </div>
       </div>
       <div class="calendar-controls">
         <div class="date-controls">
           <AppIcon name="calendar" :size="16" /><strong>{{ rangeLabel }}</strong
-          ><button class="icon-button" aria-label="Previous dates" @click="shift(-7)">
+          ><button class="icon-button" :aria-label="t('Previous dates')" @click="shift(-7)">
             <AppIcon name="chevronLeft" :size="16" /></button
-          ><button class="icon-button" aria-label="Next dates" @click="shift(7)">
+          ><button class="icon-button" :aria-label="t('Next dates')" @click="shift(7)">
             <AppIcon name="chevronRight" :size="16" /></button
-          ><button @click="showToday">Today</button>
+          ><button @click="showToday">{{ t('Today') }}</button>
         </div>
         <div class="legend">
-          <span
-            >Daily category availability · Booking bars include arrival and departure dates</span
-          >
+          <span>
+            {{
+              t('Daily category availability · Booking bars include arrival and departure dates')
+            }}
+          </span>
         </div>
       </div>
       <p class="selection-hint" role="status">
         {{
           selectionAnchor
-            ? 'Single day loaded. Choose another date to extend the range, or the same date to finish.'
-            : 'Choose a date for one day, then a second date for a range.'
+            ? t(
+                'Single day loaded. Choose another date to extend the range, or the same date to finish.',
+              )
+            : t('Choose a date for one day, then a second date for a range.')
         }}
       </p>
-      <nav class="date-strip years" aria-label="Select year">
-        <span class="strip-label">Year</span
+      <nav class="date-strip years" :aria-label="t('Select year')">
+        <span class="strip-label"> {{ t('Year') }} </span
         ><button
           v-for="year in years"
           :key="year"
@@ -348,8 +353,8 @@ onBeforeUnmount(() => {
           {{ year }}
         </button>
       </nav>
-      <nav class="date-strip" aria-label="Select month">
-        <span class="strip-label">Month</span
+      <nav class="date-strip" :aria-label="t('Select month')">
+        <span class="strip-label"> {{ t('Month') }} </span
         ><button
           v-for="(month, index) in months"
           :key="month"
@@ -360,17 +365,17 @@ onBeforeUnmount(() => {
           {{ month }}
         </button>
       </nav>
-      <p v-if="loading" role="status" class="notice">Loading booking dashboard...</p>
+      <p v-if="loading" role="status" class="notice">{{ t('Loading booking dashboard...') }}</p>
       <div v-else-if="loadError" role="alert" class="notice">
-        <p>{{ loadError }}</p>
-        <button type="button" @click="loadRooms">Try again</button>
+        <p>{{ t(loadError) }}</p>
+        <button type="button" @click="loadRooms">{{ t('Try again') }}</button>
       </div>
       <div
         v-else
         ref="calendarScroll"
         class="calendar-scroll"
         tabindex="0"
-        aria-label="Scrollable room schedule"
+        :aria-label="t('Scrollable room schedule')"
       >
         <div
           class="schedule"
@@ -381,7 +386,8 @@ onBeforeUnmount(() => {
         >
           <div class="schedule-header">
             <div class="room-label">
-              Rooms <span>{{ visibleGroups.reduce((total, g) => total + g.rooms.length, 0) }}</span>
+              {{ t('Rooms') }}
+              <span>{{ visibleGroups.reduce((total, g) => total + g.rooms.length, 0) }}</span>
             </div>
             <div class="days">
               <button
@@ -389,7 +395,7 @@ onBeforeUnmount(() => {
                 :key="dateKey(day)"
                 class="day"
                 type="button"
-                :aria-label="`Select ${dateKey(day)}`"
+                :aria-label="t('Select {0}', [dateKey(day)])"
                 :aria-pressed="selectedDay(day)"
                 @click="selectDay(day)"
                 :class="{
@@ -398,9 +404,9 @@ onBeforeUnmount(() => {
                   weekend: day.getDay() === 0 || day.getDay() === 6,
                 }"
               >
-                <span>{{ day.toLocaleDateString('en', { weekday: 'short' }) }}</span
+                <span>{{ dateLabel(day, { weekday: 'short' }) }}</span
                 ><strong>{{ day.getDate() }}</strong
-                ><small>{{ day.toLocaleDateString('en', { month: 'short' }) }}</small>
+                ><small>{{ dateLabel(day, { month: 'short' }) }}</small>
               </button>
             </div>
           </div>
@@ -436,13 +442,13 @@ onBeforeUnmount(() => {
               <button
                 class="room-number"
                 :disabled="!can('rooms.view')"
-                :aria-label="`View ${room.name}: ${room.status}`"
+                :aria-label="t('View {0}: {1}', [room.name, room.status])"
                 @click="selectedRoomId = room.id"
               >
                 <i
                   :class="room.status"
                   :style="{ backgroundColor: statusStyle(room.status).color }"
-                  :title="statusLabel(room.status)"
+                  :title="t(statusLabel(room.status))"
                 /><span>{{ room.name }}</span
                 ><AppIcon name="more" :size="15" />
               </button>
@@ -462,22 +468,30 @@ onBeforeUnmount(() => {
                   type="button"
                   @click="openBooking(bar.booking)"
                   :disabled="!dashboardBookingId(bar.booking) || !can('bookings.view')"
-                  :aria-label="`View ${room.name} for ${bar.booking.guestName}`"
-                  :title="`${bar.booking.guestName} · ${statusLabel(bar.booking.status)} · ${bar.booking.start_date_time} to ${bar.booking.end_date_time} · ${bar.booking.totalGuests} guest(s)`"
+                  :aria-label="t('View {0} for {1}', [room.name, bar.booking.guestName])"
+                  :title="
+                    t('{0} · {1} · {2} to {3} · {4} guest(s)', [
+                      bar.booking.guestName,
+                      statusLabel(bar.booking.status),
+                      bar.booking.start_date_time,
+                      bar.booking.end_date_time,
+                      bar.booking.totalGuests,
+                    ])
+                  "
                 >
-                  {{ bar.booking.guestName }} · {{ bar.booking.totalGuests }} guest(s)
+                  {{ bar.booking.guestName }} · {{ bar.booking.totalGuests }} {{ t('guest(s)') }}
                 </button>
               </div>
             </div>
           </section>
           <p v-if="!visibleGroups.length" class="empty">
-            No rooms found. Try changing your room search or filters.
+            {{ t('No rooms found. Try changing your room search or filters.') }}
           </p>
         </div>
       </div>
       <footer class="calendar-footer">
-        <span><i class="live-dot" /> {{ visibleGroups.length }} room types shown</span
-        ><span>Current room status - Select a room for details</span>
+        <span><i class="live-dot" /> {{ visibleGroups.length }} {{ t('room types shown') }} </span
+        ><span> {{ t('Current room status - Select a room for details') }} </span>
       </footer>
     </section>
     <dialog
@@ -488,50 +502,51 @@ onBeforeUnmount(() => {
     >
       <header>
         <div>
-          <span class="eyebrow">FRONT DESK</span>
-          <h2 id="panel-title">{{ panel }}</h2>
+          <span class="eyebrow"> {{ t('FRONT DESK') }} </span>
+          <h2 id="panel-title">{{ t(panel) }}</h2>
         </div>
-        <button class="icon-button" aria-label="Close dialog" @click="closePanel">
+        <button class="icon-button" :aria-label="t('Close dialog')" @click="closePanel">
           <AppIcon name="close" />
         </button>
       </header>
       <template v-if="panel === 'Room types'"
-        ><label class="field"
-          >Show room type<select v-model="typeFilter">
-            <option value="all">All room types</option>
+        ><label class="field">
+          {{ t('Show room type') }}
+          <select v-model="typeFilter">
+            <option value="all">{{ t('All room types') }}</option>
             <option v-for="group in groups" :key="group.id" :value="group.id">
               {{ group.name }}
             </option>
           </select></label
-        ><button class="primary" @click="closePanel">Apply</button></template
+        ><button class="primary" @click="closePanel">{{ t('Apply') }}</button></template
       >
       <template v-else-if="panel === 'Booking options'"
-        ><button @click="setAllGroups(false)">Expand all room types</button
-        ><button @click="setAllGroups(true)">Collapse all room types</button></template
+        ><button @click="setAllGroups(false)">{{ t('Expand all room types') }}</button
+        ><button @click="setAllGroups(true)">{{ t('Collapse all room types') }}</button></template
       >
       <template v-else-if="panel === 'Housekeeping'"
-        ><p class="muted">Current room readiness</p>
+        ><p class="muted">{{ t('Current room readiness') }}</p>
         <div v-for="group in groups" :key="group.id" class="readiness">
           <h3>{{ group.name }}</h3>
           <div v-for="room in group.rooms" :key="room.id">
             <span>{{ room.name }}</span
             ><span class="state" :style="statusStyle(room.status)">{{
-              statusLabel(room.status)
+              t(statusLabel(room.status))
             }}</span>
           </div>
         </div></template
       >
       <template v-else-if="panel === 'Facilities'"
-        ><p class="muted">Sample property facilities</p>
+        ><p class="muted">{{ t('Sample property facilities') }}</p>
         <ul class="facilities">
-          <li>Restaurant &amp; room service</li>
-          <li>Wi-Fi throughout the property</li>
-          <li>Guest parking</li>
-          <li>Laundry service</li>
+          <li>{{ t('Restaurant & room service') }}</li>
+          <li>{{ t('Wi-Fi throughout the property') }}</li>
+          <li>{{ t('Guest parking') }}</li>
+          <li>{{ t('Laundry service') }}</li>
         </ul></template
       >
       <p v-else-if="panel === 'Create booking' || panel === 'Create check-in'" class="muted">
-        Booking and check-in are not available yet.
+        {{ t('Booking and check-in are not available yet.') }}
       </p>
     </dialog>
     <RoomDrawer

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import AppIcon from '@/components/common/AppIcon.vue'
 import { computed, nextTick, onMounted, onBeforeUnmount, reactive, ref, useId } from 'vue'
 import { ValidationError } from 'yup'
@@ -168,27 +169,27 @@ async function submit() {
         <h2 :id="`${prefix}-title`">
           {{
             statusOnly
-              ? 'Update category status'
+              ? t('Update category status')
               : editing
-                ? 'Edit asset category'
-                : 'Add asset category'
+                ? t('Edit asset category')
+                : t('Add asset category')
           }}
         </h2>
-        <button type="button" aria-label="Close dialog" :disabled="saving" @click="close">
+        <button type="button" :aria-label="t('Close dialog')" :disabled="saving" @click="close">
           <AppIcon name="close" />
         </button>
       </header>
-      <p v-if="statusOnly && category">{{ category.name }} | ID {{ category.id }}</p>
-      <p v-if="saveError" role="alert" class="error">{{ saveError }}</p>
-      <p v-if="loading" role="status">Loading category...</p>
+      <p v-if="statusOnly && category">{{ category.name }} {{ t('| ID') }} {{ category.id }}</p>
+      <p v-if="saveError" role="alert" class="error">{{ t(saveError) }}</p>
+      <p v-if="loading" role="status">{{ t('Loading category...') }}</p>
       <div v-else-if="loadError" role="alert" class="error">
-        <p>{{ loadError }}</p>
-        <button type="button" @click="load">Try again</button>
+        <p>{{ t(loadError) }}</p>
+        <button type="button" @click="load">{{ t('Try again') }}</button>
       </div>
       <fieldset v-else :disabled="saving">
-        <p v-if="errors.id" role="alert" class="error">{{ errors.id }}</p>
+        <p v-if="errors.id" role="alert" class="error">{{ t(errors.id) }}</p>
         <div v-if="!statusOnly" class="field">
-          <label :for="`${prefix}-name`">Name</label>
+          <label :for="`${prefix}-name`"> {{ t('Name') }} </label>
           <input
             :id="`${prefix}-name`"
             v-model="form.name"
@@ -199,11 +200,11 @@ async function submit() {
             :aria-describedby="errors.name ? `${prefix}-name-error` : undefined"
           />
           <span v-if="errors.name" :id="`${prefix}-name-error`" class="error">{{
-            errors.name
+            t(errors.name)
           }}</span>
         </div>
         <div v-if="!statusOnly" class="field">
-          <label :for="`${prefix}-code`">Code</label>
+          <label :for="`${prefix}-code`"> {{ t('Code') }} </label>
           <input
             :id="`${prefix}-code`"
             v-model="form.code"
@@ -214,11 +215,11 @@ async function submit() {
             :aria-describedby="errors.code ? `${prefix}-code-error` : undefined"
           />
           <span v-if="errors.code" :id="`${prefix}-code-error`" class="error">{{
-            errors.code
+            t(errors.code)
           }}</span>
         </div>
         <div v-if="!statusOnly" class="field">
-          <label :for="`${prefix}-parent`">Parent category (optional)</label>
+          <label :for="`${prefix}-parent`"> {{ t('Parent category (optional)') }} </label>
           <select
             :id="`${prefix}-parent`"
             v-model="form.parent_id"
@@ -226,17 +227,17 @@ async function submit() {
             :aria-invalid="!!errors.parent_id"
             :aria-describedby="errors.parent_id ? `${prefix}-parent-error` : undefined"
           >
-            <option value="">No parent (top-level category)</option>
+            <option value="">{{ t('No parent (top-level category)') }}</option>
             <option v-for="parent in parentOptions" :key="parent.id" :value="parent.id">
               {{ parent.name }} ({{ parent.code }})
             </option>
           </select>
           <span v-if="errors.parent_id" :id="`${prefix}-parent-error`" class="error">{{
-            errors.parent_id
+            t(errors.parent_id)
           }}</span>
         </div>
         <div v-if="!statusOnly" class="field">
-          <label :for="`${prefix}-description`">Description (optional)</label>
+          <label :for="`${prefix}-description`"> {{ t('Description (optional)') }} </label>
           <textarea
             :id="`${prefix}-description`"
             v-model="form.description"
@@ -246,11 +247,11 @@ async function submit() {
             :aria-describedby="errors.description ? `${prefix}-description-error` : undefined"
           />
           <span v-if="errors.description" :id="`${prefix}-description-error`" class="error">{{
-            errors.description
+            t(errors.description)
           }}</span>
         </div>
         <div v-if="statusOnly" class="field">
-          <label :for="`${prefix}-status`">Status</label>
+          <label :for="`${prefix}-status`"> {{ t('Status') }} </label>
           <select
             :id="`${prefix}-status`"
             v-model="form.is_active"
@@ -259,26 +260,26 @@ async function submit() {
             :aria-invalid="!!errors.is_active"
             :aria-describedby="errors.is_active ? `${prefix}-status-error` : undefined"
           >
-            <option :value="undefined" disabled>Choose status</option>
-            <option :value="true">Active</option>
-            <option :value="false">Inactive</option>
+            <option :value="undefined" disabled>{{ t('Choose status') }}</option>
+            <option :value="true">{{ t('Active') }}</option>
+            <option :value="false">{{ t('Inactive') }}</option>
           </select>
           <span v-if="errors.is_active" :id="`${prefix}-status-error`" class="error">{{
-            errors.is_active
+            t(errors.is_active)
           }}</span>
         </div>
       </fieldset>
       <footer>
-        <button type="button" :disabled="saving" @click="close">Cancel</button>
+        <button type="button" :disabled="saving" @click="close">{{ t('Cancel') }}</button>
         <button type="submit" class="primary" :disabled="saving || loading || !!loadError">
           {{
             saving
-              ? 'Saving...'
+              ? t('Saving...')
               : statusOnly
-                ? 'Update status'
+                ? t('Update status')
                 : editing
-                  ? 'Save changes'
-                  : 'Create category'
+                  ? t('Save changes')
+                  : t('Create category')
           }}
         </button>
       </footer>

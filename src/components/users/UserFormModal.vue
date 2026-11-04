@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import { usePermissions } from '@/composables/usePermissions'
 const { can } = usePermissions()
 import { permissionService, type PermissionGroup } from '@/services/permission.service'
@@ -161,22 +162,22 @@ async function submit() {
   >
     <form novalidate :aria-busy="loading || saving" @submit.prevent="submit">
       <header>
-        <h2 :id="`${prefix}-title`">{{ editing ? 'Edit user' : 'Add user' }}</h2>
-        <button type="button" aria-label="Back to users" :disabled="saving" @click="close">
+        <h2 :id="`${prefix}-title`">{{ editing ? t('Edit user') : t('Add user') }}</h2>
+        <button type="button" :aria-label="t('Back to users')" :disabled="saving" @click="close">
           <AppIcon name="close" />
         </button>
       </header>
-      <p v-if="loading" role="status">Loading user...</p>
+      <p v-if="loading" role="status">{{ t('Loading user...') }}</p>
       <div v-else-if="loadError" role="alert" class="error">
-        <p>{{ loadError }}</p>
-        <button type="button" @click="loadUser">Try again</button>
+        <p>{{ t(loadError) }}</p>
+        <button type="button" @click="loadUser">{{ t('Try again') }}</button>
       </div>
       <template v-else>
-        <p v-if="saveError" role="alert" class="error">{{ saveError }}</p>
-        <p v-if="errors.id" role="alert" class="error">{{ errors.id }}</p>
+        <p v-if="saveError" role="alert" class="error">{{ t(saveError) }}</p>
+        <p v-if="errors.id" role="alert" class="error">{{ t(errors.id) }}</p>
         <fieldset :disabled="saving">
           <div v-for="field in fields" :key="field.key" class="field">
-            <label :for="`${prefix}-${field.key}`">{{ field.label }}</label>
+            <label :for="`${prefix}-${field.key}`">{{ t(field.label) }}</label>
             <select
               v-if="field.key === 'role' || field.key === 'portal_access'"
               :id="`${prefix}-${field.key}`"
@@ -185,13 +186,15 @@ async function submit() {
               required
               :aria-invalid="!!errors[field.key]"
             >
-              <option value="" disabled>Select {{ field.label.toLowerCase() }}</option>
+              <option value="" disabled>
+                {{ t('Select') }} {{ t(field.label.toLowerCase()) }}
+              </option>
               <option
                 v-for="option in field.key === 'role' ? userRoles : portalAccessOptions"
                 :key="option"
                 :value="option"
               >
-                {{ statusLabel(option) }}
+                {{ t(statusLabel(option)) }}
               </option>
             </select>
             <input
@@ -206,29 +209,30 @@ async function submit() {
               :aria-describedby="errors[field.key] ? `${prefix}-${field.key}-error` : undefined"
             />
             <span v-if="errors[field.key]" :id="`${prefix}-${field.key}-error`" class="error">{{
-              errors[field.key]
+              t(errors[field.key])
             }}</span>
           </div>
           <section
             v-if="can('users.manage_permissions')"
             class="permissions"
-            aria-label="User permissions"
+            :aria-label="t('User permissions')"
           >
-            <h3>Permissions</h3>
-            <p>Choose the actions this user may perform.</p>
-            <p v-if="!groups.length">No permissions available.</p>
+            <h3>{{ t('Permissions') }}</h3>
+            <p>{{ t('Choose the actions this user may perform.') }}</p>
+            <p v-if="!groups.length">{{ t('No permissions available.') }}</p>
             <fieldset v-for="group in groups" :key="group.group" class="permission-group">
-              <legend>{{ group.label }}</legend>
+              <legend>{{ t(group.label) }}</legend>
               <label class="permission-option"
                 ><input
                   type="checkbox"
                   :checked="groupSelected(group)"
                   :indeterminate="groupPartial(group)"
                   :disabled="!group.permissions.length"
-                  :aria-label="`Select all ${group.label} permissions`"
+                  :aria-label="t('Select all {0} permissions', [t(group.label)])"
                   @change="toggleGroup(group, ($event.target as HTMLInputElement).checked)"
-                />Select all</label
-              >
+                />
+                {{ t('Select all') }}
+              </label>
               <div class="permission-options">
                 <label
                   v-for="permission in group.permissions"
@@ -239,7 +243,7 @@ async function submit() {
                     v-model="form.permissions"
                     :value="permission.name"
                     :name="permission.name"
-                  />{{ permission.label }}</label
+                  />{{ t(permission.label) }}</label
                 >
               </div>
             </fieldset>
@@ -247,9 +251,9 @@ async function submit() {
         </fieldset>
       </template>
       <footer>
-        <button type="button" :disabled="saving" @click="close">Cancel</button>
+        <button type="button" :disabled="saving" @click="close">{{ t('Cancel') }}</button>
         <button type="submit" class="primary" :disabled="saving || loading || !!loadError">
-          {{ saving ? 'Saving...' : editing ? 'Save changes' : 'Create user' }}
+          {{ saving ? t('Saving...') : editing ? t('Save changes') : t('Create user') }}
         </button>
       </footer>
     </form>

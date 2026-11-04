@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import { posBookingService } from '@/services/pos-booking.service'
@@ -107,59 +108,63 @@ const groups = computed(() => {
 </script>
 <template>
   <main class="booking-detail">
-    <RouterLink to="/pos/bookings">Back to bookings</RouterLink>
-    <p v-if="loading" role="status">Loading booking details…</p>
+    <RouterLink to="/pos/bookings"> {{ t('Back to bookings') }} </RouterLink>
+    <p v-if="loading" role="status">{{ t('Loading booking details…') }}</p>
     <div v-else-if="error" role="alert">
-      <p>{{ error }}</p>
-      <button type="button" @click="load">Retry</button>
+      <p>{{ t(error) }}</p>
+      <button type="button" @click="load">{{ t('Retry') }}</button>
     </div>
     <template v-else-if="booking"
       ><header>
         <div>
-          <small>BOOKING DETAILS</small>
+          <small> {{ t('BOOKING DETAILS') }} </small>
           <h1>{{ booking.booking_no }}</h1>
-          <p>{{ booking.guest_name }} · {{ booking.room?.name || `Room #${booking.room_id}` }}</p>
+          <p>
+            {{ booking.guest_name }} · {{ booking.room?.name || t('Room #{0}', [booking.room_id]) }}
+          </p>
         </div>
         <span class="badge" :style="statusStyle(booking.status)">{{
-          statusLabel(booking.status)
+          t(statusLabel(booking.status))
         }}</span>
       </header>
       <div class="detail-grid">
         <section v-for="group in groups" :key="group.title">
-          <h2>{{ group.title }}</h2>
+          <h2>{{ t(group.title) }}</h2>
           <dl>
             <template v-for="[label, value] in group.fields" :key="String(label)"
-              ><dt>{{ label }}</dt>
+              ><dt>{{ t(label) }}</dt>
               <dd>{{ value ?? '—' }}</dd></template
             >
           </dl>
         </section>
         <section>
-          <h2>Booking note</h2>
-          <p class="note">{{ booking.note || 'No note.' }}</p>
+          <h2>{{ t('Booking note') }}</h2>
+          <p class="note">{{ booking.note || t('No note.') }}</p>
         </section>
       </div>
       <section class="payments">
-        <h2>Payments</h2>
-        <p v-if="!booking.payments?.length">No payments recorded.</p>
+        <h2>{{ t('Payments') }}</h2>
+        <p v-if="!booking.payments?.length">{{ t('No payments recorded.') }}</p>
         <div v-else class="table-scroll">
           <table>
             <caption>
-              Payments for
+              {{
+                t('Payments for')
+              }}
               {{
                 booking.booking_no
               }}
             </caption>
             <thead>
               <tr>
-                <th>Payment</th>
-                <th>Type</th>
-                <th>Method</th>
-                <th>Amount</th>
-                <th>Paid at</th>
-                <th>Note</th>
-                <th>Created by</th>
-                <th>Created at</th>
+                <th>{{ t('Payment') }}</th>
+                <th>{{ t('Type') }}</th>
+                <th>{{ t('Method') }}</th>
+                <th>{{ t('Amount') }}</th>
+                <th>{{ t('Paid at') }}</th>
+                <th>{{ t('Note') }}</th>
+                <th>{{ t('Created by') }}</th>
+                <th>{{ t('Created at') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -167,8 +172,8 @@ const groups = computed(() => {
                 <td>
                   {{ payment.payment_no }}<small>ID {{ payment.id }}</small>
                 </td>
-                <td>{{ statusLabel(payment.payment_type) }}</td>
-                <td>{{ statusLabel(payment.payment_method) }}</td>
+                <td>{{ t(statusLabel(payment.payment_type)) }}</td>
+                <td>{{ t(statusLabel(payment.payment_method)) }}</td>
                 <td>{{ payment.amount }}</td>
                 <td>{{ payment.paid_at }}</td>
                 <td>{{ payment.note || '—' }}</td>

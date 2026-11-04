@@ -1,9 +1,15 @@
+<script setup lang="ts">
+import { t } from '@/i18n'
+</script>
 <template>
   <section class="access-denied">
-    <h1>Access unavailable</h1>
+    <h1>{{ t('Access unavailable') }}</h1>
     <p>
-      Your account does not have permission to open this page. Choose an available page from the
-      sidebar or contact your administrator.
+      {{
+        t(
+          'Your account does not have permission to open this page. Choose an available page from the sidebar or contact your administrator.',
+        )
+      }}
     </p>
   </section>
 </template>

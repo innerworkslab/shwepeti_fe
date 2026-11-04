@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import { usePermissions } from '@/composables/usePermissions'
 const { can } = usePermissions()
 
@@ -87,11 +88,11 @@ function saved() {
 </script>
 <template>
   <section>
-    <h1>Fixed Assets</h1>
-    <p>Manage assets, purchase details, and supporting documents.</p>
-    <p v-if="notice" role="status">{{ notice }}</p>
+    <h1>{{ t('Fixed Assets') }}</h1>
+    <p>{{ t('Manage assets, purchase details, and supporting documents.') }}</p>
+    <p v-if="notice" role="status">{{ t(notice) }}</p>
     <p v-else-if="route.query.saved === 'created' || route.query.saved === 'updated'" role="status">
-      Asset {{ route.query.saved }}.
+      {{ t('Asset') }} {{ route.query.saved }}.
     </p>
     <DataTable
       :rows="rows"
@@ -109,7 +110,7 @@ function saved() {
       :loading="loading"
       :error="error"
       :searchable="false"
-      caption="Fixed assets"
+      :caption="t('Fixed assets')"
       @update:page="setPage"
       @update:per-page="setPerPage"
       @refresh="refresh"
@@ -119,39 +120,42 @@ function saved() {
           v-if="can('fixed_assets.create')"
           class="action primary"
           to="/fixed-assets/create"
-          ><AppIcon name="add" :size="16" />Add fixed asset</RouterLink
-        ></template
+          ><AppIcon name="add" :size="16" /> {{ t('Add fixed asset') }}
+        </RouterLink></template
       >
       <template #filters
         ><form class="filters" @submit.prevent="applyFilters">
-          <label for="filter-category"
-            >Asset category<select
+          <label for="filter-category">
+            {{ t('Asset category') }}
+            <select
               id="filter-category"
               name="asset_category_id"
               v-model="filters.asset_category_id"
               :disabled="optionsLoading || !!optionsError"
             >
-              <option value="">All categories</option>
+              <option value="">{{ t('All categories') }}</option>
               <option v-for="category in categories" :key="category.id" :value="category.id">
                 {{ category.name }}
               </option>
             </select></label
           >
-          <label for="filter-cashbook"
-            >Cashbook<select
+          <label for="filter-cashbook">
+            {{ t('Cashbook') }}
+            <select
               id="filter-cashbook"
               name="cashbook_id"
               v-model="filters.cashbook_id"
               :disabled="optionsLoading || !!optionsError"
             >
-              <option value="">All cashbooks</option>
+              <option value="">{{ t('All cashbooks') }}</option>
               <option v-for="cashbook in cashbooks" :key="cashbook.id" :value="cashbook.id">
                 {{ cashbook.name }}
               </option>
             </select></label
           >
-          <label for="filter-from"
-            >From date<input
+          <label for="filter-from">
+            {{ t('From date') }}
+            <input
               id="filter-from"
               name="date_from"
               type="date"
@@ -159,8 +163,9 @@ function saved() {
               :aria-invalid="!!filterError"
               :aria-describedby="filterError ? 'filter-error' : undefined"
           /></label>
-          <label for="filter-to"
-            >To date<input
+          <label for="filter-to">
+            {{ t('To date') }}
+            <input
               id="filter-to"
               name="date_to"
               type="date"
@@ -168,12 +173,15 @@ function saved() {
               :aria-invalid="!!filterError"
               :aria-describedby="filterError ? 'filter-error' : undefined"
           /></label>
-          <button type="submit">Apply filters</button
-          ><button type="button" @click="clearFilters">Clear filters</button>
-          <p v-if="filterError" id="filter-error" role="alert" class="error">{{ filterError }}</p>
-          <p v-if="optionsLoading" role="status">Loading filter options...</p>
+          <button type="submit">{{ t('Apply filters') }}</button
+          ><button type="button" @click="clearFilters">{{ t('Clear filters') }}</button>
+          <p v-if="filterError" id="filter-error" role="alert" class="error">
+            {{ t(filterError) }}
+          </p>
+          <p v-if="optionsLoading" role="status">{{ t('Loading filter options...') }}</p>
           <div v-if="optionsError" role="alert">
-            {{ optionsError }} <button type="button" @click="loadOptions">Retry options</button>
+            {{ t(optionsError) }}
+            <button type="button" @click="loadOptions">{{ t('Retry options') }}</button>
           </div>
         </form></template
       >
@@ -183,15 +191,17 @@ function saved() {
             v-if="can('fixed_assets.update')"
             class="action"
             :to="`/fixed-assets/${row.id}/edit`"
-            :aria-label="`Edit ${row.name}`"
-            :title="`Edit ${row.name}`"
-            ><AppIcon name="pencil" :size="18" /><span class="action-label">Edit</span></RouterLink
+            :aria-label="t('Edit {0}', [row.name])"
+            :title="t('Edit {0}', [row.name])"
+            ><AppIcon name="pencil" :size="18" /><span class="action-label">
+              {{ t('Edit') }}
+            </span></RouterLink
           ><button
             v-if="can('fixed_assets.update_status')"
             type="button"
-            :aria-label="`Update status for ${row.name}`"
+            :aria-label="t('Update status for {0}', [row.name])"
             @click="selected = row"
-            :title="`Update status for ${row.name}`"
+            :title="t('Update status for {0}', [row.name])"
           >
             <AppIcon name="status" />
           </button>
@@ -199,11 +209,11 @@ function saved() {
             v-if="can('fixed_assets.view')"
             class="action"
             :to="`/fixed-assets/${row.id}/depreciations`"
-            :aria-label="`View depreciation history for ${row.name}`"
-            :title="`View depreciation history for ${row.name}`"
-            ><AppIcon name="ledger" :size="18" /><span class="action-label"
-              >Depreciation history</span
-            ></RouterLink
+            :aria-label="t('View depreciation history for {0}', [row.name])"
+            :title="t('View depreciation history for {0}', [row.name])"
+            ><AppIcon name="ledger" :size="18" /><span class="action-label">
+              {{ t('Depreciation history') }}
+            </span></RouterLink
           >
         </div></template
       >

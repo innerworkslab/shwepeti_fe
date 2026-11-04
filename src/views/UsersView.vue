@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import { usePermissions } from '@/composables/usePermissions'
 const { can } = usePermissions()
 
@@ -40,9 +41,9 @@ function openForm(id: number | null = null) {
 
 <template>
   <section>
-    <h1>Users</h1>
-    <p>Manage user accounts and roles.</p>
-    <p v-if="notice" role="status" class="notice">{{ notice }}</p>
+    <h1>{{ t('Users') }}</h1>
+    <p>{{ t('Manage user accounts and roles.') }}</p>
+    <p v-if="notice" role="status" class="notice">{{ t(notice) }}</p>
     <DataTable
       :rows="rows"
       :columns="columns.filter((column) => column.key !== 'actions' || can(['users.update']))"
@@ -53,8 +54,8 @@ function openForm(id: number | null = null) {
       :search="search"
       :loading="loading"
       :error="error"
-      caption="Users"
-      search-placeholder="Search users..."
+      :caption="t('Users')"
+      :search-placeholder="t('Search users...')"
       @update:page="setPage"
       @update:per-page="setPerPage"
       @update:search="setSearch"
@@ -62,18 +63,18 @@ function openForm(id: number | null = null) {
     >
       <template #toolbar
         ><button v-if="can('users.create')" type="button" class="primary" @click="openForm()">
-          <AppIcon name="add" :size="16" />Add user
+          <AppIcon name="add" :size="16" /> {{ t('Add user') }}
         </button></template
       >
       <template #cell-actions="{ row }"
         ><button
           v-if="can('users.update')"
           type="button"
-          :aria-label="`Edit ${row.name}`"
+          :aria-label="t('Edit {0}', [row.name])"
           @click="openForm(row.id)"
-          :title="`Edit ${row.name}`"
+          :title="t('Edit {0}', [row.name])"
         >
-          <AppIcon name="pencil" :size="18" /><span class="action-label">Edit</span>
+          <AppIcon name="pencil" :size="18" /><span class="action-label"> {{ t('Edit') }} </span>
         </button></template
       >
     </DataTable>

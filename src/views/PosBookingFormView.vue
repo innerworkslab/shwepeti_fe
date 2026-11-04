@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import { usePermissions } from '@/composables/usePermissions'
 const { can } = usePermissions()
 
@@ -125,80 +126,88 @@ async function submit() {
   <main class="booking-page">
     <header>
       <div>
-        <span class="eyebrow">SHWE PETIT · FRONT DESK</span>
-        <h1>Create booking</h1>
-        <p>Reserve a room or register a walk-in stay.</p>
+        <span class="eyebrow"> {{ t('SHWE PETIT · FRONT DESK') }} </span>
+        <h1>{{ t('Create booking') }}</h1>
+        <p>{{ t('Reserve a room or register a walk-in stay.') }}</p>
       </div>
-      <RouterLink v-if="!saving" to="/pos">Back to calendar</RouterLink>
+      <RouterLink v-if="!saving" to="/pos"> {{ t('Back to calendar') }} </RouterLink>
     </header>
     <section v-if="saved" class="card success" role="status">
       <AppIcon name="status" :size="32" />
-      <h2>Booking saved</h2>
+      <h2>{{ t('Booking saved') }}</h2>
       <strong>{{ saved.booking_no }}</strong>
-      <p>{{ saved.guest_name }} · {{ saved.status }}</p>
+      <p>{{ saved.guest_name }} · {{ t(saved.status) }}</p>
       <dl>
-        <dt>Total</dt>
+        <dt>{{ t('Total') }}</dt>
         <dd>{{ saved.total_amount }}</dd>
-        <dt>Paid</dt>
+        <dt>{{ t('Paid') }}</dt>
         <dd>{{ saved.paid_amount }}</dd>
-        <dt>Balance</dt>
+        <dt>{{ t('Balance') }}</dt>
         <dd>{{ saved.balance_amount }}</dd>
       </dl>
-      <RouterLink class="primary" to="/pos">Return to calendar</RouterLink>
+      <RouterLink class="primary" to="/pos"> {{ t('Return to calendar') }} </RouterLink>
     </section>
     <form v-else novalidate :aria-busy="saving" @submit.prevent="submit">
       <p v-if="loadError" role="alert" class="error">
-        {{ loadError }} <button type="button" @click="loadRooms">Retry rooms</button>
+        {{ t(loadError) }} <button type="button" @click="loadRooms">{{ t('Retry rooms') }}</button>
       </p>
-      <p v-if="error" role="alert" class="error">{{ error }}</p>
+      <p v-if="error" role="alert" class="error">{{ t(error) }}</p>
       <ul v-if="Object.keys(errors).length" class="error" role="alert">
-        <li v-for="(message, key) in errors" :key="key">{{ message }}</li>
+        <li v-for="(message, key) in errors" :key="key">{{ t(message) }}</li>
       </ul>
       <fieldset :disabled="saving" class="card">
-        <legend>Stay details</legend>
+        <legend>{{ t('Stay details') }}</legend>
         <div class="fields">
-          <label
-            >Booking type<select v-model="form.booking_type" name="booking_type">
-              <option value="reservation">Reservation</option>
-              <option value="walk_in">Walk-in</option>
+          <label>
+            {{ t('Booking type') }}
+            <select v-model="form.booking_type" name="booking_type">
+              <option value="reservation">{{ t('Reservation') }}</option>
+              <option value="walk_in">{{ t('Walk-in') }}</option>
             </select></label
           >
-          <label
-            >Room<select
+          <label>
+            {{ t('Room') }}
+            <select
               v-model="form.room_id"
               name="room_id"
               :disabled="loading || !!loadError"
               :aria-invalid="!!errors.room_id"
             >
-              <option value="">{{ loading ? 'Loading rooms…' : 'Select a room' }}</option>
+              <option value="">{{ loading ? t('Loading rooms…') : t('Select a room') }}</option>
               <option v-for="room in rooms" :key="room.id" :value="room.id">
                 {{ room.name }} · {{ room.room_category?.name }} · {{ room.price }}
               </option></select
-            ><small v-if="!loading && !loadError && !rooms.length">No rooms found.</small></label
+            ><small v-if="!loading && !loadError && !rooms.length">
+              {{ t('No rooms found.') }}
+            </small></label
           >
-          <label
-            >Guest name<input
+          <label>
+            {{ t('Guest name') }}
+            <input
               v-model="form.guest_name"
               name="guest_name"
               autocomplete="name"
               :aria-invalid="!!errors.guest_name"
           /></label>
-          <label
-            >Charge type<select v-model="form.charge_type" name="charge_type">
-              <option value="day">Day</option>
-              <option value="session">Session</option>
+          <label>
+            {{ t('Charge type') }}
+            <select v-model="form.charge_type" name="charge_type">
+              <option value="day">{{ t('Day') }}</option>
+              <option value="session">{{ t('Session') }}</option>
             </select></label
           >
-          <label
-            >Expected check-in<input
+          <label>
+            {{ t('Expected check-in') }}
+            <input
               v-model="form.expected_check_in_at"
               name="expected_check_in_at"
               type="datetime-local"
               step="1"
               :aria-invalid="!!errors.expected_check_in_at"
           /></label>
-          <label
-            >Expected check-out<input
+          <label>
+            {{ t('Expected check-out') }}
+            <input
               v-model="form.expected_check_out_at"
               name="expected_check_out_at"
               type="datetime-local"
@@ -206,16 +215,18 @@ async function submit() {
               :aria-invalid="!!errors.expected_check_out_at"
           /></label>
           <template v-if="form.charge_type === 'session'"
-            ><label
-              >Session hours<input
+            ><label>
+              {{ t('Session hours') }}
+              <input
                 v-model="form.session_hours"
                 name="session_hours"
                 type="number"
                 min="0"
                 step="any"
                 :aria-invalid="!!errors.session_hours" /></label
-            ><label
-              >Session rate<input
+            ><label>
+              {{ t('Session rate') }}
+              <input
                 v-model="form.session_rate"
                 name="session_rate"
                 type="number"
@@ -223,7 +234,9 @@ async function submit() {
                 step="any"
                 :aria-invalid="!!errors.session_rate" /></label
           ></template>
-          <label class="wide">Note<textarea v-model="form.note" name="note" rows="3" /></label>
+          <label class="wide">
+            {{ t('Note') }} <textarea v-model="form.note" name="note" rows="3" />
+          </label>
         </div>
       </fieldset>
       <fieldset
@@ -231,21 +244,22 @@ async function submit() {
         :disabled="saving"
         class="card"
       >
-        <legend>Reservation deposit</legend>
+        <legend>{{ t('Reservation deposit') }}</legend>
         <label class="check"
-          ><input v-model="form.include_deposit" type="checkbox" name="include_deposit" /> Add a
-          deposit (optional)</label
-        >
+          ><input v-model="form.include_deposit" type="checkbox" name="include_deposit" />
+          {{ t('Add a deposit (optional)') }}
+        </label>
         <div v-if="form.include_deposit" class="fields deposit">
-          <label
-            >Deposit cashbook<select
+          <label>
+            {{ t('Deposit cashbook') }}
+            <select
               v-model="form.deposit.cashbook_id"
               name="deposit.cashbook_id"
               :disabled="cashbooksLoading"
               required
             >
               <option value="">
-                {{ cashbooksLoading ? 'Loading cashbooks…' : 'Choose a cashbook' }}
+                {{ cashbooksLoading ? t('Loading cashbooks…') : t('Choose a cashbook') }}
               </option>
               <option v-for="cashbook in cashbooks" :key="cashbook.id" :value="cashbook.id">
                 {{ cashbook.name }} ({{ cashbook.code }})
@@ -253,47 +267,49 @@ async function submit() {
             </select></label
           >
           <p v-if="cashbookError" role="alert" class="error">
-            {{ cashbookError }}
-            <button type="button" @click="loadCashbooks">Retry cashbooks</button>
+            {{ t(cashbookError) }}
+            <button type="button" @click="loadCashbooks">{{ t('Retry cashbooks') }}</button>
           </p>
-          <p v-else-if="!cashbooksLoading && !cashbooks.length">No cashbooks found.</p>
-          <label
-            >Deposit amount<input
+          <p v-else-if="!cashbooksLoading && !cashbooks.length">{{ t('No cashbooks found.') }}</p>
+          <label>
+            {{ t('Deposit amount') }}
+            <input
               v-model="form.deposit.amount"
               name="deposit.amount"
               type="number"
               min="0"
               step="any"
           /></label>
-          <label
-            >Payment method<select
-              v-model="form.deposit.payment_method"
-              name="deposit.payment_method"
-            >
-              <option value="cash">Cash</option>
-              <option value="kpay">KPay</option>
-              <option value="wavepay">WavePay</option>
-              <option value="ayapay">AyaPay</option>
+          <label>
+            {{ t('Payment method') }}
+            <select v-model="form.deposit.payment_method" name="deposit.payment_method">
+              <option value="cash">{{ t('Cash') }}</option>
+              <option value="kpay">{{ t('KPay') }}</option>
+              <option value="wavepay">{{ t('WavePay') }}</option>
+              <option value="ayapay">{{ t('AyaPay') }}</option>
             </select></label
           >
-          <label
-            >Paid at<input
+          <label>
+            {{ t('Paid at') }}
+            <input
               v-model="form.deposit.paid_at"
               name="deposit.paid_at"
               type="datetime-local"
               step="1"
           /></label>
-          <label>Deposit note<input v-model="form.deposit.note" name="deposit.note" /></label>
+          <label>
+            {{ t('Deposit note') }} <input v-model="form.deposit.note" name="deposit.note"
+          /></label>
         </div>
       </fieldset>
       <footer>
-        <RouterLink v-if="!saving" to="/pos">Cancel</RouterLink
+        <RouterLink v-if="!saving" to="/pos"> {{ t('Cancel') }} </RouterLink
         ><button
           class="primary"
           type="submit"
           :disabled="saving || loading || !!loadError || !rooms.length"
         >
-          <AppIcon name="add" :size="17" />{{ saving ? 'Saving booking…' : 'Create booking' }}
+          <AppIcon name="add" :size="17" />{{ saving ? t('Saving booking…') : t('Create booking') }}
         </button>
       </footer>
     </form>

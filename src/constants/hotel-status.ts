@@ -1,9 +1,10 @@
+import { enumLabel } from '@/i18n'
 export const roomStatuses = ['available', 'cleaning', 'maintenance', 'out_of_service'] as const
 export const bookingStatuses = ['reserved', 'checked_in', 'checked_out', 'cancelled'] as const
 export type KnownRoomStatus = (typeof roomStatuses)[number]
 export type BookingStatus = (typeof bookingStatuses)[number]
 export function statusLabel(status: string) {
-  return status.replaceAll('_', ' ').replace(/^./, (letter) => letter.toUpperCase())
+  return enumLabel(status)
 }
 const colors: Record<string, [string, string]> = {
   available: ['#15803d', '#e8faef'],

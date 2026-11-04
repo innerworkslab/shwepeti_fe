@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import { computed, defineAsyncComponent, ref } from 'vue'
 import { onBeforeRouteLeave, onBeforeRouteUpdate, useRoute, useRouter } from 'vue-router'
 const props = defineProps<{
@@ -51,8 +52,8 @@ async function saved() {
 </script>
 <template>
   <div v-if="invalidId" role="alert">
-    <h1>Invalid record ID</h1>
-    <RouterLink :to="`/${resource}`">Back to list</RouterLink>
+    <h1>{{ t('Invalid record ID') }}</h1>
+    <RouterLink :to="`/${resource}`"> {{ t('Back to list') }} </RouterLink>
   </div>
   <component
     v-else

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import { computed, reactive, ref } from 'vue'
 import DataTable from '@/components/common/DataTable.vue'
 import { useDataTable } from '@/composables/useDataTable'
@@ -78,9 +79,9 @@ const categorySales = computed(() => {
 <template>
   <section class="report-page">
     <header>
-      <h1>{{ definition.title }}</h1>
+      <h1>{{ t(definition.title) }}</h1>
       <p v-if="!loading && !error && metadata.currency">
-        Currency: {{ metadata.currency
+        {{ t('Currency:') }} {{ metadata.currency
         }}<span v-if="metadata.date_from">
           · {{ metadata.date_from }} – {{ metadata.date_to }}</span
         >
@@ -96,24 +97,25 @@ const categorySales = computed(() => {
       :loading="loading"
       :error="error"
       :searchable="false"
-      :caption="definition.title"
+      :caption="t(definition.title)"
       @update:page="setPage"
       @update:per-page="setPerPage"
       @refresh="refresh"
     >
+      <template v-if="report === 'profit-and-loss'" #cell-name="{ row }">{{
+        t(row.name)
+      }}</template>
       <template #filters
         ><form class="report-filters" @submit.prevent="applyDates">
-          <label
-            >From date<input
-              v-model="dates.date_from"
-              name="date_from"
-              type="date"
-              required /></label
-          ><label
-            >To date<input v-model="dates.date_to" name="date_to" type="date" required /></label
-          ><button type="submit">Apply dates</button
-          ><button type="button" @click="resetDates">Reset dates</button>
-          <p v-if="dateError" role="alert">{{ dateError }}</p>
+          <label>
+            {{ t('From date') }}
+            <input v-model="dates.date_from" name="date_from" type="date" required /></label
+          ><label>
+            {{ t('To date') }}
+            <input v-model="dates.date_to" name="date_to" type="date" required /></label
+          ><button type="submit">{{ t('Apply dates') }}</button
+          ><button type="button" @click="resetDates">{{ t('Reset dates') }}</button>
+          <p v-if="dateError" role="alert">{{ t(dateError) }}</p>
         </form></template
       >
     </DataTable>
@@ -121,32 +123,32 @@ const categorySales = computed(() => {
       <section
         v-if="props.report === 'profit-and-loss'"
         class="report-notes"
-        aria-label="Financial report information"
+        :aria-label="t('Financial report information')"
       >
-        <p v-if="metadata.basis">Basis: {{ reportLabel(metadata.basis) }}</p>
+        <p v-if="metadata.basis">{{ t('Basis:') }} {{ t(reportLabel(metadata.basis)) }}</p>
         <p v-if="metadata.has_missing_costs" role="status" class="warning">
-          {{ metadata.missing_cost_count ?? 0 }} costs are missing. Reported profit excludes these
-          unrecorded costs.
+          {{ metadata.missing_cost_count ?? 0 }}
+          {{ t('costs are missing. Reported profit excludes these unrecorded costs.') }}
         </p>
         <dl class="summary">
           <div v-if="metadata.recorded_total_expense != null">
-            <dt>Recorded total expense</dt>
+            <dt>{{ t('Recorded total expense') }}</dt>
             <dd>{{ metadata.recorded_total_expense }}</dd>
           </div>
           <div v-if="metadata.profit_before_unrecorded_costs != null">
-            <dt>Profit before unrecorded costs</dt>
+            <dt>{{ t('Profit before unrecorded costs') }}</dt>
             <dd>{{ metadata.profit_before_unrecorded_costs }}</dd>
           </div>
         </dl>
       </section>
-      <dl v-if="summaries.length" class="summary" aria-label="Report totals">
+      <dl v-if="summaries.length" class="summary" :aria-label="t('Report totals')">
         <div v-for="[key, value] in summaries" :key="key">
-          <dt>{{ reportLabel(key) }}</dt>
+          <dt>{{ t(reportLabel(key)) }}</dt>
           <dd>{{ value }}</dd>
         </div>
       </dl>
       <section v-if="categorySales.length" class="category-summary">
-        <h2>Sales by category</h2>
+        <h2>{{ t('Sales by category') }}</h2>
         <dl class="summary">
           <div v-for="category in categorySales" :key="category.category_id">
             <dt>{{ category.category }}</dt>

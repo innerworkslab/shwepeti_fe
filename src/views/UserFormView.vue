@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import { computed, ref } from 'vue'
 import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
 import UserForm from '@/components/users/UserFormModal.vue'
@@ -25,5 +26,5 @@ function saved() {
     @close="router.push('/users')"
     @saved="saved"
   />
-  <p v-else role="alert">Invalid user ID.</p>
+  <p v-else role="alert">{{ t('Invalid user ID.') }}</p>
 </template>

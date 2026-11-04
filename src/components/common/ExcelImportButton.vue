@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import { ref, onBeforeUnmount } from 'vue'
 import { onBeforeRouteLeave } from 'vue-router'
 import AppIcon from './AppIcon.vue'
@@ -60,7 +61,7 @@ onBeforeUnmount(() => {
 </script>
 <template>
   <button type="button" class="import-button" @click="open">
-    <AppIcon name="upload" :size="16" />Import Excel
+    <AppIcon name="upload" :size="16" /> {{ t('Import Excel') }}
   </button>
   <Teleport to="body"
     ><dialog
@@ -70,18 +71,23 @@ onBeforeUnmount(() => {
       @cancel.prevent="close"
     >
       <header>
-        <h2 id="excel-import-title">Import {{ resource }}</h2>
-        <button type="button" aria-label="Close import" :disabled="busy" @click="close">
+        <h2 id="excel-import-title">{{ t('Import') }} {{ t(resource) }}</h2>
+        <button type="button" :aria-label="t('Close import')" :disabled="busy" @click="close">
           <AppIcon name="close" :size="18" />
         </button>
       </header>
       <p>
-        Choose an Excel workbook using the import template columns. Repeated rows can include
-        additional {{ resource === 'items' ? 'unit conversions' : 'recipe ingredients' }}.
+        {{
+          t(
+            'Choose an Excel workbook using the import template columns. Repeated rows can include additional',
+          )
+        }}
+        {{ resource === 'items' ? t('Unit conversions') : t('Recipe ingredients') }}.
       </p>
       <form @submit.prevent="submit">
-        <label
-          >Excel file<input
+        <label>
+          {{ t('Excel file') }}
+          <input
             ref="input"
             name="file"
             type="file"
@@ -89,12 +95,12 @@ onBeforeUnmount(() => {
             :disabled="busy"
             @change="select"
         /></label>
-        <p v-if="error" role="alert">{{ error }}</p>
-        <p v-if="busy" role="status">Importing… Please keep this page open.</p>
+        <p v-if="error" role="alert">{{ t(error) }}</p>
+        <p v-if="busy" role="status">{{ t('Importing… Please keep this page open.') }}</p>
         <footer>
-          <button type="button" :disabled="busy" @click="close">Cancel</button
+          <button type="button" :disabled="busy" @click="close">{{ t('Cancel') }}</button
           ><button type="submit" :disabled="busy || !file">
-            {{ busy ? 'Importing…' : 'Import file' }}
+            {{ busy ? t('Importing…') : t('Import file') }}
           </button>
         </footer>
       </form>

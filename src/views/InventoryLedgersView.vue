@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import DataTable from '@/components/common/DataTable.vue'
 import { useDataTable } from '@/composables/useDataTable'
 import { inventoryLedgerService } from '@/services/inventory-ledger.service'
@@ -61,8 +62,8 @@ const {
 </script>
 <template>
   <section>
-    <h1>Inventory Ledger</h1>
-    <p>View inventory movements across warehouses.</p>
+    <h1>{{ t('Inventory Ledger') }}</h1>
+    <p>{{ t('View inventory movements across warehouses.') }}</p>
     <DataTable
       :rows="rows"
       :columns="columns"
@@ -73,8 +74,8 @@ const {
       :search="search"
       :loading="loading"
       :error="error"
-      caption="Inventory Ledger"
-      search-placeholder="Search inventory ledger…"
+      :caption="t('Inventory Ledger')"
+      :search-placeholder="t('Search inventory ledger…')"
       @update:page="setPage"
       @update:per-page="setPerPage"
       @update:search="setSearch"

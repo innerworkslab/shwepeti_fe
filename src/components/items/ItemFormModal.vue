@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/i18n'
 import AppIcon from '@/components/common/AppIcon.vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, useId } from 'vue'
 import { ValidationError } from 'yup'
@@ -208,38 +209,38 @@ async function submit() {
         <component :is="page ? 'h1' : 'h2'" :id="`${prefix}-title`">
           {{
             statusOnly
-              ? 'Update item status'
+              ? t('Update item status')
               : priceOnly
-                ? 'Update item price'
+                ? t('Update item price')
                 : editing
-                  ? 'Edit item'
-                  : 'Add item'
+                  ? t('Edit item')
+                  : t('Add item')
           }}
         </component>
         <button
           type="button"
-          :aria-label="page ? 'Back to list' : 'Close dialog'"
+          :aria-label="page ? t('Back to list') : t('Close dialog')"
           :disabled="saving"
           @click="close"
         >
           <AppIcon name="close" />
         </button>
       </header>
-      <p v-if="loading" role="status">Loading item...</p>
+      <p v-if="loading" role="status">{{ t('Loading item...') }}</p>
       <div v-else-if="loadError" role="alert" class="error">
-        <p>{{ loadError }}</p>
-        <button type="button" @click="load">Try again</button>
+        <p>{{ t(loadError) }}</p>
+        <button type="button" @click="load">{{ t('Try again') }}</button>
       </div>
       <template v-else>
-        <p v-if="saveError" role="alert" class="error">{{ saveError }}</p>
+        <p v-if="saveError" role="alert" class="error">{{ t(saveError) }}</p>
         <p v-if="errors.id || errors.item_id" role="alert" class="error">
-          {{ errors.id || errors.item_id }}
+          {{ t(errors.id || errors.item_id) }}
         </p>
         <fieldset :disabled="saving">
-          <p v-if="detailsOnly">{{ form.name }} &middot; ID {{ itemId }}</p>
+          <p v-if="detailsOnly">{{ form.name }} {{ t('· ID') }} {{ itemId }}</p>
           <template v-if="statusOnly"
             ><div class="field">
-              <label :for="`${prefix}-is_active`">Status</label>
+              <label :for="`${prefix}-is_active`"> {{ t('Status') }} </label>
               <select
                 :id="`${prefix}-is_active`"
                 name="is_active"
@@ -248,18 +249,18 @@ async function submit() {
                 :aria-describedby="errors.is_active ? `${prefix}-is_active-error` : undefined"
                 required
               >
-                <option :value="undefined" disabled>Choose status</option>
-                <option :value="true">Active</option>
-                <option :value="false">Inactive</option>
+                <option :value="undefined" disabled>{{ t('Choose status') }}</option>
+                <option :value="true">{{ t('Active') }}</option>
+                <option :value="false">{{ t('Inactive') }}</option>
               </select>
               <span v-if="errors.is_active" :id="`${prefix}-is_active-error`" class="error">{{
-                errors.is_active
+                t(errors.is_active)
               }}</span>
             </div></template
           >
           <template v-else-if="priceOnly"
             ><div class="field">
-              <label :for="`${prefix}-price`">Price</label>
+              <label :for="`${prefix}-price`"> {{ t('Price') }} </label>
               <input
                 :id="`${prefix}-price`"
                 name="price"
@@ -272,13 +273,13 @@ async function submit() {
                 required
               />
               <span v-if="errors.price" :id="`${prefix}-price-error`" class="error">{{
-                errors.price
+                t(errors.price)
               }}</span>
             </div></template
           >
           <template v-else
             ><div class="field">
-              <label :for="`${prefix}-name`">Name</label>
+              <label :for="`${prefix}-name`"> {{ t('Name') }} </label>
               <input
                 :id="`${prefix}-name`"
                 name="name"
@@ -288,11 +289,11 @@ async function submit() {
                 required
               />
               <span v-if="errors.name" :id="`${prefix}-name-error`" class="error">{{
-                errors.name
+                t(errors.name)
               }}</span>
             </div>
             <div class="field">
-              <label :for="`${prefix}-code`">Code</label>
+              <label :for="`${prefix}-code`"> {{ t('Code') }} </label>
               <input
                 :id="`${prefix}-code`"
                 name="code"
@@ -302,11 +303,11 @@ async function submit() {
                 required
               />
               <span v-if="errors.code" :id="`${prefix}-code-error`" class="error">{{
-                errors.code
+                t(errors.code)
               }}</span>
             </div>
             <div class="field">
-              <label :for="`${prefix}-item_category_id`">Item type</label>
+              <label :for="`${prefix}-item_category_id`"> {{ t('Item type') }} </label>
               <select
                 :id="`${prefix}-item_category_id`"
                 name="item_category_id"
@@ -317,26 +318,26 @@ async function submit() {
                 "
                 required
               >
-                <option value="" disabled>Choose an item type</option>
+                <option value="" disabled>{{ t('Choose an item type') }}</option>
                 <option v-if="missingCategory" :value="form.item_category_id">
-                  Item type #{{ form.item_category_id }} (not in list)
+                  {{ t('Item type #') }} {{ form.item_category_id }} {{ t('(not in list)') }}
                 </option>
                 <option v-for="category in categories" :key="category.id" :value="category.id">
                   {{ category.name }}
                 </option>
               </select>
-              <small v-if="!categories.length"
-                >No item types found. Create an item category first.</small
-              >
+              <small v-if="!categories.length">
+                {{ t('No item types found. Create an item category first.') }}
+              </small>
               <span
                 v-if="errors.item_category_id"
                 :id="`${prefix}-item_category_id-error`"
                 class="error"
-                >{{ errors.item_category_id }}</span
+                >{{ t(errors.item_category_id) }}</span
               >
             </div>
             <div class="field">
-              <label :for="`${prefix}-stock_unit_id`">Stock unit</label>
+              <label :for="`${prefix}-stock_unit_id`"> {{ t('Stock unit') }} </label>
               <select
                 :id="`${prefix}-stock_unit_id`"
                 name="stock_unit_id"
@@ -347,24 +348,24 @@ async function submit() {
                 "
                 required
               >
-                <option value="" disabled>Choose a stock unit</option>
+                <option value="" disabled>{{ t('Choose a stock unit') }}</option>
                 <option v-if="missingUnit(form.stock_unit_id)" :value="form.stock_unit_id">
-                  Unit #{{ form.stock_unit_id }} (not in list)
+                  {{ t('Unit #') }} {{ form.stock_unit_id }} {{ t('(not in list)') }}
                 </option>
                 <option v-for="unit in units" :key="unit.id" :value="unit.id">
                   {{ unit.name }} ({{ unit.symbol }})
                 </option>
               </select>
-              <small v-if="!units.length">No units found. Create a unit first.</small>
+              <small v-if="!units.length"> {{ t('No units found. Create a unit first.') }} </small>
               <span
                 v-if="errors.stock_unit_id"
                 :id="`${prefix}-stock_unit_id-error`"
                 class="error"
-                >{{ errors.stock_unit_id }}</span
+                >{{ t(errors.stock_unit_id) }}</span
               >
             </div>
             <div class="field">
-              <label :for="`${prefix}-min_stock`">Minimum stock</label>
+              <label :for="`${prefix}-min_stock`"> {{ t('Minimum stock') }} </label>
               <input
                 :id="`${prefix}-min_stock`"
                 name="min_stock"
@@ -377,11 +378,11 @@ async function submit() {
                 required
               />
               <span v-if="errors.min_stock" :id="`${prefix}-min_stock-error`" class="error">{{
-                errors.min_stock
+                t(errors.min_stock)
               }}</span>
             </div>
             <div class="field">
-              <label :for="`${prefix}-description`">Description</label>
+              <label :for="`${prefix}-description`"> {{ t('Description') }} </label>
               <textarea
                 :id="`${prefix}-description`"
                 name="description"
@@ -391,20 +392,21 @@ async function submit() {
                 rows="3"
               ></textarea>
               <span v-if="errors.description" :id="`${prefix}-description-error`" class="error">{{
-                errors.description
+                t(errors.description)
               }}</span>
             </div>
-            <section class="conversions" aria-label="Unit conversions">
-              <h3>Unit conversions</h3>
-              <p v-if="!form.item_unit_conversions.length">No conversions added.</p>
+            <section class="conversions" :aria-label="t('Unit conversions')">
+              <h3>{{ t('Unit conversions') }}</h3>
+              <p v-if="!form.item_unit_conversions.length">{{ t('No conversions added.') }}</p>
               <div
                 v-for="(row, index) in form.item_unit_conversions"
                 :key="index"
                 class="conversion-row"
               >
-                <h4>Conversion {{ index + 1 }}</h4>
+                <h4>{{ t('Conversion') }} {{ index + 1 }}</h4>
                 <div class="field">
-                  <label :for="`${prefix}-conversion-${index}-from_unit_id`">From unit</label
+                  <label :for="`${prefix}-conversion-${index}-from_unit_id`">
+                    {{ t('From unit') }} </label
                   ><select
                     :id="`${prefix}-conversion-${index}-from_unit_id`"
                     :name="`item_unit_conversions[${index}].from_unit_id`"
@@ -417,9 +419,9 @@ async function submit() {
                     "
                     required
                   >
-                    <option value="" disabled>Choose unit</option>
+                    <option value="" disabled>{{ t('Choose unit') }}</option>
                     <option v-if="missingUnit(row.from_unit_id)" :value="row.from_unit_id">
-                      Unit #{{ row.from_unit_id }} (not in list)
+                      {{ t('Unit #') }} {{ row.from_unit_id }} {{ t('(not in list)') }}
                     </option>
                     <option v-for="unit in units" :key="unit.id" :value="unit.id">
                       {{ unit.name }} ({{ unit.symbol }})
@@ -428,11 +430,12 @@ async function submit() {
                     v-if="errors[`item_unit_conversions[${index}].from_unit_id`]"
                     :id="`${prefix}-conversion-${index}-from_unit_id-error`"
                     class="error"
-                    >{{ errors[`item_unit_conversions[${index}].from_unit_id`] }}</span
+                    >{{ t(errors[`item_unit_conversions[${index}].from_unit_id`]) }}</span
                   >
                 </div>
                 <div class="field">
-                  <label :for="`${prefix}-conversion-${index}-to_unit_id`">To unit</label
+                  <label :for="`${prefix}-conversion-${index}-to_unit_id`">
+                    {{ t('To unit') }} </label
                   ><select
                     :id="`${prefix}-conversion-${index}-to_unit_id`"
                     :name="`item_unit_conversions[${index}].to_unit_id`"
@@ -445,9 +448,9 @@ async function submit() {
                     "
                     required
                   >
-                    <option value="" disabled>Choose unit</option>
+                    <option value="" disabled>{{ t('Choose unit') }}</option>
                     <option v-if="missingUnit(row.to_unit_id)" :value="row.to_unit_id">
-                      Unit #{{ row.to_unit_id }} (not in list)
+                      {{ t('Unit #') }} {{ row.to_unit_id }} {{ t('(not in list)') }}
                     </option>
                     <option v-for="unit in units" :key="unit.id" :value="unit.id">
                       {{ unit.name }} ({{ unit.symbol }})
@@ -456,12 +459,12 @@ async function submit() {
                     v-if="errors[`item_unit_conversions[${index}].to_unit_id`]"
                     :id="`${prefix}-conversion-${index}-to_unit_id-error`"
                     class="error"
-                    >{{ errors[`item_unit_conversions[${index}].to_unit_id`] }}</span
+                    >{{ t(errors[`item_unit_conversions[${index}].to_unit_id`]) }}</span
                   >
                 </div>
                 <div class="field">
-                  <label :for="`${prefix}-conversion-${index}-conversion_factor`"
-                    >Conversion factor</label
+                  <label :for="`${prefix}-conversion-${index}-conversion_factor`">
+                    {{ t('Conversion factor') }} </label
                   ><input
                     :id="`${prefix}-conversion-${index}-conversion_factor`"
                     :name="`item_unit_conversions[${index}].conversion_factor`"
@@ -480,35 +483,35 @@ async function submit() {
                     v-if="errors[`item_unit_conversions[${index}].conversion_factor`]"
                     :id="`${prefix}-conversion-${index}-conversion_factor-error`"
                     class="error"
-                    >{{ errors[`item_unit_conversions[${index}].conversion_factor`] }}</span
+                    >{{ t(errors[`item_unit_conversions[${index}].conversion_factor`]) }}</span
                   >
                 </div>
                 <button
                   type="button"
-                  :aria-label="`Remove conversion ${index + 1}`"
+                  :aria-label="t('Remove conversion {0}', [index + 1])"
                   @click="removeConversion(index)"
                 >
-                  Remove
+                  {{ t('Remove') }}
                 </button>
               </div>
-              <button type="button" @click="addConversion">Add conversion</button>
+              <button type="button" @click="addConversion">{{ t('Add conversion') }}</button>
             </section></template
           >
         </fieldset></template
       >
       <footer>
-        <button type="button" :disabled="saving" @click="close">Cancel</button>
+        <button type="button" :disabled="saving" @click="close">{{ t('Cancel') }}</button>
         <button type="submit" class="primary" :disabled="saving || loading || !!loadError">
           {{
             saving
-              ? 'Saving...'
+              ? t('Saving...')
               : statusOnly
-                ? 'Update status'
+                ? t('Update status')
                 : priceOnly
-                  ? 'Update price'
+                  ? t('Update price')
                   : editing
-                    ? 'Save changes'
-                    : 'Create item'
+                    ? t('Save changes')
+                    : t('Create item')
           }}
         </button>
       </footer>
