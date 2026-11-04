@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { usePermissions } from '@/composables/usePermissions'
+const { can } = usePermissions()
+
 import AppIcon from '@/components/common/AppIcon.vue'
 import { ref } from 'vue'
 import DataTable from '@/components/common/DataTable.vue'
@@ -57,7 +60,12 @@ function saved() {
     <p v-if="notice" role="status" class="notice">{{ notice }}</p>
     <DataTable
       :rows="rows"
-      :columns="columns"
+      :columns="
+        columns.filter(
+          (column) =>
+            column.key !== 'actions' || can(['warehouses.toggle_active', 'warehouses.update']),
+        )
+      "
       :row-key="(category: Warehouse) => category.id"
       :total="total"
       :page="page"
@@ -73,7 +81,7 @@ function saved() {
       @refresh="refresh"
     >
       <template #toolbar
-        ><button type="button" class="primary" @click="openForm()">
+        ><button v-if="can('warehouses.create')" type="button" class="primary" @click="openForm()">
           <AppIcon name="add" :size="16" />Add warehouse
         </button></template
       >
@@ -85,6 +93,7 @@ function saved() {
       <template #cell-actions="{ row }">
         <div class="row-actions">
           <button
+            v-if="can('warehouses.update')"
             type="button"
             :aria-label="`Edit ${row.name}`"
             @click="openForm(row)"
@@ -93,6 +102,7 @@ function saved() {
             <AppIcon name="pencil" :size="18" /><span class="action-label">Edit</span>
           </button>
           <button
+            v-if="can('warehouses.toggle_active')"
             type="button"
             :aria-label="`Update status for ${row.name}`"
             title="Update status"

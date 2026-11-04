@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { usePermissions } from '@/composables/usePermissions'
+const { can } = usePermissions()
+
 import { computed, watch, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { calculatePosCharges } from '@/utils/pos-charges'
 import { checkoutPaymentSchema } from '@/schemas/pos-payment.schema'
@@ -132,6 +135,14 @@ onBeforeUnmount(() => {
   controller.abort()
 })
 function start(action: 'partial' | 'checkout') {
+  if (
+    !can(
+      action === 'partial'
+        ? 'bookings.record_payment'
+        : ['bookings.checkout', 'bookings.check_out'],
+    )
+  )
+    return
   if (recordedPayment.value || saving.value || props.disabled || loading.value) return
   if (action === 'partial' && Number(invoice.value?.balance_amount) <= 0) return
   if (
@@ -162,6 +173,7 @@ async function completeRecordedPayment() {
   if (!disposed) recordedPayment.value = null
 }
 async function checkoutSettledBooking() {
+  if (!can(['bookings.checkout', 'bookings.check_out'])) return
   if (saving.value || props.disabled || booking.value?.status !== 'checked_in') return
   saving.value = true
   emit('busy', true)
@@ -234,6 +246,16 @@ async function retryCompletion() {
   }
 }
 async function save(action: 'check-in' | 'partial' | 'checkout') {
+  if (
+    !can(
+      action === 'check-in'
+        ? 'bookings.check_in'
+        : action === 'partial'
+          ? 'bookings.record_payment'
+          : ['bookings.checkout', 'bookings.check_out'],
+    )
+  )
+    return
   if (saving.value || props.disabled || loading.value || !booking.value || recordedPayment.value)
     return
   if (action === 'check-in' && booking.value.status !== 'reserved') return
@@ -352,7 +374,7 @@ function submit() {
       </dl>
       <div class="actions">
         <button
-          v-if="booking.status === 'reserved'"
+          v-if="booking.status === 'reserved' && can('bookings.check_in')"
           type="button"
           :disabled="saving || disabled || !!recordedPayment"
           @click="save('check-in')"
@@ -360,6 +382,7 @@ function submit() {
           Check in</button
         ><button
           v-if="
+            can('bookings.record_payment') &&
             ['reserved', 'checked_in'].includes(booking.status) &&
             Number(invoice?.balance_amount) > 0
           "
@@ -369,7 +392,7 @@ function submit() {
         >
           Partial payment</button
         ><button
-          v-if="booking.status === 'checked_in'"
+          v-if="booking.status === 'checked_in' && can(['bookings.checkout', 'bookings.check_out'])"
           type="button"
           :disabled="saving || disabled || !!recordedPayment"
           @click="start('checkout')"
@@ -377,7 +400,18 @@ function submit() {
           Check out
         </button>
       </div>
-      <form v-if="mode" novalidate @submit.prevent="submit">
+      <form
+        v-if="
+          mode &&
+          can(
+            mode === 'partial'
+              ? 'bookings.record_payment'
+              : ['bookings.checkout', 'bookings.check_out'],
+          )
+        "
+        novalidate
+        @submit.prevent="submit"
+      >
         <h4>{{ mode === 'checkout' ? 'Checkout payment' : 'Partial payment' }}</h4>
         <fieldset :disabled="saving || disabled || !!recordedPayment">
           <div>

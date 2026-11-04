@@ -1,7 +1,8 @@
 import { userRoles, portalAccessOptions } from '@/constants/admin-options'
-import { number, object, string } from 'yup'
+import { array, number, object, string } from 'yup'
 
 export const createUserSchema = object({
+  permissions: array().of(string().required()).required(),
   name: string().trim().required('Name is required.'),
   email: string().trim().email('Enter a valid email address.').required('Email is required.'),
   // Do not trim or prefill passwords: preserve exactly what the user enters.

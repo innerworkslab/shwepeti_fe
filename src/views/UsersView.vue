@@ -1,8 +1,12 @@
 <script setup lang="ts">
+import { usePermissions } from '@/composables/usePermissions'
+const { can } = usePermissions()
+
 import AppIcon from '@/components/common/AppIcon.vue'
 import { ref } from 'vue'
 import DataTable from '@/components/common/DataTable.vue'
-import UserFormModal from '@/components/users/UserFormModal.vue'
+import { useRouter } from 'vue-router'
+const router = useRouter()
 import { useDataTable } from '@/composables/useDataTable'
 import { userService } from '@/services/user.service'
 import type { User } from '@/types/user'
@@ -28,19 +32,9 @@ const {
   setSearch,
   refresh,
 } = useDataTable(userService.list)
-const modalOpen = ref(false)
-const selectedId = ref<number | null>(null)
 const notice = ref('')
-
 function openForm(id: number | null = null) {
-  selectedId.value = id
-  notice.value = ''
-  modalOpen.value = true
-}
-function saved() {
-  notice.value = selectedId.value != null ? 'User updated.' : 'User created.'
-  modalOpen.value = false
-  void refresh()
+  void router.push(id == null ? '/users/create' : `/users/${id}/edit`)
 }
 </script>
 
@@ -51,7 +45,7 @@ function saved() {
     <p v-if="notice" role="status" class="notice">{{ notice }}</p>
     <DataTable
       :rows="rows"
-      :columns="columns"
+      :columns="columns.filter((column) => column.key !== 'actions' || can(['users.update']))"
       :row-key="(user: User) => user.id"
       :total="total"
       :page="page"
@@ -67,12 +61,13 @@ function saved() {
       @refresh="refresh"
     >
       <template #toolbar
-        ><button type="button" class="primary" @click="openForm()">
+        ><button v-if="can('users.create')" type="button" class="primary" @click="openForm()">
           <AppIcon name="add" :size="16" />Add user
         </button></template
       >
       <template #cell-actions="{ row }"
         ><button
+          v-if="can('users.update')"
           type="button"
           :aria-label="`Edit ${row.name}`"
           @click="openForm(row.id)"
@@ -82,12 +77,6 @@ function saved() {
         </button></template
       >
     </DataTable>
-    <UserFormModal
-      v-if="modalOpen"
-      :user-id="selectedId"
-      @close="modalOpen = false"
-      @saved="saved"
-    />
   </section>
 </template>
 

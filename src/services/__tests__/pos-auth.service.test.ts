@@ -12,6 +12,7 @@ import { posAuthService } from '../pos-auth.service'
 import { usePosSessionStore } from '@/stores/pos-session'
 import router from '@/router'
 const user = {
+  permissions: ['booking_dashboard.view'],
   id: 2,
   name: 'POS Staff',
   email: 'pos@example.com',

@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { usePermissions } from '@/composables/usePermissions'
+const { can } = usePermissions()
+
 import { useRoute, useRouter } from 'vue-router'
 const route = useRoute()
 const router = useRouter()
@@ -114,7 +117,12 @@ function pageSaved() {
     <p v-if="notice" role="status" class="notice">{{ notice }}</p>
     <DataTable
       :rows="rows"
-      :columns="columns"
+      :columns="
+        columns.filter(
+          (column) =>
+            column.key !== 'actions' || can(['stock_ins.update_status', 'stock_ins.view']),
+        )
+      "
       :row-key="(category: StockIn) => category.id"
       :total="total"
       :page="page"
@@ -130,7 +138,7 @@ function pageSaved() {
       @refresh="refresh"
     >
       <template #toolbar
-        ><button type="button" class="primary" @click="openForm()">
+        ><button v-if="can('stock_ins.create')" type="button" class="primary" @click="openForm()">
           <AppIcon name="add" :size="16" />Add stock in
         </button></template
       >
@@ -153,6 +161,7 @@ function pageSaved() {
             <AppIcon name="availability" :size="18" />
           </button>
           <button
+            v-if="can('stock_ins.update_status')"
             type="button"
             :aria-label="`Update status for stock in #${row.id}`"
             title="Update status"

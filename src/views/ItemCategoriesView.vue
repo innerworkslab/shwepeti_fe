@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { usePermissions } from '@/composables/usePermissions'
+const { can } = usePermissions()
+
 import AppIcon from '@/components/common/AppIcon.vue'
 import { ref } from 'vue'
 import DataTable from '@/components/common/DataTable.vue'
@@ -62,7 +65,13 @@ function saved() {
     <p v-if="notice" role="status" class="notice">{{ notice }}</p>
     <DataTable
       :rows="rows"
-      :columns="columns"
+      :columns="
+        columns.filter(
+          (column) =>
+            column.key !== 'actions' ||
+            can(['item_categories.toggle_active', 'item_categories.update']),
+        )
+      "
       :row-key="(category: ItemCategory) => category.id"
       :total="total"
       :page="page"
@@ -92,7 +101,12 @@ function saved() {
             " /></label
       ></template>
       <template #toolbar
-        ><button type="button" class="primary" @click="openForm()">
+        ><button
+          v-if="can('item_categories.create')"
+          type="button"
+          class="primary"
+          @click="openForm()"
+        >
           <AppIcon name="add" :size="16" />Add item category
         </button></template
       >
@@ -104,6 +118,7 @@ function saved() {
       <template #cell-actions="{ row }">
         <div class="row-actions">
           <button
+            v-if="can('item_categories.update')"
             type="button"
             :aria-label="`Edit ${row.name}`"
             @click="openForm(row)"
@@ -112,6 +127,7 @@ function saved() {
             <AppIcon name="pencil" :size="18" /><span class="action-label">Edit</span>
           </button>
           <button
+            v-if="can('item_categories.toggle_active')"
             type="button"
             :aria-label="`Update status for ${row.name}`"
             title="Update status"

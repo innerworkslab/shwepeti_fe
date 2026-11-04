@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { usePermissions } from '@/composables/usePermissions'
+const { can } = usePermissions()
+import { permissionService, type PermissionGroup } from '@/services/permission.service'
 import { userRoles, portalAccessOptions } from '@/constants/admin-options'
 import { statusLabel } from '@/constants/hotel-status'
 import AppIcon from '@/components/common/AppIcon.vue'
@@ -12,8 +15,15 @@ const props = defineProps<{ userId?: number | null }>()
 const emit = defineEmits<{ close: []; saved: [] }>()
 const editing = computed(() => props.userId != null)
 const prefix = useId()
-const dialog = ref<HTMLDialogElement | null>(null)
-const form = reactive({ name: '', email: '', password: '', role: '', portal_access: 'admin' })
+const dialog = ref<HTMLElement | null>(null)
+const form = reactive({
+  name: '',
+  email: '',
+  password: '',
+  role: '',
+  portal_access: 'admin',
+  permissions: [] as string[],
+})
 const fields = [
   { key: 'name', label: 'Name', type: 'text', autocomplete: 'name' },
   { key: 'email', label: 'Email', type: 'email', autocomplete: 'email' },
@@ -21,8 +31,25 @@ const fields = [
   { key: 'role', label: 'Role', type: 'text', autocomplete: 'off' },
   { key: 'portal_access', label: 'Portal access', type: 'text', autocomplete: 'off' },
 ] as const
-const loading = ref(editing.value)
+const groups = ref<PermissionGroup[]>([])
+function groupSelected(group: PermissionGroup) {
+  return (
+    group.permissions.length > 0 &&
+    group.permissions.every((p) => form.permissions.includes(p.name))
+  )
+}
+function groupPartial(group: PermissionGroup) {
+  return !groupSelected(group) && group.permissions.some((p) => form.permissions.includes(p.name))
+}
+function toggleGroup(group: PermissionGroup, checked: boolean) {
+  const names = new Set(group.permissions.map((p) => p.name))
+  form.permissions = checked
+    ? [...new Set([...form.permissions, ...names])]
+    : form.permissions.filter((p) => !names.has(p))
+}
+const loading = ref(true)
 const saving = ref(false)
+defineExpose({ saving })
 const loadError = ref('')
 const saveError = ref('')
 const errors = ref<Record<string, string>>({})
@@ -31,21 +58,28 @@ let disposed = false
 let previousFocus: HTMLElement | null = null
 
 async function loadUser() {
-  if (props.userId == null || disposed || (loading.value && controller)) return
+  if (disposed || (loading.value && controller)) return
   const active = new AbortController()
   controller = active
   loading.value = true
   loadError.value = ''
   try {
-    const user = await userService.get(props.userId, active.signal)
+    const [permissionGroups, user] = await Promise.all([
+      can('users.manage_permissions') ? permissionService.list(active.signal) : Promise.resolve([]),
+      props.userId != null ? userService.get(props.userId, active.signal) : Promise.resolve(null),
+    ])
     if (disposed || active.signal.aborted) return
-    if (user.id !== props.userId)
-      throw new Error('The API returned a different user. Please retry.')
-    form.name = user.name
-    form.email = user.email
-    form.role = user.role
-    form.portal_access = user.portal_access || ''
-    form.password = ''
+    groups.value = permissionGroups
+    if (user) {
+      if (user.id !== props.userId)
+        throw new Error('The API returned a different user. Please retry.')
+      form.name = user.name
+      form.email = user.email
+      form.role = user.role
+      form.portal_access = user.portal_access || ''
+      form.permissions = [...new Set(user.permissions ?? [])]
+      form.password = ''
+    }
   } catch (cause) {
     if (!disposed && !active.signal.aborted) loadError.value = toApiError(cause).message
   } finally {
@@ -59,15 +93,12 @@ async function loadUser() {
 
 onMounted(() => {
   previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null
-  dialog.value?.showModal()
-  if (editing.value) void loadUser()
-  else dialog.value?.querySelector<HTMLInputElement>('[name="name"]')?.focus()
+  void loadUser()
 })
 onBeforeUnmount(() => {
   disposed = true
   controller?.abort()
   form.password = ''
-  dialog.value?.close()
   previousFocus?.focus()
 })
 
@@ -87,6 +118,8 @@ async function submit() {
         { abortEarly: false, stripUnknown: true },
       )
       if (disposed) return
+      if (!can('users.manage_permissions'))
+        delete (payload as { permissions?: string[] }).permissions
       await userService.update(payload)
     } else {
       const payload = await createUserSchema.validate(form, {
@@ -94,6 +127,8 @@ async function submit() {
         stripUnknown: true,
       })
       if (disposed) return
+      if (!can('users.manage_permissions'))
+        delete (payload as { permissions?: string[] }).permissions
       await userService.create(payload)
     }
     if (!disposed) {
@@ -118,7 +153,7 @@ async function submit() {
 </script>
 
 <template>
-  <dialog
+  <section
     ref="dialog"
     class="user-modal"
     :aria-labelledby="`${prefix}-title`"
@@ -127,7 +162,7 @@ async function submit() {
     <form novalidate :aria-busy="loading || saving" @submit.prevent="submit">
       <header>
         <h2 :id="`${prefix}-title`">{{ editing ? 'Edit user' : 'Add user' }}</h2>
-        <button type="button" aria-label="Close dialog" :disabled="saving" @click="close">
+        <button type="button" aria-label="Back to users" :disabled="saving" @click="close">
           <AppIcon name="close" />
         </button>
       </header>
@@ -174,6 +209,41 @@ async function submit() {
               errors[field.key]
             }}</span>
           </div>
+          <section
+            v-if="can('users.manage_permissions')"
+            class="permissions"
+            aria-label="User permissions"
+          >
+            <h3>Permissions</h3>
+            <p>Choose the actions this user may perform.</p>
+            <p v-if="!groups.length">No permissions available.</p>
+            <fieldset v-for="group in groups" :key="group.group" class="permission-group">
+              <legend>{{ group.label }}</legend>
+              <label class="permission-option"
+                ><input
+                  type="checkbox"
+                  :checked="groupSelected(group)"
+                  :indeterminate="groupPartial(group)"
+                  :disabled="!group.permissions.length"
+                  :aria-label="`Select all ${group.label} permissions`"
+                  @change="toggleGroup(group, ($event.target as HTMLInputElement).checked)"
+                />Select all</label
+              >
+              <div class="permission-options">
+                <label
+                  v-for="permission in group.permissions"
+                  :key="permission.name"
+                  class="permission-option"
+                  ><input
+                    type="checkbox"
+                    v-model="form.permissions"
+                    :value="permission.name"
+                    :name="permission.name"
+                  />{{ permission.label }}</label
+                >
+              </div>
+            </fieldset>
+          </section>
         </fieldset>
       </template>
       <footer>
@@ -183,22 +253,44 @@ async function submit() {
         </button>
       </footer>
     </form>
-  </dialog>
+  </section>
 </template>
 
 <style scoped>
 .user-modal {
-  width: min(540px, calc(100vw - 2rem));
-  max-height: calc(100dvh - 2rem);
-  overflow-y: auto;
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+.permission-group {
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+.permission-options {
+  display: flex;
+  gap: 14px 24px;
+  flex-wrap: wrap;
+}
+.permission-option {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+.permission-option input {
+  width: auto;
+}
+legend {
+  font-weight: 600;
+}
+
+.user-modal {
   padding: 1.5rem;
   border: 1px solid #e2e8f0;
   border-radius: 14px;
   color: #1e293b;
-  box-shadow: 0 24px 64px #0f172a33;
-}
-.user-modal::backdrop {
-  background: #0f172a80;
+  background: white;
 }
 header,
 footer {

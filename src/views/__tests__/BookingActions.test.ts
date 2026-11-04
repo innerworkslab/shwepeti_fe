@@ -1,6 +1,32 @@
+import { createPinia, setActivePinia } from 'pinia'
+import { usePosSessionStore } from '@/stores/pos-session'
+vi.mock('vue-router', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('vue-router')>()),
+  useRoute: () => ({ path: '/pos' }),
+}))
+beforeEach(() => {
+  localStorage.clear()
+  sessionStorage.clear()
+  setActivePinia(createPinia())
+  usePosSessionStore().setSession(
+    {
+      id: 2,
+      name: 'Staff',
+      email: 'pos@example.com',
+      role: 'restaurant_administrator',
+      permissions: [
+        'bookings.view',
+        'bookings.record_payment',
+        'bookings.check_in',
+        'bookings.checkout',
+      ],
+    },
+    'test',
+  )
+})
 import { posCashbookService } from '@/services/pos-cashbook.service'
 vi.mock('@/services/pos-cashbook.service', () => ({ posCashbookService: { list: vi.fn() } }))
-import { afterEach, expect, it, vi } from 'vitest'
+import { beforeEach, afterEach, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import BookingActions from '@/components/pos/BookingActions.vue'
 import { posBookingService } from '@/services/pos-booking.service'
@@ -204,4 +230,26 @@ it('shows the booking order breakdown and includes orders once in checkout', asy
   } finally {
     w.unmount()
   }
+})
+
+it('hides payment and checkout controls independently by permission', async () => {
+  vi.mocked(posBookingService.get).mockResolvedValue({
+    id: 1,
+    status: 'checked_in',
+    balance_amount: '100',
+  } as never)
+  usePosSessionStore().user!.permissions = ['bookings.view']
+  const w = mount(BookingActions, { props: { bookingId: 1, disabled: false } })
+  await flushPromises()
+  expect(w.text()).not.toContain('Partial payment')
+  expect(w.text()).not.toContain('Check out')
+  usePosSessionStore().user!.permissions.push('bookings.record_payment')
+  await flushPromises()
+  expect(w.text()).toContain('Partial payment')
+  expect(w.text()).not.toContain('Check out')
+  usePosSessionStore().user!.permissions = ['bookings.view', 'bookings.check_out']
+  await flushPromises()
+  expect(w.text()).toContain('Check out')
+  expect(w.text()).not.toContain('Partial payment')
+  w.unmount()
 })

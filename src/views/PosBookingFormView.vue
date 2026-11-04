@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { usePermissions } from '@/composables/usePermissions'
+const { can } = usePermissions()
+
 import { statusLabel, statusStyle } from '@/constants/hotel-status'
 import { computed, watch, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { onBeforeRouteLeave, useRoute, RouterLink } from 'vue-router'
@@ -34,7 +37,10 @@ const saved = ref<PosBooking | null>(null)
 let loadController: AbortController | undefined
 const saveController = new AbortController()
 let disposed = false
-const needsDeposit = computed(() => form.booking_type === 'reservation' && form.include_deposit)
+const needsDeposit = computed(
+  () =>
+    can('bookings.record_payment') && form.booking_type === 'reservation' && form.include_deposit,
+)
 const cashbooks = ref<PosCashbook[]>([])
 const cashbooksLoading = ref(false)
 const cashbookError = ref('')
@@ -220,7 +226,11 @@ async function submit() {
           <label class="wide">Note<textarea v-model="form.note" name="note" rows="3" /></label>
         </div>
       </fieldset>
-      <fieldset v-if="form.booking_type === 'reservation'" :disabled="saving" class="card">
+      <fieldset
+        v-if="form.booking_type === 'reservation' && can('bookings.record_payment')"
+        :disabled="saving"
+        class="card"
+      >
         <legend>Reservation deposit</legend>
         <label class="check"
           ><input v-model="form.include_deposit" type="checkbox" name="include_deposit" /> Add a

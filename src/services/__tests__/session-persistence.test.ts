@@ -4,6 +4,7 @@ import { useSessionStore } from '@/stores/session'
 import { apiClient, setAccessToken } from '../api/client'
 import router from '@/router'
 const user = {
+  permissions: ['fixed_assets.update'],
   id: 1,
   name: 'Administrator',
   email: 'admin@example.com',

@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { usePermissions } from '@/composables/usePermissions'
+const { can } = usePermissions()
+
 import AppIcon from '@/components/common/AppIcon.vue'
 import { useRoute } from 'vue-router'
 import DataTable from '@/components/common/DataTable.vue'
@@ -56,7 +59,13 @@ const { rows, total, page, perPage, loading, error, setPage, setPerPage, refresh
     <p v-if="route.query.saved === 'created'" role="status">Supplier payment created.</p>
     <DataTable
       :rows="rows"
-      :columns="columns"
+      :columns="
+        columns.filter(
+          (column) =>
+            column.key !== 'actions' ||
+            can(['supplier_ap_ledgers.view', 'supplier_ap_payments.view']),
+        )
+      "
       :row-key="(row: SupplierApBalance) => row.id ?? row.supplier_id"
       :total="total"
       :page="page"
@@ -70,12 +79,16 @@ const { rows, total, page, perPage, loading, error, setPage, setPerPage, refresh
       @refresh="refresh"
     >
       <template #toolbar
-        ><RouterLink class="action primary" to="/supplier-ap-payments/create"
+        ><RouterLink
+          v-if="can('supplier_ap_payments.create')"
+          class="action primary"
+          to="/supplier-ap-payments/create"
           ><AppIcon name="add" :size="16" />Add payment</RouterLink
         ></template
       >
       <template #cell-actions="{ row }"
         ><RouterLink
+          v-if="can('supplier_ap_ledgers.view')"
           class="action"
           :to="`/suppliers/${row.supplier_id}/ap-ledgers`"
           title="View AP ledger"
@@ -84,6 +97,7 @@ const { rows, total, page, perPage, loading, error, setPage, setPerPage, refresh
           ></RouterLink
         >
         <RouterLink
+          v-if="can('supplier_ap_payments.view')"
           class="action"
           :to="`/suppliers/${row.supplier_id}/ap-payments`"
           title="View AP payment history"

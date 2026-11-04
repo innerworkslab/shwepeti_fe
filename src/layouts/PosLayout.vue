@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { usePermissions } from '@/composables/usePermissions'
+const { can, canVisit } = usePermissions()
+
 import { redirectAfterLogout } from '@/utils/logout-redirect'
 import { posCashbookService, type PosCashbook } from '@/services/pos-cashbook.service'
 import { nextTick, onBeforeUnmount, ref, watch } from 'vue'
@@ -124,15 +127,21 @@ onBeforeUnmount(() => drawer.value?.close())
         </button>
       </header>
       <nav aria-label="POS navigation">
-        <RouterLink to="/pos" :class="{ active: route.path === '/pos' }" @click="close"
+        <RouterLink
+          v-if="canVisit('/pos')"
+          to="/pos"
+          :class="{ active: route.path === '/pos' }"
+          @click="close"
           ><AppIcon name="rooms" />POS Terminal</RouterLink
         ><RouterLink
+          v-if="canVisit('/pos/bookings')"
           to="/pos/bookings"
           :class="{ active: route.path.startsWith('/pos/bookings') }"
           @click="close"
           ><AppIcon name="calendar" />Bookings</RouterLink
         >
         <RouterLink
+          v-if="canVisit('/pos/cashbook-transfers')"
           class="cashbook-manage"
           to="/pos/cashbook-transfers"
           :class="{ active: route.path === '/pos/cashbook-transfers' }"
@@ -141,6 +150,7 @@ onBeforeUnmount(() => drawer.value?.close())
         >
         <div class="closing-group">
           <button
+            v-if="can('cashbooks.view')"
             class="cashbook-toggle"
             :class="{ active: route.path === '/pos/cashbook-closings' }"
             :aria-expanded="closingsOpen"
@@ -154,6 +164,7 @@ onBeforeUnmount(() => drawer.value?.close())
               {{ cashbooksError }}<button @click="loadCashbooks">Retry</button>
             </p>
             <RouterLink
+              v-if="can('cashbooks.view')"
               v-for="book in cashbooks"
               :key="book.id"
               class="cashbook-link"
@@ -170,6 +181,7 @@ onBeforeUnmount(() => drawer.value?.close())
         </div>
         <div class="cashbook-group">
           <button
+            v-if="can(['cashbooks.view', 'cashbook_transactions.view'])"
             class="cashbook-toggle"
             type="button"
             :class="{
@@ -190,8 +202,11 @@ onBeforeUnmount(() => drawer.value?.close())
               {{ cashbooksError }} <button @click="loadCashbooks">Retry</button>
             </p>
             <template v-else>
-              <RouterLink to="/pos/cashbooks" @click="close">All cashbooks</RouterLink>
+              <RouterLink v-if="canVisit('/pos/cashbooks')" to="/pos/cashbooks" @click="close"
+                >All cashbooks</RouterLink
+              >
               <RouterLink
+                v-if="can('cashbook_transactions.view')"
                 v-for="book in cashbooks"
                 :key="book.id"
                 :to="{ path: '/pos/cashbook-transactions', query: { cashbook_id: book.id } }"

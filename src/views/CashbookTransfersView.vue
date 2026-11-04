@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { usePermissions } from '@/composables/usePermissions'
+const { can } = usePermissions()
+
 import { createRequestId } from '@/utils/uuid'
 import { ref, reactive, onMounted, onBeforeUnmount } from 'vue'
 import { ValidationError } from 'yup'
@@ -174,7 +177,9 @@ onBeforeUnmount(() => {
     </p>
     <DataTable
       :rows="rows"
-      :columns="columns"
+      :columns="
+        columns.filter((column) => column.key !== 'actions' || can(['cashbook_transfers.view']))
+      "
       :row-key="(r) => r.id"
       :total="total"
       :page="page"
@@ -188,7 +193,7 @@ onBeforeUnmount(() => {
       @refresh="refresh"
     >
       <template #toolbar
-        ><button class="primary" @click="openCreate">
+        ><button v-if="can('cashbook_transfers.create')" class="primary" @click="openCreate">
           <AppIcon name="add" :size="16" />New transfer
         </button></template
       >
@@ -215,6 +220,7 @@ onBeforeUnmount(() => {
       >
       <template #cell-actions="{ row }"
         ><button
+          v-if="can('cashbook_transfers.view')"
           :aria-label="`View transfer ${row.reference_no}`"
           title="View transfer"
           @click="loadDetail(row.id)"
@@ -233,7 +239,10 @@ onBeforeUnmount(() => {
       </header>
       <p v-if="formError" role="alert">
         {{ formError }}
-        <button v-if="mode === 'detail' && selectedId" @click="loadDetail(selectedId)">
+        <button
+          v-if="mode === 'detail' && selectedId && can('cashbook_transfers.view')"
+          @click="loadDetail(selectedId)"
+        >
           Retry
         </button>
       </p>

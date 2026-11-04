@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { usePermissions } from '@/composables/usePermissions'
+const { can } = usePermissions()
+
 import { computed, watch, ref, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 import AppIcon from '@/components/common/AppIcon.vue'
@@ -82,7 +85,11 @@ watch(supplierId, (id) => setFilters({ supplier_id: id }))
     <p v-if="notice" role="status">{{ notice }}</p>
     <DataTable
       :rows="rows"
-      :columns="columns"
+      :columns="
+        columns.filter(
+          (column) => column.key !== 'actions' || can(['supplier_ap_payments.update_status']),
+        )
+      "
       :row-key="(row: SupplierApPayment) => row.id"
       :total="total"
       :page="page"
@@ -97,7 +104,7 @@ watch(supplierId, (id) => setFilters({ supplier_id: id }))
     >
       <template #cell-actions="{ row }">
         <button
-          v-if="row.status === 'draft'"
+          v-if="row.status === 'draft' && can('supplier_ap_payments.update_status')"
           class="post-payment"
           type="button"
           :disabled="postingId !== null"

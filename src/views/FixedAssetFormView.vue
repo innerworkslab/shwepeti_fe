@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { usePermissions } from '@/composables/usePermissions'
+const { can } = usePermissions()
 import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import { onBeforeRouteLeave, onBeforeRouteUpdate, useRoute, useRouter } from 'vue-router'
 import AppIcon from '@/components/common/AppIcon.vue'
@@ -275,6 +277,7 @@ function removeDocument(index: number) {
           <label
             ><input
               name="depreciation_enabled"
+              :disabled="editing && !can('fixed_assets.update_depreciation_settings')"
               type="checkbox"
               v-model="form.depreciation_enabled"
             />
@@ -287,6 +290,7 @@ function removeDocument(index: number) {
             ><input
               id="asset-depreciation-start"
               name="depreciation_start_date"
+              :disabled="editing && !can('fixed_assets.update_depreciation_settings')"
               type="date"
               v-model="form.depreciation_start_date"
             /><span class="error">{{ errors.depreciation_start_date }}</span>
@@ -296,6 +300,7 @@ function removeDocument(index: number) {
             ><input
               id="asset-life"
               name="useful_life_months"
+              :disabled="editing && !can('fixed_assets.update_depreciation_settings')"
               type="number"
               min="1"
               step="1"
@@ -307,6 +312,7 @@ function removeDocument(index: number) {
             ><input
               id="asset-residual"
               name="residual_value"
+              :disabled="editing && !can('fixed_assets.update_depreciation_settings')"
               type="number"
               min="0"
               step="0.01"

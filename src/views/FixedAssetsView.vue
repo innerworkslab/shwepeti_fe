@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { usePermissions } from '@/composables/usePermissions'
+const { can } = usePermissions()
+
 import { onMounted, reactive, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import AppIcon from '@/components/common/AppIcon.vue'
@@ -92,7 +95,13 @@ function saved() {
     </p>
     <DataTable
       :rows="rows"
-      :columns="columns"
+      :columns="
+        columns.filter(
+          (column) =>
+            column.key !== 'actions' ||
+            can(['fixed_assets.update', 'fixed_assets.update_status', 'fixed_assets.view']),
+        )
+      "
       :row-key="(row: FixedAsset) => row.id"
       :total="total"
       :page="page"
@@ -106,7 +115,10 @@ function saved() {
       @refresh="refresh"
     >
       <template #toolbar
-        ><RouterLink class="action primary" to="/fixed-assets/create"
+        ><RouterLink
+          v-if="can('fixed_assets.create')"
+          class="action primary"
+          to="/fixed-assets/create"
           ><AppIcon name="add" :size="16" />Add fixed asset</RouterLink
         ></template
       >
@@ -168,12 +180,14 @@ function saved() {
       <template #cell-actions="{ row }"
         ><div class="actions">
           <RouterLink
+            v-if="can('fixed_assets.update')"
             class="action"
             :to="`/fixed-assets/${row.id}/edit`"
             :aria-label="`Edit ${row.name}`"
             :title="`Edit ${row.name}`"
             ><AppIcon name="pencil" :size="18" /><span class="action-label">Edit</span></RouterLink
           ><button
+            v-if="can('fixed_assets.update_status')"
             type="button"
             :aria-label="`Update status for ${row.name}`"
             @click="selected = row"
@@ -182,6 +196,7 @@ function saved() {
             <AppIcon name="status" />
           </button>
           <RouterLink
+            v-if="can('fixed_assets.view')"
             class="action"
             :to="`/fixed-assets/${row.id}/depreciations`"
             :aria-label="`View depreciation history for ${row.name}`"

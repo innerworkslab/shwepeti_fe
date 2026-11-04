@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { usePermissions } from '@/composables/usePermissions'
+const { can } = usePermissions()
+
 import { calculatePosCharges } from '@/utils/pos-charges'
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { ValidationError } from 'yup'
@@ -100,6 +103,7 @@ function add(menu: PosMenu) {
   notice.value = ''
 }
 async function loadMenus() {
+  if (!can('food_orders.create')) return
   menuController?.abort()
   const active = new AbortController()
   menuController = active
@@ -115,6 +119,7 @@ async function loadMenus() {
   }
 }
 async function loadOrders() {
+  if (!can('food_orders.view')) return
   orderController?.abort()
   const active = new AbortController()
   orderController = active
@@ -142,6 +147,7 @@ function setBusy(value: boolean) {
   emit('busy', value)
 }
 async function submit() {
+  if (!can('food_orders.create')) return
   if (busy.value || !props.canOrder) return
   setBusy(true)
   error.value = ''
@@ -194,6 +200,7 @@ async function submit() {
   }
 }
 async function update(order: FoodOrder) {
+  if (!can('food_orders.update_status')) return
   const status = statuses[order.id]
   if (
     ['served', 'cancelled'].includes(order.status) ||
@@ -235,7 +242,7 @@ onBeforeUnmount(() => {
   <div class="food-panel">
     <p v-if="notice" role="status" class="notice">{{ notice }}</p>
     <p v-if="error" role="alert" class="error">{{ error }}</p>
-    <form v-if="canOrder" novalidate @submit.prevent="submit">
+    <form v-if="canOrder && can('food_orders.create')" novalidate @submit.prevent="submit">
       <fieldset :disabled="busy">
         <legend>Add food &amp; beverages</legend>
         <label class="search"
@@ -376,7 +383,7 @@ onBeforeUnmount(() => {
         </button>
       </fieldset>
     </form>
-    <section class="existing">
+    <section v-if="can('food_orders.view')" class="existing">
       <h3>
         Ordered food
         <button
@@ -431,9 +438,10 @@ onBeforeUnmount(() => {
               <dd>{{ order.total_amount }}</dd></template
             >
           </dl>
-          <div class="status-controls">
+          <div v-if="can('food_orders.update_status')" class="status-controls">
             <label
               >Status<select
+                v-if="can('food_orders.update_status')"
                 v-model="statuses[order.id]"
                 :aria-label="`Status for order ${order.id}`"
                 :disabled="busy || ['served', 'cancelled'].includes(order.status)"
@@ -450,6 +458,7 @@ onBeforeUnmount(() => {
                 !statuses[order.id] ||
                 statuses[order.id] === order.status
               "
+              v-show="can('food_orders.update_status')"
               @click="update(order)"
             >
               Update

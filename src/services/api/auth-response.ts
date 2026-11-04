@@ -32,5 +32,17 @@ export function parseLoginResponse(response: unknown): LoginResult {
   ) {
     throw new Error('The login response must include a token and user details.')
   }
-  return { token, user: { id: user.id, name: user.name, email: user.email, role: user.role } }
+  return {
+    token,
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      portal_access: typeof user.portal_access === 'string' ? user.portal_access : undefined,
+      permissions: Array.isArray(user.permissions)
+        ? [...new Set(user.permissions.filter((p): p is string => typeof p === 'string'))]
+        : [],
+    },
+  }
 }

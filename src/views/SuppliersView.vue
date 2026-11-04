@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { usePermissions } from '@/composables/usePermissions'
+const { can } = usePermissions()
+
 import AppIcon from '@/components/common/AppIcon.vue'
 import { useRoute } from 'vue-router'
 const route = useRoute()
@@ -47,7 +50,12 @@ const {
     </p>
     <DataTable
       :rows="rows"
-      :columns="columns"
+      :columns="
+        columns.filter(
+          (column) =>
+            column.key !== 'actions' || can(['supplier_ap_ledgers.view', 'suppliers.update']),
+        )
+      "
       :row-key="(category: Supplier) => category.id"
       :total="total"
       :page="page"
@@ -63,7 +71,7 @@ const {
       @refresh="refresh"
     >
       <template #toolbar
-        ><RouterLink class="primary action" to="/suppliers/create"
+        ><RouterLink v-if="can('suppliers.create')" class="primary action" to="/suppliers/create"
           ><AppIcon name="add" :size="16" />Add supplier</RouterLink
         ></template
       >
@@ -74,12 +82,14 @@ const {
       </template>
       <template #cell-actions="{ row }"
         ><RouterLink
+          v-if="can('suppliers.update')"
           class="action"
           :to="`/suppliers/${row.id}/edit`"
           :aria-label="`Edit ${row.name}`"
           :title="`Edit ${row.name}`"
           ><AppIcon name="pencil" :size="18" /> <span class="action-label">Edit</span></RouterLink
         ><RouterLink
+          v-if="can('supplier_ap_ledgers.view')"
           class="action"
           :to="`/suppliers/${row.id}/ap-ledgers`"
           :aria-label="`View AP ledger for ${row.name}`"

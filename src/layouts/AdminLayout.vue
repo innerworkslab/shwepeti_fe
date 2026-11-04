@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { usePermissions } from '@/composables/usePermissions'
+const { can, canVisit } = usePermissions()
+
 import { redirectAfterLogout } from '@/utils/logout-redirect'
 import { reportLinks, reportDefinitions, type AdminReport } from '@/constants/admin-reports'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
@@ -162,7 +165,7 @@ async function logout() {
   <div class="admin-layout" :class="{ 'is-expanded': expanded }">
     <a class="skip-link" href="#main-content">Skip to content</a>
     <header class="topbar">
-      <RouterLink to="/" class="brand" :aria-label="`${env.appName} home`">
+      <RouterLink v-if="canVisit('/')" to="/" class="brand" :aria-label="`${env.appName} home`">
         <span class="brand-mark" aria-hidden="true">sp<span class="brand-star">✦</span></span>
         <span class="brand-wordmark"
           ><strong>SHWE PETIT</strong><small>HOTEL MANAGEMENT</small></span
@@ -205,11 +208,10 @@ async function logout() {
         </button>
       </div>
       <nav id="sidebar-navigation" aria-label="Main navigation">
-        <span v-if="expanded" class="nav-section-label">Daily operations</span>
         <RouterLink
-          v-for="link in ['/rooms', '/menus'].map((path) =>
-            links.find((link) => link.to === path)!,
-          )"
+          v-for="link in ['/rooms', '/menus']
+            .map((path) => links.find((link) => link.to === path)!)
+            .filter((link) => canVisit(link.to))"
           :key="link.to"
           :to="link.to"
           class="nav-link"
@@ -225,7 +227,6 @@ async function logout() {
             aria-hidden="true"
           ></span>
         </RouterLink>
-        <span v-if="expanded" class="nav-section-label">Inventory</span>
         <RouterLink
           v-for="link in [
             '/stock-ins',
@@ -235,7 +236,9 @@ async function logout() {
             '/inventory-ledgers',
             '/items',
             '/warehouses',
-          ].map((path) => links.find((link) => link.to === path)!)"
+          ]
+            .map((path) => links.find((link) => link.to === path)!)
+            .filter((link) => canVisit(link.to))"
           :key="link.to"
           :to="link.to"
           class="nav-link"
@@ -251,8 +254,8 @@ async function logout() {
             aria-hidden="true"
           ></span>
         </RouterLink>
-        <span v-if="expanded" class="nav-section-label">Finance</span>
         <button
+          v-if="can(['cashbooks.view', 'cashbook_transactions.view'])"
           class="nav-link cashbook-toggle"
           :class="{
             'cashbook-toggle--open': cashbooksOpen && expanded,
@@ -276,6 +279,7 @@ async function logout() {
         </button>
         <div v-if="cashbooksOpen && expanded" id="cashbook-links" class="cashbook-links">
           <RouterLink
+            v-if="canVisit('/cashbooks')"
             class="cashbook-manage"
             :class="{ 'is-active': route.path === '/cashbooks' }"
             to="/cashbooks"
@@ -294,6 +298,7 @@ async function logout() {
           </div>
           <template v-else>
             <RouterLink
+              v-if="can('cashbook_transactions.view')"
               v-for="book in cashbooks"
               :key="book.id"
               class="cashbook-link"
@@ -314,6 +319,7 @@ async function logout() {
           </template>
         </div>
         <RouterLink
+          v-if="canVisit('/cashbook-transfers')"
           class="nav-link"
           to="/cashbook-transfers"
           :class="{ 'is-active': route.path === '/cashbook-transfers' }"
@@ -321,6 +327,7 @@ async function logout() {
         >
         <div class="closing-group">
           <button
+            v-if="can('cashbooks.view')"
             class="nav-link cashbook-toggle"
             :class="{ 'is-active': route.path === '/cashbook-closings' }"
             :aria-expanded="closingsOpen"
@@ -335,6 +342,7 @@ async function logout() {
               {{ cashbooksError }}<button @click="loadCashbooks">Retry</button>
             </p>
             <RouterLink
+              v-if="can('cashbooks.view')"
               v-for="book in cashbooks"
               :key="book.id"
               class="cashbook-link"
@@ -349,9 +357,11 @@ async function logout() {
           </div>
         </div>
         <RouterLink
-          v-for="link in links.filter((link) =>
-            ['/suppliers', '/supplier-ap-balances', '/fixed-assets'].includes(link.to),
-          )"
+          v-for="link in links
+            .filter((link) =>
+              ['/suppliers', '/supplier-ap-balances', '/fixed-assets'].includes(link.to),
+            )
+            .filter((link) => canVisit(link.to))"
           :key="link.to"
           :to="link.to"
           class="nav-link"
@@ -367,8 +377,8 @@ async function logout() {
             aria-hidden="true"
           ></span>
         </RouterLink>
-        <span v-if="expanded" class="nav-section-label">Reports</span>
         <RouterLink
+          v-if="canVisit('/reports/profit-and-loss')"
           to="/reports/profit-and-loss"
           class="nav-link"
           :class="{ 'is-active': route.path === '/reports/profit-and-loss' }"
@@ -377,6 +387,7 @@ async function logout() {
         >
         <div>
           <button
+            v-if="can('reports.hotel')"
             class="nav-link cashbook-toggle"
             :class="{ 'is-active': reportLinks.some((link) => link.to === route.path) }"
             :aria-expanded="reportsOpen"
@@ -387,9 +398,13 @@ async function logout() {
             <AppIcon name="ledger" /><span v-if="expanded">Reports</span
             ><AppIcon v-if="expanded" name="chevronDown" />
           </button>
-          <div v-if="reportsOpen && expanded" id="report-links" class="cashbook-links">
+          <div
+            v-if="reportsOpen && expanded && can('reports.hotel')"
+            id="report-links"
+            class="cashbook-links"
+          >
             <RouterLink
-              v-for="link in reportLinks"
+              v-for="link in reportLinks.filter((link) => canVisit(link.to))"
               :key="link.key"
               :to="link.to"
               class="cashbook-link"
@@ -399,7 +414,6 @@ async function logout() {
           </div>
         </div>
 
-        <span v-if="expanded" class="nav-section-label">Setup & administration</span>
         <RouterLink
           v-for="link in [
             '/room-categories',
@@ -409,7 +423,9 @@ async function logout() {
             '/unit-groups',
             '/units',
             '/users',
-          ].map((path) => links.find((link) => link.to === path)!)"
+          ]
+            .map((path) => links.find((link) => link.to === path)!)
+            .filter((link) => canVisit(link.to))"
           :key="link.to"
           :to="link.to"
           class="nav-link"
@@ -450,18 +466,6 @@ async function logout() {
 </template>
 
 <style scoped>
-.nav-section-label {
-  display: block;
-  padding: 20px 14px 7px;
-  color: #94a3b8;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 1.2px;
-  text-transform: uppercase;
-}
-.nav-section-label:first-child {
-  padding-top: 4px;
-}
 
 /* Cashbook group follows the sidebar's navy and warm gold palette. */
 .nav-link.cashbook-toggle {

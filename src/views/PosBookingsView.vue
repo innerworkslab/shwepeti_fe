@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { usePermissions } from '@/composables/usePermissions'
+const { can } = usePermissions()
+
 import { RouterLink } from 'vue-router'
 import DataTable from '@/components/common/DataTable.vue'
 import { useDataTable } from '@/composables/useDataTable'
@@ -53,7 +56,9 @@ const {
         <h1>Bookings</h1>
         <p>View stays, payment balances, and booking details.</p>
       </div>
-      <RouterLink class="create" to="/pos/bookings/create">Create booking</RouterLink>
+      <RouterLink v-if="can('bookings.create')" class="create" to="/pos/bookings/create"
+        >Create booking</RouterLink
+      >
     </header>
     <DataTable
       :rows="rows"

@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { usePermissions } from '@/composables/usePermissions'
+const { can } = usePermissions()
+
 import { statusLabel, statusStyle } from '@/constants/hotel-status'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
@@ -14,6 +17,7 @@ function dashboardBookingId(booking: DashboardBooking) {
   return Number.isSafeInteger(id) && id > 0 ? id : null
 }
 function openBooking(booking: DashboardBooking) {
+  if (!can('bookings.view')) return
   const id = dashboardBookingId(booking)
   if (id) void router.push(`/pos/bookings/${id}`)
 }
@@ -295,9 +299,17 @@ onBeforeUnmount(() => {
             @click="openPanel('Booking options')"
           >
             <AppIcon name="filters" :size="17" /></button
-          ><RouterLink class="checkin-button" to="/pos/bookings/create?type=walk_in">
+          ><RouterLink
+            v-if="can('bookings.create')"
+            class="checkin-button"
+            to="/pos/bookings/create?type=walk_in"
+          >
             <AppIcon name="users" :size="15" />Create walk-in</RouterLink
-          ><RouterLink class="primary" to="/pos/bookings/create?type=reservation">
+          ><RouterLink
+            v-if="can('bookings.create')"
+            class="primary"
+            to="/pos/bookings/create?type=reservation"
+          >
             <AppIcon name="add" :size="16" />Create booking
           </RouterLink>
         </div>
@@ -423,6 +435,7 @@ onBeforeUnmount(() => {
             >
               <button
                 class="room-number"
+                :disabled="!can('rooms.view')"
                 :aria-label="`View ${room.name}: ${room.status}`"
                 @click="selectedRoomId = room.id"
               >
@@ -448,7 +461,7 @@ onBeforeUnmount(() => {
                   :style="bar.style"
                   type="button"
                   @click="openBooking(bar.booking)"
-                  :disabled="!dashboardBookingId(bar.booking)"
+                  :disabled="!dashboardBookingId(bar.booking) || !can('bookings.view')"
                   :aria-label="`View ${room.name} for ${bar.booking.guestName}`"
                   :title="`${bar.booking.guestName} · ${statusLabel(bar.booking.status)} · ${bar.booking.start_date_time} to ${bar.booking.end_date_time} · ${bar.booking.totalGuests} guest(s)`"
                 >

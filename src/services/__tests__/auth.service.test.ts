@@ -6,6 +6,7 @@ import { useSessionStore } from '@/stores/session'
 import router from '@/router'
 
 const user = {
+  permissions: ['users.view'],
   id: 1,
   name: 'Hotel Administrator',
   email: 'admin@example.com',

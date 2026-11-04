@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { usePermissions } from '@/composables/usePermissions'
+const { can } = usePermissions()
+
 import { useRoute } from 'vue-router'
 import AppIcon from '@/components/common/AppIcon.vue'
 import { computed, watch, reactive, ref, useId } from 'vue'
@@ -110,7 +113,9 @@ function clearDates() {
     </dl>
     <DataTable
       :rows="rows"
-      :columns="columns"
+      :columns="
+        columns.filter((column) => column.key !== 'actions' || can(['cashbook_transactions.view']))
+      "
       :row-key="(row: CashbookTransaction) => row.id"
       :total="total"
       :page="page"
@@ -127,12 +132,18 @@ function clearDates() {
       @refresh="refresh"
     >
       <template #toolbar
-        ><button type="button" class="primary" @click="openForm()">
+        ><button
+          v-if="can('cashbook_transactions.create')"
+          type="button"
+          class="primary"
+          @click="openForm()"
+        >
           <AppIcon name="add" :size="16" />Add transaction
         </button></template
       >
       <template #cell-actions="{ row }">
         <button
+          v-if="can('cashbook_transactions.view')"
           type="button"
           :aria-label="`View transaction #${row.id}`"
           :title="`View transaction #${row.id}`"

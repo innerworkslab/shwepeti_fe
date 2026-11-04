@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { usePermissions } from '@/composables/usePermissions'
+const { can } = usePermissions()
+
 import ExcelImportButton from '@/components/common/ExcelImportButton.vue'
 import { useRoute, useRouter } from 'vue-router'
 const route = useRoute()
@@ -94,7 +97,13 @@ function pageSaved() {
     <p v-if="notice" role="status" class="notice">{{ notice }}</p>
     <DataTable
       :rows="rows"
-      :columns="columns"
+      :columns="
+        columns.filter(
+          (column) =>
+            column.key !== 'actions' ||
+            can(['menus.toggle_active', 'menus.toggle_available', 'menus.update']),
+        )
+      "
       :row-key="(category: Menu) => category.id"
       :total="total"
       :page="page"
@@ -130,9 +139,9 @@ function pageSaved() {
         ></template
       >
       <template #toolbar
-        ><button type="button" class="primary" @click="openForm()">
+        ><button v-if="can('menus.create')" type="button" class="primary" @click="openForm()">
           <AppIcon name="add" :size="16" />Add menu</button
-        ><ExcelImportButton resource="menus" @imported="imported"
+        ><ExcelImportButton v-if="can('menus.import')" resource="menus" @imported="imported"
       /></template>
       <template #cell-status="{ row }">
         <span class="status" :class="{ active: row.is_active === true }">{{
@@ -142,6 +151,7 @@ function pageSaved() {
       <template #cell-actions="{ row }">
         <div class="row-actions">
           <button
+            v-if="can('menus.update')"
             type="button"
             :aria-label="`Edit ${row.name}`"
             @click="openForm(row)"
@@ -150,6 +160,7 @@ function pageSaved() {
             <AppIcon name="pencil" :size="18" /><span class="action-label">Edit</span>
           </button>
           <button
+            v-if="can('menus.toggle_active')"
             type="button"
             :aria-label="`Update status for ${row.name}`"
             title="Update status"
@@ -159,6 +170,7 @@ function pageSaved() {
             <AppIcon name="status" :size="18" />
           </button>
           <button
+            v-if="can('menus.toggle_available')"
             type="button"
             :aria-label="`Update availability for ${row.name}`"
             title="Update availability"

@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { usePermissions } from '@/composables/usePermissions'
+const { can } = usePermissions()
+
 import { statusLabel, statusStyle } from '@/constants/hotel-status'
 import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import BookingActions from './BookingActions.vue'
@@ -158,7 +161,7 @@ function backdrop(event: MouseEvent) {
             {{ room.room_category.description }}
           </p>
         </details>
-        <section v-if="bookingId">
+        <section v-if="bookingId && can('bookings.view')">
           <h3>Current booking</h3>
           <div v-if="bookingId" class="booking-info">
             <strong>{{ room.current_booking?.guest_name || `Booking #${bookingId}` }}</strong>
@@ -179,7 +182,7 @@ function backdrop(event: MouseEvent) {
           </div>
         </section>
         <BookingActions
-          v-if="bookingId"
+          v-if="bookingId && can('bookings.view')"
           :key="`booking-${room.id}-${bookingId}`"
           :booking-id="bookingId"
           :refresh-key="invoiceRevision"
@@ -190,6 +193,13 @@ function backdrop(event: MouseEvent) {
         />
         <nav v-if="bookingId" class="service-tabs" aria-label="Room services">
           <button
+            v-show="
+              can(
+                tab === 'food'
+                  ? ['food_orders.view', 'food_orders.create']
+                  : ['service_orders.view', 'service_orders.create'],
+              )
+            "
             v-for="tab in ['food', 'amenity', 'laundry'] as const"
             :key="tab"
             type="button"
@@ -204,7 +214,9 @@ function backdrop(event: MouseEvent) {
           <ServiceOrderPanel
             v-show="serviceTab === type"
             :key="`${room.id}-${bookingId}-${type}`"
-            v-if="bookingId && visited[type]"
+            v-if="
+              bookingId && visited[type] && can(['service_orders.view', 'service_orders.create'])
+            "
             :room-id="room.id"
             :booking-id="bookingId"
             :can-order="canOrder && !refreshing && !refreshError"
@@ -216,7 +228,7 @@ function backdrop(event: MouseEvent) {
         <FoodOrderPanel
           @saved="orderSaved"
           v-show="serviceTab === 'food'"
-          v-if="bookingId"
+          v-if="bookingId && can(['food_orders.view', 'food_orders.create'])"
           :key="`${room.id}-${bookingId}`"
           :room-id="room.id"
           :booking-id="bookingId"

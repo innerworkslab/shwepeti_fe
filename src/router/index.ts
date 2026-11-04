@@ -1,3 +1,4 @@
+import { hasPermission, routePermission } from '@/utils/permissions'
 import { reportDefinitions, type AdminReport } from '@/constants/admin-reports'
 import { createRouter, createWebHistory } from 'vue-router'
 import { useSessionStore } from '@/stores/session'
@@ -11,6 +12,7 @@ const router = createRouter({
       meta: { requiresPosAuth: true },
       component: () => import('@/layouts/PosLayout.vue'),
       children: [
+        { path: 'access-denied', component: () => import('@/views/AccessDeniedView.vue') },
         { path: '', name: 'pos', component: () => import('@/views/PosView.vue') },
         {
           path: 'cashbook-closings',
@@ -58,6 +60,7 @@ const router = createRouter({
       meta: { requiresAuth: true },
       component: () => import('@/layouts/AdminLayout.vue'),
       children: [
+        { path: 'access-denied', component: () => import('@/views/AccessDeniedView.vue') },
         ...(Object.keys(reportDefinitions) as AdminReport[]).map((report) => ({
           path: `reports/${report}`,
           name: `admin-report-${report}`,
@@ -246,6 +249,8 @@ const router = createRouter({
           name: 'unit-groups',
           component: () => import('@/views/UnitGroupsView.vue'),
         },
+        { path: 'users/create', component: () => import('@/views/UserFormView.vue') },
+        { path: 'users/:id/edit', component: () => import('@/views/UserFormView.vue') },
         { path: 'users', name: 'users', component: () => import('@/views/UsersView.vue') },
         {
           path: 'item-categories',
@@ -289,6 +294,27 @@ router.beforeEach((to) => {
     return { name: 'pos-login', query: { redirect: to.fullPath } }
   if (to.meta.requiresAuth && !useSessionStore().user) {
     return { name: 'login', query: { redirect: to.fullPath } }
+  }
+  if (to.meta.requiresAuth || to.meta.requiresPosAuth) {
+    const user = to.meta.requiresPosAuth ? usePosSessionStore().user : useSessionStore().user
+    const required = routePermission(to.path)
+    if (to.path === '/' || (required && !hasPermission(user?.permissions, required))) {
+      const prefix = to.meta.requiresPosAuth ? '/pos' : ''
+      const landing = router
+        .getRoutes()
+        .find(
+          (r) =>
+            r.path !== to.path &&
+            !r.path.includes(':') &&
+            !r.path.endsWith('/create') &&
+            r.path !== '/' &&
+            !r.path.endsWith('access-denied') &&
+            (prefix ? r.path.startsWith('/pos') : !r.path.startsWith('/pos')) &&
+            !!routePermission(r.path) &&
+            hasPermission(user?.permissions, routePermission(r.path)!),
+        )
+      return landing?.path ?? `${prefix}/access-denied`
+    }
   }
 })
 export default router

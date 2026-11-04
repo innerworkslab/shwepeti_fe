@@ -1,4 +1,5 @@
 export interface User {
+  permissions?: string[]
   id: number
   name: string
   email: string
@@ -7,6 +8,7 @@ export interface User {
 }
 
 export interface CreateUserInput {
+  permissions?: string[]
   name: string
   email: string
   password: string

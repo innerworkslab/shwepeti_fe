@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { usePermissions } from '@/composables/usePermissions'
+const { can } = usePermissions()
+
 import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 import { object, number, string, ValidationError } from 'yup'
@@ -137,7 +140,7 @@ onBeforeUnmount(() => {
     </p>
     <DataTable
       :rows="rows"
-      :columns="columns"
+      :columns="columns.filter((column) => column.key !== 'actions' || can(['cashbooks.close']))"
       :row-key="(row) => row.id"
       :total="total"
       :page="page"
@@ -152,6 +155,7 @@ onBeforeUnmount(() => {
     >
       <template #toolbar
         ><button
+          v-if="can('cashbooks.close')"
           class="primary"
           :disabled="!selected || optionsLoading || !!optionsError || saving"
           @click="openClosing"
