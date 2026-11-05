@@ -2,7 +2,9 @@ import { afterEach, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import View from '../AdminReportView.vue'
 import { adminReportService } from '@/services/admin-report.service'
-vi.mock('@/services/admin-report.service', () => ({ adminReportService: { list: vi.fn() } }))
+vi.mock('@/services/admin-report.service', () => ({
+  adminReportService: { list: vi.fn(), exportExcel: vi.fn() },
+}))
 afterEach(() => vi.resetAllMocks())
 it('filters dates, preserves filters across pages and resets when switching reports', async () => {
   vi.mocked(adminReportService.list).mockImplementation(
@@ -80,5 +82,57 @@ it('shows Other Bill totals for an empty report', async () => {
     ])
   } finally {
     w.unmount()
+  }
+})
+
+it.each([
+  'daily-summary',
+  'room-occupancy',
+  'room-revenue',
+  'guest-balances',
+  'food-sales',
+  'top-selling-items',
+  'other-bills',
+  'inventory-balance',
+  'low-stock',
+  'depreciation',
+] as const)('exports %s with selected dates and rejects reversed dates', async (report) => {
+  vi.mocked(adminReportService.list).mockResolvedValue({
+    data: [],
+    page: 1,
+    perPage: 50,
+    total: 0,
+    reportMeta: {},
+  } as never)
+  vi.mocked(adminReportService.exportExcel).mockResolvedValue({
+    blob: new Blob(['excel']),
+    filename: 'report.xlsx',
+  })
+  const create = vi.fn(() => 'blob:report')
+  vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: create, revokeObjectURL: vi.fn() }))
+  const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+  const w = mount(View, { props: { report } })
+  try {
+    await flushPromises()
+    await w.get('[name="date_from"]').setValue('2026-11-01')
+    await w.get('[name="date_to"]').setValue('2026-11-30')
+    await w.get('.export-button').trigger('click')
+    await flushPromises()
+    expect(adminReportService.exportExcel).toHaveBeenCalledWith(
+      report,
+      { date_from: '2026-11-01', date_to: '2026-11-30' },
+      expect.any(AbortSignal),
+    )
+    expect(click).toHaveBeenCalledOnce()
+    await w.get('[name="date_from"]').setValue('2026-12-01')
+    await w.get('.export-button').trigger('click')
+    expect(adminReportService.exportExcel).toHaveBeenCalledTimes(1)
+    expect(w.text()).toContain('From date must be on or before to date.')
+    await w.setProps({ report: 'profit-and-loss' })
+    expect(w.find('.export-button').exists()).toBe(false)
+  } finally {
+    w.unmount()
+    click.mockRestore()
+    vi.unstubAllGlobals()
   }
 })

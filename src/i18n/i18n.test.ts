@@ -61,20 +61,19 @@ it('uses Burmese calendar labels when the browser lacks Burmese ICU data', () =>
 
 it('translates table headings and statuses without translating record names or changing search', async () => {
   const rows = [{ id: 1, name: 'Cash', status: 'checked_in' }]
-  const w = mount(DataTable, {
-    props: {
-      rows,
-      columns: [
-        { key: 'name', label: 'Name', field: 'name' },
-        { key: 'status', label: 'Status', field: 'status' },
-      ],
-      rowKey: (row: (typeof rows)[number]) => row.id,
-      page: 1,
-      perPage: 15,
-      total: 1,
-      search: 'Chicken',
-    },
-  })
+  const props = {
+    rows,
+    columns: [
+      { key: 'name', label: 'Name', field: 'name' as const },
+      { key: 'status', label: 'Status', field: 'status' as const },
+    ],
+    rowKey: (row: (typeof rows)[number]) => row.id,
+    page: 1,
+    perPage: 15,
+    total: 1,
+    search: 'Chicken',
+  }
+  const w = mount(DataTable<(typeof rows)[number]>, { props })
   setLocale('my')
   await nextTick()
   expect(w.get('thead').text()).toContain('အမည်')

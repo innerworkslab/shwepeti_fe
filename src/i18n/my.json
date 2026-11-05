@@ -1227,5 +1227,8 @@
   "warehouse updated.": "ဂိုဒေါင် ပြင်ဆင်ပြီးပါပြီ။",
   "options...": "ရွေးချယ်စရာများ…",
   "network error": "ကွန်ရက်ချိတ်ဆက်မှု မအောင်မြင်ပါ။",
-  "request timeout": "တောင်းဆိုမှု အချိန်ကုန်သွားသည်။"
+  "request timeout": "တောင်းဆိုမှု အချိန်ကုန်သွားသည်။",
+  "export excel": "Excel ဖိုင်ထုတ်ရန်",
+  "exporting excel…": "Excel ဖိုင်ထုတ်နေသည်…",
+  "could not export report. please try again.": "အစီရင်ခံစာ ဖိုင်ထုတ်၍ မရပါ။ ထပ်မံကြိုးစားပါ။"
 }

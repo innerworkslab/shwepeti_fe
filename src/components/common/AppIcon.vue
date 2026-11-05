@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {
   Upload,
+  Download,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
@@ -38,6 +39,7 @@ import {
 
 const icons = {
   upload: Upload,
+  download: Download,
   chevronLeft: ChevronLeft,
   chevronRight: ChevronRight,
   chevronDown: ChevronDown,

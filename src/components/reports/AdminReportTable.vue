@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { t } from '@/i18n'
-import { computed, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, reactive, ref } from 'vue'
+import AppIcon from '@/components/common/AppIcon.vue'
 import DataTable from '@/components/common/DataTable.vue'
 import { useDataTable } from '@/composables/useDataTable'
 import {
@@ -24,6 +25,50 @@ const defaults = {
 }
 const dates = reactive({ ...defaults })
 const dateError = ref('')
+const exporting = ref(false)
+const exportError = ref('')
+let exportController: AbortController | undefined
+onBeforeUnmount(() => exportController?.abort())
+async function exportExcel() {
+  if (exporting.value || !validateDates()) return
+  if (
+    props.report !== 'daily-summary' &&
+    props.report !== 'room-occupancy' &&
+    props.report !== 'room-revenue' &&
+    props.report !== 'guest-balances' &&
+    props.report !== 'food-sales' &&
+    props.report !== 'top-selling-items' &&
+    props.report !== 'other-bills' &&
+    props.report !== 'inventory-balance' &&
+    props.report !== 'low-stock' &&
+    props.report !== 'depreciation'
+  )
+    return
+  exporting.value = true
+  exportError.value = ''
+  exportController = new AbortController()
+  const signal = exportController.signal
+  try {
+    const { blob, filename } = await adminReportService.exportExcel(
+      props.report,
+      { ...dates },
+      signal,
+    )
+    if (signal.aborted) return
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = filename
+    document.body.append(link)
+    link.click()
+    link.remove()
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
+  } catch {
+    if (!signal.aborted) exportError.value = 'Could not export report. Please try again.'
+  } finally {
+    exporting.value = false
+  }
+}
 const metadata = ref<ReportMeta>({})
 const textFields = new Set(
   'name,date,room,category,guest,charge_type,description,check_in,check_out,status,payment_status,stay_type,order_no,menu_item,item,unit,asset,month'.split(
@@ -49,17 +94,20 @@ const { rows, total, page, perPage, loading, error, setPage, setPerPage, setFilt
     },
     { initialFilters: defaults, initialPerPage: props.report === 'daily-summary' ? 50 : 15 },
   )
-function applyDates() {
+function validateDates() {
   dateError.value = ''
   if (!dates.date_from || !dates.date_to) {
     dateError.value = 'Choose both dates.'
-    return
+    return false
   }
   if (dates.date_from > dates.date_to) {
     dateError.value = 'From date must be on or before to date.'
-    return
+    return false
   }
-  setFilters({ ...dates })
+  return true
+}
+function applyDates() {
+  if (validateDates()) setFilters({ ...dates })
 }
 function resetDates() {
   Object.assign(dates, defaults)
@@ -102,6 +150,33 @@ const categorySales = computed(() => {
       @update:per-page="setPerPage"
       @refresh="refresh"
     >
+      <template
+        v-if="
+          report === 'daily-summary' ||
+          report === 'room-occupancy' ||
+          report === 'room-revenue' ||
+          report === 'guest-balances' ||
+          report === 'food-sales' ||
+          report === 'top-selling-items' ||
+          report === 'other-bills' ||
+          report === 'inventory-balance' ||
+          report === 'low-stock' ||
+          report === 'depreciation'
+        "
+        #toolbar
+      >
+        <button
+          class="export-button"
+          type="button"
+          :disabled="exporting"
+          :aria-busy="exporting"
+          @click="exportExcel"
+        >
+          <AppIcon name="download" :size="18" />
+          {{ exporting ? t('Exporting Excel…') : t('Export Excel') }}
+        </button>
+        <p v-if="exportError" role="alert">{{ t(exportError) }}</p>
+      </template>
       <template v-if="report === 'profit-and-loss'" #cell-name="{ row }">{{
         t(row.name)
       }}</template>
@@ -188,6 +263,18 @@ button {
 }
 button {
   cursor: pointer;
+}
+.export-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #16704a;
+  color: white;
+  border-color: #16704a;
+}
+.export-button:disabled {
+  opacity: 0.65;
+  cursor: wait;
 }
 button[type='submit'] {
   background: #183249;

@@ -1,3 +1,5 @@
+// Run against a dedicated headless browser profile on port 9333 and Vite on 5173.
+// This check injects fixture sessions and intercepts API requests; do not use a personal browser.
 import fs from 'node:fs'
 const pages = await (await fetch('http://127.0.0.1:9333/json')).json()
 const ws = new WebSocket(pages.find((p) => p.type === 'page').webSocketDebuggerUrl)
@@ -127,7 +129,8 @@ async function waitFor(expression) {
   }
   throw new Error('Timed out: ' + expression)
 }
-const dir = 'C:/Users/Admin/.codex/visualizations/2026/09/15/01a0a458-e416-7762-95d7-daefb660dca1'
+const dir = process.env.I18N_SCREENSHOT_DIR || 'node_modules/.cache/i18n-screenshots'
+fs.mkdirSync(dir, { recursive: true })
 await send('Page.navigate', { url: 'http://127.0.0.1:5173/users' })
 await waitFor("document.querySelector('tbody')?.textContent.includes('Hotel Staff')")
 fs.writeFileSync(
@@ -165,9 +168,23 @@ console.log(
     "({lang:document.documentElement.lang,flag:!!document.querySelector('.pos-account .language-switch'),overflow:document.documentElement.scrollWidth>innerWidth})",
   ),
 )
-console.log('Burmese month:', await evaluate("document.querySelector('.month-row')?.textContent || document.querySelector('.month-nav')?.textContent"))
-await send('Emulation.setDeviceMetricsOverride', {width:390,height:844,deviceScaleFactor:1,mobile:false})
-console.log('POS mobile overflow:', await evaluate('document.documentElement.scrollWidth > innerWidth'))
-fs.writeFileSync(dir+'/burmese-pos-mobile.png',Buffer.from((await send('Page.captureScreenshot',{format:'png'})).data,'base64'))
+console.log(
+  'Burmese month:',
+  await evaluate("document.querySelector('.date-strip:not(.years)')?.textContent"),
+)
+await send('Emulation.setDeviceMetricsOverride', {
+  width: 390,
+  height: 844,
+  deviceScaleFactor: 1,
+  mobile: false,
+})
+console.log(
+  'POS mobile overflow:',
+  await evaluate('document.documentElement.scrollWidth > innerWidth'),
+)
+fs.writeFileSync(
+  dir + '/burmese-pos-mobile.png',
+  Buffer.from((await send('Page.captureScreenshot', { format: 'png' })).data, 'base64'),
+)
 console.log('Browser errors:', errors)
 ws.close()
