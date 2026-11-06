@@ -1,6 +1,9 @@
 import { normalizePagination } from './api/pagination'
 import type { ApiPaginatedResponse } from '@/types/api'
-import type { CashbookTransaction } from '@/types/cashbook-transaction'
+import type {
+  CashbookTransaction,
+  CreateCashbookTransactionInput,
+} from '@/types/cashbook-transaction'
 import { posApiClient } from './api/pos-client'
 export interface PosCashbook {
   id: number
@@ -15,6 +18,10 @@ export interface PosCashbook {
   updated_at: string
 }
 export const posCashbookService = {
+  async createTransaction(input: CreateCashbookTransactionInput) {
+    const { data } = await posApiClient.post('/cashbook-transactions', input)
+    if (data?.success === false) throw new Error(data.message || 'Could not save transaction.')
+  },
   async transactions(
     params: { page: number; cashbook_id: number; perPage?: number },
     signal?: AbortSignal,

@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import AppIcon from '@/components/common/AppIcon.vue'
+import CashbookTransactionModal from '@/components/cashbook-transactions/CashbookTransactionModal.vue'
+import { usePermissions } from '@/composables/usePermissions'
 import { t } from '@/i18n'
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
@@ -7,6 +10,12 @@ import { useDataTable } from '@/composables/useDataTable'
 import { posCashbookService } from '@/services/pos-cashbook.service'
 import type { CashbookTransaction } from '@/types/cashbook-transaction'
 import type { DataTableColumn } from '@/types/data-table'
+const { can } = usePermissions()
+const showCreate = ref(false)
+function saved() {
+  showCreate.value = false
+  void refresh()
+}
 const route = useRoute()
 const cashbookId = computed(() => Number(route.query.cashbook_id))
 const balances = ref<{
@@ -67,6 +76,24 @@ watch(cashbookId, (id) => setFilters({ cashbook_id: id }))
       @update:page="setPage"
       @update:per-page="setPerPage"
       @refresh="refresh"
+    >
+      <template #toolbar>
+        <button
+          v-if="can('cashbook_transactions.create')"
+          class="create-button"
+          type="button"
+          @click="showCreate = true"
+        >
+          <AppIcon name="add" :size="18" /> {{ t('Add transaction') }}
+        </button>
+      </template>
+    </DataTable>
+    <CashbookTransactionModal
+      v-if="showCreate && can('cashbook_transactions.create')"
+      :pos="true"
+      :cashbook-id="cashbookId"
+      @close="showCreate = false"
+      @saved="saved"
     />
     <dl :aria-label="t('Closing balance')">
       <dt>{{ t('Closing balance') }}</dt>
@@ -75,6 +102,18 @@ watch(cashbookId, (id) => setFilters({ cashbook_id: id }))
   </main>
 </template>
 <style scoped>
+.create-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: 0;
+  border-radius: 8px;
+  background: #183249;
+  color: white;
+  cursor: pointer;
+  font: inherit;
+}
 .ledger-page {
   padding: 24px;
   background: #f4f7fa;

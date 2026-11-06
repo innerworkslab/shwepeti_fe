@@ -4,20 +4,21 @@ import { t } from '@/i18n'
 import { nextTick, onBeforeUnmount, onMounted, reactive, ref, useId } from 'vue'
 import { ValidationError } from 'yup'
 import AppIcon from '@/components/common/AppIcon.vue'
+import { posCashbookService } from '@/services/pos-cashbook.service'
 import { cashbookService } from '@/services/cashbook.service'
 import { cashbookTransactionService } from '@/services/cashbook-transaction.service'
 import { createCashbookTransactionSchema } from '@/schemas/cashbook-transaction.schema'
 import { toApiError } from '@/services/api/api-error'
 import type { Cashbook } from '@/types/cashbook'
 import type { CashbookTransaction } from '@/types/cashbook-transaction'
-const props = defineProps<{ transactionId?: number }>()
+const props = defineProps<{ transactionId?: number; pos?: boolean; cashbookId?: number }>()
 const emit = defineEmits<{ close: []; saved: [] }>()
 const prefix = useId()
 const dialog = ref<HTMLDialogElement | null>(null)
-const cashbooks = ref<Cashbook[]>([])
+const cashbooks = ref<Pick<Cashbook, 'id' | 'name' | 'code'>[]>([])
 const detail = ref<CashbookTransaction | null>(null)
 const form = reactive({
-  cashbook_id: '',
+  cashbook_id: props.cashbookId ? String(props.cashbookId) : '',
   transaction_type: 'income',
   amount: '',
   transaction_date: '',
@@ -44,7 +45,9 @@ async function load() {
         throw new Error('The API returned a different transaction. Please retry.')
       detail.value = result
     } else {
-      const result = await cashbookService.listOptions(controller.signal)
+      const result = await (props.pos
+        ? posCashbookService.list(controller.signal)
+        : cashbookService.listOptions(controller.signal))
       if (disposed) return
       cashbooks.value = result
     }
@@ -87,7 +90,13 @@ async function submit() {
       },
     )
     if (disposed) return
-    await cashbookTransactionService.create(payload)
+    if (props.pos) {
+      if (!['income', 'expense'].includes(payload.transaction_type))
+        throw new Error('Choose a transaction type.')
+      if (!cashbooks.value.some((cashbook) => cashbook.id === payload.cashbook_id))
+        throw new Error('Choose a cashbook.')
+      await posCashbookService.createTransaction(payload)
+    } else await cashbookTransactionService.create(payload)
     if (!disposed) emit('saved')
   } catch (cause) {
     if (disposed) return
@@ -184,7 +193,17 @@ async function submit() {
           </div>
           <div class="field">
             <label :for="`${prefix}-transaction_type`"> {{ t('Transaction type') }} </label
+            ><select
+              v-if="pos"
+              :id="`${prefix}-transaction_type`"
+              v-model="form.transaction_type"
+              name="transaction_type"
+              required
+            >
+              <option value="income">{{ t('Income') }}</option>
+              <option value="expense">{{ t('Expense') }}</option></select
             ><input
+              v-else
               :id="`${prefix}-transaction_type`"
               v-model="form.transaction_type"
               name="transaction_type"
