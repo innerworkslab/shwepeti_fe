@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { currentDateTime } from '@/utils/current-date-time'
 import { t } from '@/i18n'
 import { usePermissions } from '@/composables/usePermissions'
 const { can } = usePermissions()
@@ -139,10 +140,13 @@ async function submit() {
   formError.value = ''
   saving.value = true
   try {
-    const payload = await cashbookTransferSchema.validate(form, {
-      abortEarly: false,
-      stripUnknown: true,
-    })
+    const payload = await cashbookTransferSchema.validate(
+      { ...form, transfer_date: currentDateTime() },
+      {
+        abortEarly: false,
+        stripUnknown: true,
+      },
+    )
     if (
       ![payload.from_cashbook_id, payload.to_cashbook_id].every((id) =>
         cashbooks.value.some((c) => c.id === id),
@@ -281,10 +285,7 @@ onBeforeUnmount(() => {
             {{ t('Amount') }}
             <input v-model="form.amount" name="amount" type="number" min="0.01" step="0.01"
           /></label>
-          <label>
-            {{ t('Transfer date') }}
-            <input v-model="form.transfer_date" name="transfer_date" type="datetime-local" step="1"
-          /></label>
+
           <label> {{ t('Remark') }} <textarea v-model="form.remark" name="remark" /></label>
           <button type="submit" class="primary">
             {{ saving ? t('Saving…') : t('Create transfer') }}

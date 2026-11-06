@@ -1,3 +1,7 @@
+vi.mock('@/composables/usePermissions', () => ({
+  usePermissions: () => ({ can: () => true, canVisit: () => true }),
+}))
+vi.mock('@/utils/current-date-time', () => ({ currentDateTime: () => '2026-09-26 23:00:00' }))
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createRouter, createMemoryHistory } from 'vue-router'
@@ -87,7 +91,7 @@ it('validates and creates using dropdown IDs and a local payment date', async ()
   await wrapper.get('[name="supplier_id"]').setValue('1')
   await wrapper.get('[name="cashbook_id"]').setValue('3')
   await wrapper.get('[name="amount"]').setValue('5000')
-  await wrapper.get('[name="payment_date"]').setValue('2026-09-26T23:00:00')
+  expect(wrapper.find('[name="payment_date"]').exists()).toBe(false)
   await wrapper.get('[name="remark"]').setValue('Partial settlement')
   await wrapper.get('form').trigger('submit')
   await flushPromises()

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { currentDateTime } from '@/utils/current-date-time'
 import { t } from '@/i18n'
 import { usePermissions } from '@/composables/usePermissions'
 const { can } = usePermissions()
@@ -91,7 +92,10 @@ async function submit() {
   error.value = ''
   errors.value = {}
   try {
-    const payload = await bookingPayload(form)
+    const payload = await bookingPayload({
+      ...form,
+      deposit: { ...form.deposit, paid_at: currentDateTime() },
+    })
     if (
       payload.deposit &&
       !cashbooks.value.some((cashbook) => cashbook.id === payload.deposit?.cashbook_id)
@@ -289,14 +293,7 @@ async function submit() {
               <option value="ayapay">{{ t('AyaPay') }}</option>
             </select></label
           >
-          <label>
-            {{ t('Paid at') }}
-            <input
-              v-model="form.deposit.paid_at"
-              name="deposit.paid_at"
-              type="datetime-local"
-              step="1"
-          /></label>
+
           <label>
             {{ t('Deposit note') }} <input v-model="form.deposit.note" name="deposit.note"
           /></label>

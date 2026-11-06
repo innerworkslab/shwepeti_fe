@@ -1,3 +1,4 @@
+vi.mock('@/utils/current-date-time', () => ({ currentDateTime: () => '2026-10-08 12:00:00' }))
 import { createPinia, setActivePinia } from 'pinia'
 import { usePosSessionStore } from '@/stores/pos-session'
 vi.mock('vue-router', async (importOriginal) => ({
@@ -64,7 +65,7 @@ it.each(['partial', 'checkout'] as const)('validates and submits %s payment', as
     expect(w.get('[name="tax_amount"]').attributes('readonly')).toBeDefined()
     expect((w.get('[name="amount"]').element as HTMLInputElement).value).toBe('21750')
   } else await w.get('[name="amount"]').setValue('15000')
-  await w.get('[name="paid_at"]').setValue('2026-10-08T12:00')
+  expect(w.find('[name="paid_at"]').exists()).toBe(false)
   await w.get('[name="payment_method"]').setValue('kpay')
   await w.get('[name="note"]').setValue('Payment')
   await w.get('form').trigger('submit')
@@ -138,7 +139,7 @@ it('records full partial payment without checkout, then checks out only on click
     await flushPromises()
     await w.get('[name="cashbook_id"]').setValue('1')
     await w.get('[name="amount"]').setValue('100')
-    await w.get('[name="paid_at"]').setValue('2026-10-21T10:00')
+    expect(w.find('[name="paid_at"]').exists()).toBe(false)
     await w.get('form').trigger('submit')
     await flushPromises()
     expect(posBookingService.partialPayment).toHaveBeenCalledTimes(1)

@@ -1,3 +1,6 @@
+vi.mock('@/composables/usePermissions', () => ({
+  usePermissions: () => ({ can: () => true, canVisit: () => true }),
+}))
 import { afterEach, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createMemoryHistory, createRouter } from 'vue-router'

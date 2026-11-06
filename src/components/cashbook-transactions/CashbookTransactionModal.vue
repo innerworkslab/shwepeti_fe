@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { currentDateTime } from '@/utils/current-date-time'
 import { t } from '@/i18n'
 import { nextTick, onBeforeUnmount, onMounted, reactive, ref, useId } from 'vue'
 import { ValidationError } from 'yup'
@@ -78,10 +79,13 @@ async function submit() {
   saveError.value = ''
   errors.value = {}
   try {
-    const payload = await createCashbookTransactionSchema.validate(form, {
-      abortEarly: false,
-      stripUnknown: true,
-    })
+    const payload = await createCashbookTransactionSchema.validate(
+      { ...form, transaction_date: currentDateTime() },
+      {
+        abortEarly: false,
+        stripUnknown: true,
+      },
+    )
     if (disposed) return
     await cashbookTransactionService.create(payload)
     if (!disposed) emit('saved')
@@ -213,26 +217,7 @@ async function submit() {
               t(errors.amount)
             }}</span>
           </div>
-          <div class="field">
-            <label :for="`${prefix}-transaction_date`"> {{ t('Transaction date') }} </label
-            ><input
-              :id="`${prefix}-transaction_date`"
-              v-model="form.transaction_date"
-              name="transaction_date"
-              type="datetime-local"
-              step="1"
-              required
-              :aria-invalid="!!errors.transaction_date"
-              :aria-describedby="
-                errors.transaction_date ? `${prefix}-transaction_date-error` : undefined
-              "
-            /><span
-              v-if="errors.transaction_date"
-              :id="`${prefix}-transaction_date-error`"
-              class="error"
-              >{{ t(errors.transaction_date) }}</span
-            >
-          </div>
+
           <div class="field">
             <label :for="`${prefix}-remark`"> {{ t('Remark') }} </label
             ><textarea

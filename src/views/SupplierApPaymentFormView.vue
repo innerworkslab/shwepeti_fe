@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { currentDateTime } from '@/utils/current-date-time'
 import { t } from '@/i18n'
 import { nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
@@ -62,10 +63,13 @@ async function submit() {
   errors.value = {}
   saveError.value = ''
   try {
-    const payload = await createSupplierApPaymentSchema.validate(form, {
-      abortEarly: false,
-      stripUnknown: true,
-    })
+    const payload = await createSupplierApPaymentSchema.validate(
+      { ...form, payment_date: currentDateTime() },
+      {
+        abortEarly: false,
+        stripUnknown: true,
+      },
+    )
     if (disposed) return
     await supplierApService.createPayment(payload)
     if (!disposed) {
@@ -153,21 +157,7 @@ async function submit() {
             t(errors.amount)
           }}</span>
         </div>
-        <div class="field">
-          <label for="payment-payment_date"> {{ t('Payment date') }} </label
-          ><input
-            id="payment-payment_date"
-            name="payment_date"
-            v-model="form.payment_date"
-            type="datetime-local"
-            step="1"
-            required
-            :aria-invalid="!!errors.payment_date"
-            :aria-describedby="errors.payment_date ? 'payment-payment_date-error' : undefined"
-          /><span v-if="errors.payment_date" id="payment-payment_date-error" class="error">{{
-            t(errors.payment_date)
-          }}</span>
-        </div>
+
         <div class="field">
           <label for="payment-remark"> {{ t('Remark') }} </label
           ><textarea

@@ -1,3 +1,7 @@
+vi.mock('@/composables/usePermissions', () => ({
+  usePermissions: () => ({ can: () => true, canVisit: () => true }),
+}))
+vi.mock('@/utils/current-date-time', () => ({ currentDateTime: () => '2026-09-25 09:00:00' }))
 import { reactive } from 'vue'
 const routeState = reactive({ query: {} as Record<string, string> })
 vi.mock('vue-router', () => ({ useRoute: () => routeState }))
@@ -75,7 +79,7 @@ describe('Cashbook transactions', () => {
     expect(wrapper.get('dialog').text()).toContain('Choose a cashbook.')
     await wrapper.get('[name="cashbook_id"]').setValue('3')
     await wrapper.get('[name="amount"]').setValue('25000')
-    await wrapper.get('[name="transaction_date"]').setValue('2026-09-25T09:00:00')
+    expect(wrapper.find('[name="transaction_date"]').exists()).toBe(false)
     await wrapper.get('[name="remark"]').setValue('Room payment')
     await wrapper.get('dialog form').trigger('submit')
     await flushPromises()

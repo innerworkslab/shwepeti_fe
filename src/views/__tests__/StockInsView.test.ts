@@ -1,3 +1,7 @@
+vi.mock('@/composables/usePermissions', () => ({
+  usePermissions: () => ({ can: () => true, canVisit: () => true }),
+}))
+vi.mock('@/utils/current-date-time', () => ({ currentDateTime: () => '2026-09-15 14:47:41' }))
 import { supplierService } from '@/services/supplier.service'
 import { cashbookService } from '@/services/cashbook.service'
 vi.mock('@/services/supplier.service', () => ({ supplierService: { listOptions: vi.fn() } }))
@@ -99,7 +103,7 @@ async function fill(wrapper: ReturnType<typeof mount>) {
   await wrapper.get('[name="total_amount"]').setValue('50000')
   await wrapper.get('[name="paid_amount"]').setValue('40000')
   await wrapper.get('[name="warehouse_id"]').setValue('2')
-  await wrapper.get('[name="transaction_date"]').setValue('2026-09-15T14:47:41')
+  expect(wrapper.find('[name="transaction_date"]').exists()).toBe(false)
   await wrapper.get('[name="items[0].item_id"]').setValue('1')
   await wrapper.get('[name="items[0].unit_id"]').setValue('1')
   await wrapper.get('[name="items[0].quantity"]').setValue('10')
@@ -180,7 +184,7 @@ describe('Stock In', () => {
       await flushPromises()
       await wrapper.get('[aria-label="Update status for stock in #7"]').trigger('click')
       await flushPromises()
-      expect(wrapper.get('[data-form-surface]').text()).toContain('Stock in #7')
+      expect(wrapper.get('[data-form-surface]').text()).toMatch(/Stock in #\s*7/)
       await wrapper.get('form').trigger('submit')
       await flushPromises()
       expect(stockInService.updateStatus).not.toHaveBeenCalled()

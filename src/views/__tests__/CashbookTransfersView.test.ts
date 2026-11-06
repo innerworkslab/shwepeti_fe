@@ -1,3 +1,7 @@
+vi.mock('@/composables/usePermissions', () => ({
+  usePermissions: () => ({ can: () => true, canVisit: () => true }),
+}))
+vi.mock('@/utils/current-date-time', () => ({ currentDateTime: () => '2026-10-22 15:30:00' }))
 import { afterEach, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import View from '../CashbookTransfersView.vue'
@@ -25,7 +29,7 @@ it('keeps the request UUID when retrying a failed transfer and refreshes after s
     await w.get('[name="from_cashbook_id"]').setValue('1')
     await w.get('[name="to_cashbook_id"]').setValue('5')
     await w.get('[name="amount"]').setValue('100000.00')
-    await w.get('[name="transfer_date"]').setValue('2026-10-22T15:30')
+    expect(w.find('[name="transfer_date"]').exists()).toBe(false)
     await w.get('dialog form').trigger('submit')
     await flushPromises()
     expect(w.text()).toContain('Network error')

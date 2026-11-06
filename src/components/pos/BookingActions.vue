@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { currentDateTime } from '@/utils/current-date-time'
 import { t } from '@/i18n'
 import { usePermissions } from '@/composables/usePermissions'
 const { can } = usePermissions()
@@ -195,11 +196,7 @@ async function checkoutSettledBooking() {
     if (disposed) return
     const lastPayment = fresh.payments?.at(-1)
     const cashbookId = lastPayment?.cashbook_id ?? cashbooks.value[0]?.id
-    const now = new Date()
-    const paidAt = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
-      .toISOString()
-      .slice(0, 19)
-      .replace('T', ' ')
+    const paidAt = currentDateTime()
     const payload = await checkoutPaymentSchema.validate(
       {
         cashbook_id: cashbookId,
@@ -275,8 +272,9 @@ async function save(action: 'check-in' | 'partial' | 'checkout') {
   try {
     if (action === 'check-in') await posBookingService.checkIn(props.bookingId, controller.signal)
     else {
+      const paymentForm = { ...form, paid_at: currentDateTime() }
       const payload = await bookingPaymentSchema.validate(
-        action === 'checkout' ? { ...form, amount: checkoutBalance.value } : form,
+        action === 'checkout' ? { ...paymentForm, amount: checkoutBalance.value } : paymentForm,
         {
           abortEarly: false,
           stripUnknown: true,
@@ -301,7 +299,7 @@ async function save(action: 'check-in' | 'partial' | 'checkout') {
         if (disposed) return
         await posBookingService.checkout(props.bookingId, checkout, controller.signal)
       } else {
-        const partial = await partialPaymentSchema.validate(form, {
+        const partial = await partialPaymentSchema.validate(paymentForm, {
           abortEarly: false,
           stripUnknown: true,
         })
@@ -496,9 +494,6 @@ function submit() {
               type="number"
               min="0"
               step="any" /></label
-          ><label>
-            {{ t('Paid at') }}
-            <input v-model="form.paid_at" name="paid_at" type="datetime-local" step="1" /></label
           ><label> {{ t('Note') }} <textarea v-model="form.note" name="note" rows="2" /></label>
           <div class="actions">
             <button type="button" @click="mode = null">{{ t('Cancel') }}</button
