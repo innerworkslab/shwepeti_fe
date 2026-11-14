@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CashbookExportButton from '@/components/cashbook-transactions/CashbookExportButton.vue'
 import { t } from '@/i18n'
 import { usePermissions } from '@/composables/usePermissions'
 const { can } = usePermissions()
@@ -14,6 +15,7 @@ import { cashbookService } from '@/services/cashbook.service'
 import { posCashbookService } from '@/services/pos-cashbook.service'
 import { toApiError } from '@/services/api/api-error'
 import type { DataTableColumn } from '@/types/data-table'
+const exportDates = ref({ date_from: '', date_to: '' })
 const props = defineProps<{ pos?: boolean }>()
 const route = useRoute()
 watch(
@@ -161,9 +163,14 @@ onBeforeUnmount(() => {
           :disabled="!selected || optionsLoading || !!optionsError || saving"
           @click="openClosing"
         >
-          <AppIcon name="add" :size="16" /> {{ t('Close cashbook') }}
-        </button></template
-      >
+          <AppIcon name="add" :size="16" /> {{ t('Close cashbook') }}</button
+        ><CashbookExportButton
+          v-if="!pos && can('cashbooks.view')"
+          kind="closings"
+          :cashbook-id="selected?.id"
+          :date-from="exportDates.date_from"
+          :date-to="exportDates.date_to"
+      /></template>
       <template #filters
         ><label>
           {{ t('Cashbook') }}
@@ -180,8 +187,17 @@ onBeforeUnmount(() => {
               {{ book.name }} ({{ book.code }})
             </option>
           </select></label
-        ></template
-      >
+        >
+        <fieldset v-if="!pos" class="export-dates">
+          <legend>{{ t('Export Excel') }}</legend>
+          <label
+            >{{ t('From date')
+            }}<input v-model="exportDates.date_from" name="date_from" type="date"
+          /></label>
+          <label
+            >{{ t('To date') }}<input v-model="exportDates.date_to" name="date_to" type="date"
+          /></label></fieldset
+      ></template>
     </DataTable>
     <dialog ref="dialog" aria-labelledby="closing-title" @cancel.prevent="dismiss">
       <header>
@@ -209,6 +225,19 @@ onBeforeUnmount(() => {
   </main>
 </template>
 <style scoped>
+.export-dates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+}
+input {
+  padding: 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  font: inherit;
+}
 .closings-page {
   padding: 24px;
   color: #263b51;

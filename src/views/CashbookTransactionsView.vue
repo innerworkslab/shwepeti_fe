@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CashbookExportButton from '@/components/cashbook-transactions/CashbookExportButton.vue'
 import { t } from '@/i18n'
 import { usePermissions } from '@/composables/usePermissions'
 const { can } = usePermissions()
@@ -139,9 +140,14 @@ function clearDates() {
           class="primary"
           @click="openForm()"
         >
-          <AppIcon name="add" :size="16" /> {{ t('Add transaction') }}
-        </button></template
-      >
+          <AppIcon name="add" :size="16" /> {{ t('Add transaction') }}</button
+        ><CashbookExportButton
+          v-if="can('cashbook_transactions.view')"
+          kind="transactions"
+          :cashbook-id="cashbookId"
+          :date-from="dates.date_from"
+          :date-to="dates.date_to"
+      /></template>
       <template #cell-actions="{ row }">
         <button
           v-if="can('cashbook_transactions.view')"
