@@ -218,6 +218,12 @@ async function logout() {
         </button>
       </div>
       <nav id="sidebar-navigation" :aria-label="t('Main navigation')">
+        <h2
+          v-if="expanded && ['/rooms', '/menus'].some((path) => canVisit(path))"
+          class="nav-group-title"
+        >
+          {{ t('Daily operations') }}
+        </h2>
         <RouterLink
           v-for="link in ['/rooms', '/menus']
             .map((path) => links.find((link) => link.to === path)!)
@@ -237,6 +243,23 @@ async function logout() {
             aria-hidden="true"
           ></span>
         </RouterLink>
+        <h2
+          v-if="
+            expanded &&
+            [
+              '/stock-ins',
+              '/inventory-transfers',
+              '/inventory-adjustments',
+              '/inventory-stock-balances',
+              '/inventory-ledgers',
+              '/items',
+              '/warehouses',
+            ].some((path) => canVisit(path))
+          "
+          class="nav-group-title"
+        >
+          {{ t('Inventory') }}
+        </h2>
         <RouterLink
           v-for="link in [
             '/stock-ins',
@@ -264,6 +287,23 @@ async function logout() {
             aria-hidden="true"
           ></span>
         </RouterLink>
+        <h2
+          v-if="
+            expanded &&
+            [
+              '/cashbooks',
+              '/cashbook-transactions',
+              '/cashbook-transfers',
+              '/cashbook-closings',
+              '/suppliers',
+              '/supplier-ap-balances',
+              '/fixed-assets',
+            ].some((path) => canVisit(path))
+          "
+          class="nav-group-title"
+        >
+          {{ t('Finance') }}
+        </h2>
         <button
           v-if="can(['cashbooks.view', 'cashbook_transactions.view'])"
           class="nav-link cashbook-toggle"
@@ -287,7 +327,11 @@ async function logout() {
             :style="{ transform: cashbooksOpen ? 'rotate(180deg)' : undefined }"
           />
         </button>
-        <div v-if="cashbooksOpen && expanded" id="cashbook-links" class="cashbook-links">
+        <div
+          v-if="cashbooksOpen && expanded && can(['cashbooks.view', 'cashbook_transactions.view'])"
+          id="cashbook-links"
+          class="cashbook-links"
+        >
           <RouterLink
             v-if="canVisit('/cashbooks')"
             class="cashbook-manage"
@@ -352,7 +396,7 @@ async function logout() {
             <AppIcon name="cashbooks" /><span v-if="expanded"> {{ t('Cashbook closings') }} </span
             ><AppIcon v-if="expanded" name="chevronDown" />
           </button>
-          <div v-if="closingsOpen && expanded" class="cashbook-links">
+          <div v-if="closingsOpen && expanded && can('cashbooks.view')" class="cashbook-links">
             <p v-if="cashbooksLoading">{{ t('Loading cashbooks…') }}</p>
             <p v-else-if="cashbooksError" role="alert">
               {{ t(cashbooksError) }}<button @click="loadCashbooks">{{ t('Retry') }}</button>
@@ -393,6 +437,15 @@ async function logout() {
             aria-hidden="true"
           ></span>
         </RouterLink>
+        <h2
+          v-if="
+            expanded &&
+            (canVisit('/reports/profit-and-loss') || reportLinks.some((link) => canVisit(link.to)))
+          "
+          class="nav-group-title"
+        >
+          {{ t('Reports') }}
+        </h2>
         <RouterLink
           v-if="canVisit('/reports/profit-and-loss')"
           to="/reports/profit-and-loss"
@@ -432,6 +485,23 @@ async function logout() {
           </div>
         </div>
 
+        <h2
+          v-if="
+            expanded &&
+            [
+              '/room-categories',
+              '/menu-categories',
+              '/item-categories',
+              '/asset-categories',
+              '/unit-groups',
+              '/units',
+              '/users',
+            ].some((path) => canVisit(path))
+          "
+          class="nav-group-title"
+        >
+          {{ t('Setup') }}
+        </h2>
         <RouterLink
           v-for="link in [
             '/room-categories',
@@ -610,8 +680,12 @@ async function logout() {
   color: #f1e1c5;
 }
 @media (max-width: 480px) {
-  .user-details { display: none; }
-  .account { gap: 8px; }
+  .user-details {
+    display: none;
+  }
+  .account {
+    gap: 8px;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .cashbook-chevron,
@@ -777,6 +851,17 @@ button {
   justify-content: space-between;
   padding-left: 13px;
 }
+.nav-group-title {
+  margin: 20px 14px 8px;
+  color: #a8b7c8;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.nav-group-title:first-child {
+  margin-top: 6px;
+}
 .section-label {
   color: #8395a5;
   font-size: 9px;
@@ -938,8 +1023,12 @@ nav {
   }
 }
 @media (max-width: 480px) {
-  .user-details { display: none; }
-  .account { gap: 8px; }
+  .user-details {
+    display: none;
+  }
+  .account {
+    gap: 8px;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .sidebar,

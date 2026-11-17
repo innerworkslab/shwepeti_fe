@@ -1230,5 +1230,9 @@
   "request timeout": "တောင်းဆိုမှု အချိန်ကုန်သွားသည်။",
   "export excel": "Excel ဖိုင်ထုတ်ရန်",
   "exporting excel…": "Excel ဖိုင်ထုတ်နေသည်…",
-  "could not export report. please try again.": "အစီရင်ခံစာ ဖိုင်ထုတ်၍ မရပါ။ ထပ်မံကြိုးစားပါ။"
+  "could not export report. please try again.": "အစီရင်ခံစာ ဖိုင်ထုတ်၍ မရပါ။ ထပ်မံကြိုးစားပါ။",
+  "daily operations": "နေ့စဉ်လုပ်ငန်းများ",
+  "inventory": "ကုန်ပစ္စည်းစာရင်း",
+  "finance": "ငွေကြေးစာရင်း",
+  "setup": "ဆက်တင်များ"
 }

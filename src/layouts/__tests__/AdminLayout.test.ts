@@ -154,3 +154,35 @@ it('loads cashbooks on expand and links to the selected cashbook ledger', async 
   await flushPromises()
   expect(router.currentRoute.value.query.cashbook_id).toBe('3')
 })
+
+it('shows only headings with permitted tabs and reacts to permission changes', async () => {
+  const { wrapper, session } = await render()
+  const headings = () => wrapper.findAll('.nav-group-title').map((node) => node.text())
+  await flushPromises()
+  expect(headings()).toEqual([])
+  session.setSession(
+    {
+      ...user,
+      permissions: [
+        'rooms.view',
+        'items.view',
+        'cashbook_transfers.view',
+        'reports.hotel',
+        'users.view',
+      ],
+    },
+    'test-token',
+  )
+  await flushPromises()
+  expect(headings()).toEqual(['Daily operations', 'Inventory', 'Finance', 'Reports', 'Setup'])
+  session.setSession({ ...user, permissions: ['cashbook_transactions.view'] }, 'test-token')
+  await flushPromises()
+  expect(headings()).toEqual(['Finance'])
+  await wrapper.get('[aria-label="Collapse sidebar"]').trigger('click')
+  expect(headings()).toEqual([])
+  await wrapper.get('[aria-label="Expand sidebar"]').trigger('click')
+  expect(headings()).toEqual(['Finance'])
+  session.setSession({ ...user, permissions: [] }, 'test-token')
+  await flushPromises()
+  expect(headings()).toEqual([])
+})
