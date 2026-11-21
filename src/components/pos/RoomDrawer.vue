@@ -9,10 +9,11 @@ import BookingActions from './BookingActions.vue'
 import ServiceOrderPanel from './ServiceOrderPanel.vue'
 import FoodOrderPanel from './FoodOrderPanel.vue'
 import AppIcon from '@/components/common/AppIcon.vue'
+import { posBookingService } from '@/services/pos-booking.service'
 import { posRoomService } from '@/services/pos-room.service'
 import { toApiError } from '@/services/api/api-error'
 import type { PosRoom } from '@/types/pos-room'
-const props = defineProps<{ roomId: number }>()
+const props = defineProps<{ roomId?: number; selectedBookingId?: number }>()
 const emit = defineEmits<{ close: []; updated: [] }>()
 const dialog = ref<HTMLDialogElement | null>(null)
 const room = ref<PosRoom | null>(null)
@@ -28,11 +29,8 @@ function selectService(tab: 'food' | 'amenity' | 'laundry') {
     visited.value[tab] = true
   }
 }
-const bookingId = computed(() => {
-  if (!['reserved', 'checked_in'].includes(String(room.value?.current_booking?.status))) return null
-  const id = Number(room.value?.current_booking?.id)
-  return typeof id === 'number' && Number.isSafeInteger(id) && id > 0 ? id : null
-})
+// Booking actions always belong to the clicked booking, never the room's current occupant.
+const bookingId = computed(() => props.selectedBookingId ?? null)
 const canOrder = computed(() =>
   ['reserved', 'checked_in'].includes(String(room.value?.current_booking?.status || '')),
 )
@@ -63,7 +61,16 @@ async function load(preserve = false) {
   error.value = ''
   if (!preserve) room.value = null
   try {
-    const result = await posRoomService.get(props.roomId, active.signal)
+    let result: PosRoom
+    if (props.selectedBookingId != null) {
+      const booking = await posBookingService.get(props.selectedBookingId, active.signal)
+      if (booking.id !== props.selectedBookingId)
+        throw new Error('The API returned a different booking. Please retry.')
+      const roomDetail = booking.room ?? (await posRoomService.get(booking.room_id, active.signal))
+      result = { ...roomDetail, current_booking: { ...booking } }
+    } else {
+      result = await posRoomService.get(props.roomId!, active.signal)
+    }
     if (!disposed && !active.signal.aborted) room.value = result
   } catch (cause) {
     if (!disposed && !active.signal.aborted) {
@@ -78,8 +85,12 @@ async function load(preserve = false) {
   }
 }
 watch(
-  () => props.roomId,
-  () => load(),
+  () => [props.roomId, props.selectedBookingId],
+  () => {
+    serviceTab.value = 'food'
+    visited.value = { food: true, amenity: false, laundry: false }
+    void load()
+  },
   { immediate: true },
 )
 onMounted(() => {
@@ -115,15 +126,24 @@ function backdrop(event: MouseEvent) {
   >
     <header>
       <div>
-        <span class="eyebrow"> {{ t('ROOM DETAILS') }} </span>
-        <h2 id="room-drawer-title">{{ room?.name || t('Room #{0}', [roomId]) }}</h2>
+        <span class="eyebrow">
+          {{ selectedBookingId ? t('Booking details') : t('ROOM DETAILS') }}
+        </span>
+        <h2 id="room-drawer-title">
+          {{
+            room?.name ||
+            (selectedBookingId ? t('Booking #{0}', [selectedBookingId]) : t('Room #{0}', [roomId]))
+          }}
+        </h2>
       </div>
       <button type="button" :disabled="busy" :aria-label="t('Close room details')" @click="close()">
         <AppIcon name="close" />
       </button>
     </header>
     <div class="drawer-body" :aria-busy="loading">
-      <p v-if="loading" role="status" class="muted">{{ t('Loading room details...') }}</p>
+      <p v-if="loading" role="status" class="muted">
+        {{ selectedBookingId ? t('Loading booking details…') : t('Loading room details...') }}
+      </p>
       <div v-else-if="error" role="alert" class="error">
         <p>{{ t(error) }}</p>
         <button type="button" @click="load()">{{ t('Try again') }}</button>
@@ -146,7 +166,7 @@ function backdrop(event: MouseEvent) {
             t(statusLabel(room.status))
           }}</span>
         </div>
-        <details>
+        <details :open="!selectedBookingId">
           <summary>{{ t('Room information') }}</summary>
           <dl>
             <dt>{{ t('Room ID') }}</dt>
@@ -163,7 +183,7 @@ function backdrop(event: MouseEvent) {
           </p>
         </details>
         <section v-if="bookingId && can('bookings.view')">
-          <h3>{{ t('Current booking') }}</h3>
+          <h3>{{ t('Booking details') }}</h3>
           <div v-if="bookingId" class="booking-info">
             <strong>{{
               room.current_booking?.guest_name || t('Booking #{0}', [bookingId])

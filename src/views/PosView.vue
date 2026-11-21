@@ -5,13 +5,13 @@ const { can } = usePermissions()
 
 import { statusLabel, statusStyle } from '@/constants/hotel-status'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
+import { RouterLink } from 'vue-router'
 import AppIcon from '@/components/common/AppIcon.vue'
 import RoomDrawer from '@/components/pos/RoomDrawer.vue'
 import { posDashboardService } from '@/services/pos-dashboard.service'
 import { toApiError } from '@/services/api/api-error'
 import type { BookingDashboard, DashboardRoom, DashboardBooking } from '@/types/pos-dashboard'
-const router = useRouter()
+const selectedBookingId = ref<number | null>(null)
 function dashboardBookingId(booking: DashboardBooking) {
   const id = Number(booking.booking_id ?? booking.bookingId ?? booking.id)
   return Number.isSafeInteger(id) && id > 0 ? id : null
@@ -19,7 +19,18 @@ function dashboardBookingId(booking: DashboardBooking) {
 function openBooking(booking: DashboardBooking) {
   if (!can('bookings.view')) return
   const id = dashboardBookingId(booking)
-  if (id) void router.push(`/pos/bookings/${id}`)
+  if (id) {
+    selectedRoomId.value = null
+    selectedBookingId.value = id
+  }
+}
+function openRoom(id: number) {
+  selectedBookingId.value = null
+  selectedRoomId.value = id
+}
+function closeDrawer() {
+  selectedRoomId.value = null
+  selectedBookingId.value = null
 }
 const today = new Date()
 today.setHours(0, 0, 0, 0)
@@ -443,7 +454,7 @@ onBeforeUnmount(() => {
                 class="room-number"
                 :disabled="!can('rooms.view')"
                 :aria-label="t('View {0}: {1}', [room.name, room.status])"
-                @click="selectedRoomId = room.id"
+                @click="openRoom(room.id)"
               >
                 <i
                   :class="room.status"
@@ -551,9 +562,11 @@ onBeforeUnmount(() => {
     </dialog>
     <RoomDrawer
       @updated="loadRooms"
-      v-if="selectedRoomId != null"
-      :room-id="selectedRoomId"
-      @close="selectedRoomId = null"
+      v-if="selectedRoomId != null || selectedBookingId != null"
+      :key="selectedBookingId != null ? `booking-${selectedBookingId}` : `room-${selectedRoomId}`"
+      :room-id="selectedRoomId ?? undefined"
+      :selected-booking-id="selectedBookingId ?? undefined"
+      @close="closeDrawer"
     />
   </main>
 </template>

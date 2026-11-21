@@ -1,3 +1,6 @@
+vi.mock('@/composables/usePermissions', () => ({ usePermissions: () => ({ can: () => true }) }))
+import { posBookingService } from '@/services/pos-booking.service'
+vi.mock('@/services/pos-booking.service', () => ({ posBookingService: { get: vi.fn() } }))
 import { posDashboardService } from '@/services/pos-dashboard.service'
 import type { BookingDashboard } from '@/types/pos-dashboard'
 vi.mock('@/services/pos-dashboard.service', () => ({ posDashboardService: { get: vi.fn() } }))
@@ -59,6 +62,10 @@ beforeEach(() => {
   vi.mocked(posRoomService.list).mockResolvedValue(rooms)
   vi.mocked(posRoomService.available).mockResolvedValue([room])
   vi.mocked(posRoomService.get).mockResolvedValue(room)
+  vi.mocked(posBookingService.get).mockImplementation(
+    async (id) =>
+      ({ id, room_id: 1, room, guest_name: `Guest ${id}`, status: 'checked_in' }) as never,
+  )
   Object.defineProperties(HTMLDialogElement.prototype, {
     showModal: { configurable: true, value() {} },
     close: { configurable: true, value() {} },
@@ -84,7 +91,12 @@ async function render() {
     ],
   })
   await router.push('/pos')
-  const wrapper = mount(PosView, { global: { plugins: [createPinia(), router] } })
+  const wrapper = mount(PosView, {
+    global: {
+      plugins: [createPinia(), router],
+      stubs: { BookingActions: true, FoodOrderPanel: true, ServiceOrderPanel: true },
+    },
+  })
   wrappers.push(wrapper)
   await flushPromises()
   return wrapper
@@ -189,11 +201,15 @@ it('renders booking bars and daily counts and selects a single start date', asyn
   )
   await w.get('button.booking').trigger('click')
   await flushPromises()
-  expect(w.vm.$route.path).toBe('/pos/bookings/7')
+  expect(w.vm.$route.path).toBe('/pos')
+  expect(posBookingService.get).toHaveBeenLastCalledWith(7, expect.any(AbortSignal))
+  expect(w.findComponent(RoomDrawer).props('selectedBookingId')).toBe(7)
   expect(posRoomService.get).not.toHaveBeenCalled()
   await w.findAll('button.booking')[1]!.trigger('click')
   await flushPromises()
-  expect(w.vm.$route.path).toBe('/pos/bookings/8')
+  expect(w.vm.$route.path).toBe('/pos')
+  expect(posBookingService.get).toHaveBeenLastCalledWith(8, expect.any(AbortSignal))
+  expect(w.findComponent(RoomDrawer).props('selectedBookingId')).toBe(8)
   expect(w.get('button.booking').attributes('style')).toContain('22.5806')
   expect(w.findAll('button.booking')[1]!.attributes('style')).toContain('top: 42px')
   expect(w.get('.room-timeline').attributes('style')).toContain('84px')
@@ -268,4 +284,19 @@ it('initially requests the full current month and centers today', async () => {
     expect.any(AbortSignal),
   )
   expect((w.get('.calendar-scroll').element as HTMLElement).scrollLeft).toBe(832)
+})
+
+it('room clicks show information only even when the room has an active booking', async () => {
+  vi.mocked(posRoomService.get).mockResolvedValue({
+    ...room,
+    current_booking: { id: 99, status: 'checked_in', guest_name: 'Current guest' },
+  })
+  const w = await render()
+  await w.get('.room-row .room-number').trigger('click')
+  await flushPromises()
+  expect(posRoomService.get).toHaveBeenCalledWith(1, expect.any(AbortSignal))
+  expect(posBookingService.get).not.toHaveBeenCalled()
+  expect(w.find('booking-actions-stub').exists()).toBe(false)
+  expect(w.find('food-order-panel-stub').exists()).toBe(false)
+  expect(w.find('.service-tabs').exists()).toBe(false)
 })
