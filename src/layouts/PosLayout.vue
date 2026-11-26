@@ -148,6 +148,22 @@ onBeforeUnmount(() => drawer.value?.close())
           ><AppIcon name="calendar" /> {{ t('Bookings') }}
         </RouterLink>
         <RouterLink
+          v-if="canVisit('/pos/rooms')"
+          to="/pos/rooms"
+          :class="{
+            active: route.path.startsWith('/pos/rooms') && route.path !== '/pos/rooms/daily-board',
+          }"
+          @click="close"
+          ><AppIcon name="rooms" />{{ t('Rooms') }}</RouterLink
+        >
+        <RouterLink
+          v-if="canVisit('/pos/rooms/daily-board')"
+          to="/pos/rooms/daily-board"
+          :class="{ active: route.path === '/pos/rooms/daily-board' }"
+          @click="close"
+          ><AppIcon name="dashboard" />{{ t('Daily room board') }}</RouterLink
+        >
+        <RouterLink
           v-if="canVisit('/pos/cashbook-transfers')"
           class="cashbook-manage"
           to="/pos/cashbook-transfers"
@@ -248,10 +264,18 @@ onBeforeUnmount(() => drawer.value?.close())
   gap: 6px;
   letter-spacing: 0;
 }
-.pos-navigation button { white-space: nowrap; flex-shrink: 0; }
+.pos-navigation button {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
 @media (max-width: 480px) {
-  .pos-navigation > span { display: none; }
-  .pos-navigation { gap: 10px; padding-inline: 12px; }
+  .pos-navigation > span {
+    display: none;
+  }
+  .pos-navigation {
+    gap: 10px;
+    padding-inline: 12px;
+  }
 }
 @media (max-width: 640px) {
   .pos-profile span {

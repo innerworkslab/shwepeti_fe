@@ -14,6 +14,11 @@ const router = createRouter({
       children: [
         { path: 'access-denied', component: () => import('@/views/AccessDeniedView.vue') },
         { path: '', name: 'pos', component: () => import('@/views/PosView.vue') },
+        ...['rooms', 'rooms/create', 'rooms/:id/edit'].map((path) => ({
+          path,
+          component: () => import('@/views/PosRoomsView.vue'),
+        })),
+        { path: 'rooms/daily-board', component: () => import('@/views/PosDailyRoomBoardView.vue') },
         {
           path: 'cashbook-closings',
           name: 'pos-cashbook-closings',

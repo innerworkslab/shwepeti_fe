@@ -4,13 +4,20 @@ import { roomStatuses, statusLabel } from '@/constants/hotel-status'
 import AppIcon from '@/components/common/AppIcon.vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, useId } from 'vue'
 import { ValidationError } from 'yup'
+import { posRoomManagement } from '@/services/pos-room-management.service'
 import { roomService } from '@/services/room.service'
 import { roomCategoryService } from '@/services/room-category.service'
 import { createRoomSchema, updateRoomSchema, roomStatusSchema } from '@/schemas/room.schema'
 import { toApiError } from '@/services/api/api-error'
 import type { RoomCategory } from '@/types/room-category'
 
-const props = defineProps<{ page?: boolean; roomId?: number | null; statusOnly?: boolean }>()
+const props = defineProps<{
+  pos?: boolean
+  page?: boolean
+  roomId?: number | null
+  statusOnly?: boolean
+}>()
+const service = props.pos ? posRoomManagement : roomService
 const emit = defineEmits<{ close: []; saved: [] }>()
 const editing = computed(() => props.roomId != null)
 const prefix = useId()
@@ -48,8 +55,12 @@ async function load() {
   loadError.value = ''
   try {
     const [options, room] = await Promise.all([
-      props.statusOnly ? Promise.resolve([]) : roomCategoryService.listOptions(active.signal),
-      props.roomId != null ? roomService.get(props.roomId, active.signal) : Promise.resolve(null),
+      props.statusOnly
+        ? Promise.resolve([])
+        : props.pos
+          ? posRoomManagement.categories(active.signal)
+          : roomCategoryService.listOptions(active.signal),
+      props.roomId != null ? service.get(props.roomId, active.signal) : Promise.resolve(null),
     ])
     if (disposed || active.signal.aborted) return
     categories.value = options
@@ -120,7 +131,7 @@ async function submit() {
         { abortEarly: false, stripUnknown: true },
       )
       if (disposed) return
-      await roomService.updateStatus(props.roomId, payload)
+      await service.updateStatus(props.roomId, payload)
     } else {
       const input = {
         name: form.name,
@@ -134,14 +145,14 @@ async function submit() {
           { abortEarly: false, stripUnknown: true },
         )
         if (disposed) return
-        await roomService.update(payload)
+        await service.update(payload)
       } else {
         const payload = await createRoomSchema.validate(input, {
           abortEarly: false,
           stripUnknown: true,
         })
         if (disposed) return
-        await roomService.create(payload)
+        await service.create(payload)
       }
     }
     if (!disposed) emit('saved')
