@@ -23,7 +23,13 @@ export const posCashbookService = {
     if (data?.success === false) throw new Error(data.message || 'Could not save transaction.')
   },
   async transactions(
-    params: { page: number; cashbook_id: number; perPage?: number },
+    params: {
+      page: number
+      cashbook_id: number
+      perPage?: number
+      date_from?: string
+      date_to?: string
+    },
     signal?: AbortSignal,
   ) {
     const { data } = await posApiClient.get<
@@ -38,6 +44,12 @@ export const posCashbookService = {
       opening_balance: data.opening_balance,
       closing_balance: data.closing_balance,
     }
+  },
+  async all(signal?: AbortSignal): Promise<PosCashbook[]> {
+    const { data } = await posApiClient.get('/cashbooks/all', { signal })
+    if (!data?.success || !Array.isArray(data.data))
+      throw new Error(data?.message || 'Could not load cashbooks.')
+    return data.data
   },
   async list(signal?: AbortSignal): Promise<PosCashbook[]> {
     const { data } = await posApiClient.get<{

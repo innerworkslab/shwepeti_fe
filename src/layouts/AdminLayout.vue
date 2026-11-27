@@ -48,12 +48,6 @@ const links: { to: string; label: string; icon: IconName }[] = [
 ]
 const cashbooks = ref<Cashbook[]>([])
 const cashbooksOpen = ref(false)
-const closingsOpen = ref(false)
-function toggleClosings() {
-  if (!expanded.value) toggleSidebar()
-  closingsOpen.value = !closingsOpen.value
-  if (closingsOpen.value) void loadCashbooks()
-}
 const cashbooksLoading = ref(false)
 const cashbooksError = ref('')
 const cashbookController = new AbortController()
@@ -294,7 +288,6 @@ async function logout() {
               '/cashbooks',
               '/cashbook-transactions',
               '/cashbook-transfers',
-              '/cashbook-closings',
               '/suppliers',
               '/supplier-ap-balances',
               '/fixed-assets',
@@ -385,37 +378,6 @@ async function logout() {
             {{ t('Cashbook transfers') }}
           </span></RouterLink
         >
-        <div class="closing-group">
-          <button
-            v-if="can('cashbooks.view')"
-            class="nav-link cashbook-toggle"
-            :class="{ 'is-active': route.path === '/cashbook-closings' }"
-            :aria-expanded="closingsOpen"
-            @click="toggleClosings"
-          >
-            <AppIcon name="cashbooks" /><span v-if="expanded"> {{ t('Cashbook closings') }} </span
-            ><AppIcon v-if="expanded" name="chevronDown" />
-          </button>
-          <div v-if="closingsOpen && expanded && can('cashbooks.view')" class="cashbook-links">
-            <p v-if="cashbooksLoading">{{ t('Loading cashbooks…') }}</p>
-            <p v-else-if="cashbooksError" role="alert">
-              {{ t(cashbooksError) }}<button @click="loadCashbooks">{{ t('Retry') }}</button>
-            </p>
-            <RouterLink
-              v-if="can('cashbooks.view')"
-              v-for="book in cashbooks"
-              :key="book.id"
-              class="cashbook-link"
-              :to="{ path: '/cashbook-closings', query: { cashbook_id: book.id } }"
-              :class="{
-                'is-active':
-                  route.path === '/cashbook-closings' &&
-                  Number(route.query.cashbook_id) === book.id,
-              }"
-              >{{ book.name }}</RouterLink
-            >
-          </div>
-        </div>
         <RouterLink
           v-for="link in links
             .filter((link) =>

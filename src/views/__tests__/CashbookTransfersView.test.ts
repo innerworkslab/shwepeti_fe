@@ -5,10 +5,18 @@ vi.mock('@/utils/current-date-time', () => ({ currentDateTime: () => '2026-10-22
 import { afterEach, expect, it, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import View from '../CashbookTransfersView.vue'
-const mocks = vi.hoisted(() => ({ list: vi.fn(), get: vi.fn(), create: vi.fn(), options: vi.fn() }))
+const mocks = vi.hoisted(() => ({
+  list: vi.fn(),
+  get: vi.fn(),
+  create: vi.fn(),
+  options: vi.fn(),
+  all: vi.fn(),
+}))
 vi.mock('@/services/cashbook-transfer.service', () => ({ cashbookTransfers: () => mocks }))
 vi.mock('@/services/cashbook.service', () => ({ cashbookService: { listOptions: mocks.options } }))
-vi.mock('@/services/pos-cashbook.service', () => ({ posCashbookService: { list: mocks.options } }))
+vi.mock('@/services/pos-cashbook.service', () => ({
+  posCashbookService: { list: mocks.options, all: mocks.all },
+}))
 afterEach(() => vi.restoreAllMocks())
 it('keeps the request UUID when retrying a failed transfer and refreshes after success', async () => {
   mocks.list.mockResolvedValue({ data: [], total: 0, page: 1, perPage: 15 })
@@ -47,5 +55,23 @@ it('keeps the request UUID when retrying a failed transfer and refreshes after s
       if (d) Object.defineProperty(HTMLDialogElement.prototype, key, d)
       else Reflect.deleteProperty(HTMLDialogElement.prototype, key)
     }
+  }
+})
+
+it('loads POS destinations separately from source cashbooks', async () => {
+  mocks.list.mockResolvedValue({ data: [], total: 0, page: 1, perPage: 15 })
+  mocks.options.mockResolvedValue([{ id: 1, name: 'POS Cash', code: 'POS' }])
+  mocks.all.mockResolvedValue([{ id: 7, name: 'Admin Bank', code: 'BANK' }])
+  HTMLDialogElement.prototype.showModal = function () {}
+  HTMLDialogElement.prototype.close = function () {}
+  const w = mount(View, { props: { pos: true } })
+  try {
+    await flushPromises()
+    await w.get('button.primary').trigger('click')
+    expect(mocks.all).toHaveBeenCalledWith(expect.any(AbortSignal))
+    expect(w.get('[name="to_cashbook_id"]').text()).toContain('Admin Bank')
+    expect(w.get('[name="from_cashbook_id"]').text()).not.toContain('Admin Bank')
+  } finally {
+    w.unmount()
   }
 })

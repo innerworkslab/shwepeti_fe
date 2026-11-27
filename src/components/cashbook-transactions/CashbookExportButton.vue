@@ -4,6 +4,7 @@ import { t } from '@/i18n'
 import AppIcon from '@/components/common/AppIcon.vue'
 import { exportCashbook } from '@/services/cashbook-export.service'
 const props = defineProps<{
+  pos?: boolean
   cashbookId?: number
   kind: 'transactions' | 'closings'
   dateFrom: string
@@ -37,6 +38,7 @@ async function download() {
       props.kind,
       { date_from: props.dateFrom, date_to: props.dateTo },
       signal,
+      props.pos,
     )
     if (signal.aborted) return
     const url = URL.createObjectURL(blob)

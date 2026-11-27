@@ -1,3 +1,4 @@
+vi.mock('@/utils/current-date-time', () => ({ currentDateTime: () => '2026-10-07 10:00:00' }))
 vi.mock('@/composables/usePermissions', () => ({
   usePermissions: () => ({ can: () => true, canVisit: () => true }),
 }))
@@ -87,4 +88,14 @@ it('opens walk-in mode and sends session fields without a deposit', async () => 
   expect(vi.mocked(posBookingService.create).mock.calls[0]![0]).not.toHaveProperty('deposit')
   expect(wrapper.text()).toContain('Room unavailable')
   expect(wrapper.find('form').exists()).toBe(true)
+})
+
+it.each(['reservation', 'walk_in'])('blocks past dates for %s', async (type) => {
+  const wrapper = await render(type)
+  await fill(wrapper)
+  await wrapper.get('[name="expected_check_in_at"]').setValue('2026-10-06T20:00')
+  await wrapper.get('form').trigger('submit')
+  await flushPromises()
+  expect(posBookingService.create).not.toHaveBeenCalled()
+  expect(wrapper.text()).toContain('Booking dates cannot be in the past.')
 })

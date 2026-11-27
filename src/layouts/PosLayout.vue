@@ -14,11 +14,7 @@ import { usePosSessionStore } from '@/stores/pos-session'
 import { toApiError } from '@/services/api/api-error'
 const cashbooks = ref<PosCashbook[]>([])
 const cashbooksOpen = ref(false)
-const closingsOpen = ref(false)
-function toggleClosings() {
-  closingsOpen.value = !closingsOpen.value
-  if (closingsOpen.value) void loadCashbooks()
-}
+
 const cashbooksLoading = ref(false)
 const cashbooksError = ref('')
 const cashbookController = new AbortController()
@@ -171,37 +167,6 @@ onBeforeUnmount(() => drawer.value?.close())
           @click="close"
           ><AppIcon name="cashbooks" /> {{ t('Cashbook transfers') }}
         </RouterLink>
-        <div class="closing-group">
-          <button
-            v-if="can('cashbooks.view')"
-            class="cashbook-toggle"
-            :class="{ active: route.path === '/pos/cashbook-closings' }"
-            :aria-expanded="closingsOpen"
-            @click="toggleClosings"
-          >
-            <AppIcon name="cashbooks" /> {{ t('Cashbook closings') }} <AppIcon name="chevronDown" />
-          </button>
-          <div v-if="closingsOpen" class="cashbook-links">
-            <p v-if="cashbooksLoading">{{ t('Loading cashbooks…') }}</p>
-            <p v-else-if="cashbooksError" role="alert">
-              {{ t(cashbooksError) }}<button @click="loadCashbooks">{{ t('Retry') }}</button>
-            </p>
-            <RouterLink
-              v-if="can('cashbooks.view')"
-              v-for="book in cashbooks"
-              :key="book.id"
-              class="cashbook-link"
-              :to="{ path: '/pos/cashbook-closings', query: { cashbook_id: book.id } }"
-              :class="{
-                active:
-                  route.path === '/pos/cashbook-closings' &&
-                  Number(route.query.cashbook_id) === book.id,
-              }"
-              @click="close"
-              >{{ book.name }}</RouterLink
-            >
-          </div>
-        </div>
         <div class="cashbook-group">
           <button
             v-if="can(['cashbooks.view', 'cashbook_transactions.view'])"

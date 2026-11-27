@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { currentDateTime } from '@/utils/current-date-time'
 import { t } from '@/i18n'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, useId } from 'vue'
 import { ValidationError } from 'yup'
@@ -142,7 +143,7 @@ async function submit() {
           from_warehouse_id: form.from_warehouse_id,
           to_warehouse_id: form.to_warehouse_id,
           remark: form.remark,
-          transaction_date: form.transaction_date,
+          transaction_date: currentDateTime(),
           items: form.items.map(({ item_id, unit_id, quantity, expiry_date }) => ({
             item_id,
             unit_id,
@@ -282,28 +283,7 @@ async function submit() {
                 >{{ t(errors.to_warehouse_id) }}</span
               >
             </div>
-            <div class="field">
-              <label :for="`${prefix}-transaction_date`">
-                {{ t('Transaction date and time') }} </label
-              ><input
-                :id="`${prefix}-transaction_date`"
-                name="transaction_date"
-                v-model="form.transaction_date"
-                :aria-invalid="!!errors.transaction_date"
-                :aria-describedby="
-                  errors.transaction_date ? `${prefix}-transaction_date-error` : undefined
-                "
-                type="datetime-local"
-                step="1"
-                required
-              /><small> {{ t('Use the warehouse’s local date and time.') }} </small
-              ><span
-                v-if="errors.transaction_date"
-                :id="`${prefix}-transaction_date-error`"
-                class="error"
-                >{{ t(errors.transaction_date) }}</span
-              >
-            </div>
+
             <div class="field">
               <label :for="`${prefix}-remark`"> {{ t('Remark') }} </label>
               <textarea

@@ -61,6 +61,7 @@ function clearFilters() {
   applyFilters()
 }
 const cashbooks = ref<TransferCashbook[]>([])
+const destinationCashbooks = ref<TransferCashbook[]>([])
 const optionsError = ref('')
 const optionsLoading = ref(false)
 const controller = new AbortController()
@@ -71,7 +72,11 @@ async function loadOptions() {
     const result = await (props.pos
       ? posCashbookService.list(controller.signal)
       : cashbookService.listOptions(controller.signal))
-    if (!controller.signal.aborted) cashbooks.value = result
+    const destinations = props.pos ? await posCashbookService.all(controller.signal) : result
+    if (!controller.signal.aborted) {
+      cashbooks.value = result
+      destinationCashbooks.value = destinations
+    }
   } catch (e) {
     if (!controller.signal.aborted) optionsError.value = toApiError(e).message
   } finally {
@@ -148,9 +153,8 @@ async function submit() {
       },
     )
     if (
-      ![payload.from_cashbook_id, payload.to_cashbook_id].every((id) =>
-        cashbooks.value.some((c) => c.id === id),
-      )
+      !cashbooks.value.some((c) => c.id === payload.from_cashbook_id) ||
+      !destinationCashbooks.value.some((c) => c.id === payload.to_cashbook_id)
     )
       throw new Error('Choose cashbooks from the list.')
     saving.value = true
@@ -272,7 +276,7 @@ onBeforeUnmount(() => {
             <select v-model="form.to_cashbook_id" name="to_cashbook_id">
               <option value="">{{ t('Choose cashbook') }}</option>
               <option
-                v-for="book in cashbooks"
+                v-for="book in destinationCashbooks"
                 :key="book.id"
                 :value="book.id"
                 :disabled="Number(form.from_cashbook_id) === book.id"

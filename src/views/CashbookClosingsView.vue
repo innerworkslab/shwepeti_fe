@@ -135,7 +135,7 @@ onBeforeUnmount(() => {
 </script>
 <template>
   <main class="closings-page">
-    <h1>{{ t('Cashbook Closings') }}</h1>
+    <h1>{{ pos ? t('Opening / closing history') : t('Cashbook Closings') }}</h1>
     <p v-if="notice" role="status">{{ t(notice) }}</p>
     <p v-if="optionsLoading" role="status">{{ t('Loading cashbooks…') }}</p>
     <p v-if="optionsError" role="alert">
@@ -157,13 +157,6 @@ onBeforeUnmount(() => {
       @refresh="refresh"
     >
       <template #toolbar
-        ><button
-          v-if="can('cashbooks.close')"
-          class="primary"
-          :disabled="!selected || optionsLoading || !!optionsError || saving"
-          @click="openClosing"
-        >
-          <AppIcon name="add" :size="16" /> {{ t('Close cashbook') }}</button
         ><CashbookExportButton
           v-if="!pos && can('cashbooks.view')"
           kind="closings"
@@ -172,22 +165,32 @@ onBeforeUnmount(() => {
           :date-to="exportDates.date_to"
       /></template>
       <template #filters
-        ><label>
-          {{ t('Cashbook') }}
-          <select
-            name="cashbook_id"
-            :value="filters.cashbook_id ?? ''"
-            :disabled="optionsLoading || saving"
-            @change="selectBook"
+        ><div class="closing-controls">
+          <label>
+            {{ t('Cashbook') }}
+            <select
+              name="cashbook_id"
+              :value="filters.cashbook_id ?? ''"
+              :disabled="optionsLoading || saving"
+              @change="selectBook"
+            >
+              <option v-if="!books.length" value="" disabled>
+                {{ t('No cashbooks available') }}
+              </option>
+              <option v-for="book in books" :key="book.id" :value="book.id">
+                {{ book.name }} ({{ book.code }})
+              </option>
+            </select></label
           >
-            <option v-if="!books.length" value="" disabled>
-              {{ t('No cashbooks available') }}
-            </option>
-            <option v-for="book in books" :key="book.id" :value="book.id">
-              {{ book.name }} ({{ book.code }})
-            </option>
-          </select></label
-        >
+          <button
+            v-if="can('cashbooks.close')"
+            class="primary"
+            :disabled="!selected || optionsLoading || !!optionsError || saving"
+            @click="openClosing"
+          >
+            <AppIcon name="add" :size="16" /> {{ t('Close cashbook') }}
+          </button>
+        </div>
         <fieldset v-if="!pos" class="export-dates">
           <legend>{{ t('Export Excel') }}</legend>
           <label
@@ -225,6 +228,14 @@ onBeforeUnmount(() => {
   </main>
 </template>
 <style scoped>
+.closing-controls {
+  display: flex;
+  width: 100%;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
 .export-dates {
   display: flex;
   flex-wrap: wrap;

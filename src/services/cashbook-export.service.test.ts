@@ -1,3 +1,5 @@
+import { posApiClient } from './api/pos-client'
+vi.mock('./api/pos-client', () => ({ posApiClient: { get: vi.fn() } }))
 import { afterEach, expect, it, vi } from 'vitest'
 import { apiClient } from './api/client'
 import { exportCashbook } from './cashbook-export.service'
@@ -27,4 +29,20 @@ it('rejects missing cashbook IDs and JSON responses', async () => {
     headers: {},
   })
   await expect(exportCashbook(1, 'closings', dates)).rejects.toThrow('Could not export report.')
+})
+
+it('exports POS transactions using the POS client and selected cashbook', async () => {
+  vi.mocked(posApiClient.get).mockResolvedValue({ data: new Blob(['excel']), headers: {} })
+  await exportCashbook(
+    5,
+    'transactions',
+    { date_from: '2026-11-01', date_to: '2026-11-14' },
+    undefined,
+    true,
+  )
+  expect(posApiClient.get).toHaveBeenCalledWith(
+    '/cashbooks/5/transactions/export',
+    expect.objectContaining({ params: { date_from: '2026-11-01', date_to: '2026-11-14' } }),
+  )
+  expect(apiClient.get).not.toHaveBeenCalled()
 })

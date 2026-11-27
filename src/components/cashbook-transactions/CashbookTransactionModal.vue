@@ -194,7 +194,6 @@ async function submit() {
           <div class="field">
             <label :for="`${prefix}-transaction_type`"> {{ t('Transaction type') }} </label
             ><select
-              v-if="pos"
               :id="`${prefix}-transaction_type`"
               v-model="form.transaction_type"
               name="transaction_type"
@@ -202,18 +201,7 @@ async function submit() {
             >
               <option value="income">{{ t('Income') }}</option>
               <option value="expense">{{ t('Expense') }}</option></select
-            ><input
-              v-else
-              :id="`${prefix}-transaction_type`"
-              v-model="form.transaction_type"
-              name="transaction_type"
-              :list="`${prefix}-types`"
-              required
-              :aria-invalid="!!errors.transaction_type"
-              :aria-describedby="
-                errors.transaction_type ? `${prefix}-transaction_type-error` : undefined
-              "
-            /><span
+            ><span
               v-if="errors.transaction_type"
               :id="`${prefix}-transaction_type-error`"
               class="error"
@@ -250,7 +238,6 @@ async function submit() {
               t(errors.remark)
             }}</span>
           </div>
-          <datalist :id="`${prefix}-types`"><option value="income" /></datalist>
         </fieldset>
       </template>
       <footer>

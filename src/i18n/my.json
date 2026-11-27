@@ -1244,5 +1244,7 @@
   "housekeeping count": "သန့်ရှင်းရေးအခန်းများ",
   "maintenance count": "ပြုပြင်ထိန်းသိမ်းနေသောအခန်းများ",
   "out of service count": "အသုံးမပြုနိုင်သောအခန်းများ",
-  "occupancy percentage": "အခန်းအသုံးပြုမှုရာခိုင်နှုန်း"
+  "occupancy percentage": "အခန်းအသုံးပြုမှုရာခိုင်နှုန်း",
+  "opening / closing history": "အဖွင့် / အပိတ် လက်ကျန်မှတ်တမ်း",
+  "booking dates cannot be in the past.": "ပြီးခဲ့သောရက်များအတွက် အခန်းမှာယူ၍ မရပါ။"
 }

@@ -92,6 +92,12 @@ async function submit() {
   error.value = ''
   errors.value = {}
   try {
+    const today = currentDateTime().slice(0, 10)
+    if (
+      (form.expected_check_in_at && form.expected_check_in_at.slice(0, 10) < today) ||
+      (form.expected_check_out_at && form.expected_check_out_at.slice(0, 10) < today)
+    )
+      throw new Error('Booking dates cannot be in the past.')
     const payload = await bookingPayload({
       ...form,
       deposit: { ...form.deposit, paid_at: currentDateTime() },
@@ -205,6 +211,7 @@ async function submit() {
             <input
               v-model="form.expected_check_in_at"
               name="expected_check_in_at"
+              :min="currentDateTime().slice(0, 10) + 'T00:00'"
               type="datetime-local"
               step="1"
               :aria-invalid="!!errors.expected_check_in_at"
@@ -214,6 +221,7 @@ async function submit() {
             <input
               v-model="form.expected_check_out_at"
               name="expected_check_out_at"
+              :min="form.expected_check_in_at || currentDateTime().slice(0, 10) + 'T00:00'"
               type="datetime-local"
               step="1"
               :aria-invalid="!!errors.expected_check_out_at"

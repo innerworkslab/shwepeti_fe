@@ -6,7 +6,10 @@ import { mount, flushPromises } from '@vue/test-utils'
 import View from '../PosCashbookTransactionsView.vue'
 import { posCashbookService } from '@/services/pos-cashbook.service'
 const route = reactive({ query: { cashbook_id: '4' } })
-vi.mock('vue-router', () => ({ useRoute: () => route }))
+vi.mock('vue-router', () => ({
+  useRoute: () => route,
+  RouterLink: { template: '<a><slot /></a>' },
+}))
 vi.mock('@/services/pos-cashbook.service', () => ({
   posCashbookService: { transactions: vi.fn(), list: vi.fn(), createTransaction: vi.fn() },
 }))
@@ -35,16 +38,21 @@ it('shows ledger balances and requests the selected cashbook across pagination a
     expect(w.get('[aria-label="Opening balance"] dd').text()).toBe('0.00')
     expect(w.get('[aria-label="Closing balance"] dd').text()).toBe('83000.00')
     expect(w.get('tbody').text()).toContain('Booking payment')
+    await w.get('[name="date_from"]').setValue('2026-11-01')
+    await w.get('[name="date_to"]').setValue('2026-11-30')
+    await w.get('.date-filters').trigger('submit')
+    await flushPromises()
+
     await w.get('[aria-label="Next page"]').trigger('click')
     await flushPromises()
     expect(posCashbookService.transactions).toHaveBeenLastCalledWith(
-      { page: 2, perPage: 15, cashbook_id: 4 },
+      { page: 2, perPage: 15, cashbook_id: 4, date_from: '2026-11-01', date_to: '2026-11-30' },
       expect.any(AbortSignal),
     )
     route.query.cashbook_id = '5'
     await flushPromises()
     expect(posCashbookService.transactions).toHaveBeenLastCalledWith(
-      { page: 1, perPage: 15, cashbook_id: 5 },
+      { page: 1, perPage: 15, cashbook_id: 5, date_from: '2026-11-01', date_to: '2026-11-30' },
       expect.any(AbortSignal),
     )
   } finally {

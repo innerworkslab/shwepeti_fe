@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CloseCashbookButton from '@/components/cashbook-transactions/CloseCashbookButton.vue'
 import CashbookExportButton from '@/components/cashbook-transactions/CashbookExportButton.vue'
 import { t } from '@/i18n'
 import { usePermissions } from '@/composables/usePermissions'
@@ -141,7 +142,11 @@ function clearDates() {
           @click="openForm()"
         >
           <AppIcon name="add" :size="16" /> {{ t('Add transaction') }}</button
-        ><CashbookExportButton
+        ><CloseCashbookButton
+          v-if="cashbookId && can('cashbooks.close')"
+          :cashbook-id="cashbookId"
+          @saved="refresh"
+        /><CashbookExportButton
           v-if="can('cashbook_transactions.view')"
           kind="transactions"
           :cashbook-id="cashbookId"
@@ -162,33 +167,35 @@ function clearDates() {
         </button>
       </template>
       <template #filters>
-        <form class="date-filters" @submit.prevent="applyDates">
-          <label :for="`${prefix}-from`">
-            {{ t('From date') }}
-            <input
-              :id="`${prefix}-from`"
-              name="date_from"
-              v-model="dates.date_from"
-              type="date"
-              :aria-invalid="!!dateError"
-              :aria-describedby="dateError ? `${prefix}-date-error` : undefined"
-          /></label>
-          <label :for="`${prefix}-to`">
-            {{ t('To date') }}
-            <input
-              :id="`${prefix}-to`"
-              name="date_to"
-              v-model="dates.date_to"
-              type="date"
-              :aria-invalid="!!dateError"
-              :aria-describedby="dateError ? `${prefix}-date-error` : undefined"
-          /></label>
-          <button type="submit">{{ t('Apply dates') }}</button
-          ><button type="button" @click="clearDates">{{ t('Clear dates') }}</button>
-          <p v-if="dateError" :id="`${prefix}-date-error`" class="error" role="alert">
-            {{ t(dateError) }}
-          </p>
-        </form>
+        <div class="filter-row">
+          <form class="date-filters" @submit.prevent="applyDates">
+            <label :for="`${prefix}-from`">
+              {{ t('From date') }}
+              <input
+                :id="`${prefix}-from`"
+                name="date_from"
+                v-model="dates.date_from"
+                type="date"
+                :aria-invalid="!!dateError"
+                :aria-describedby="dateError ? `${prefix}-date-error` : undefined"
+            /></label>
+            <label :for="`${prefix}-to`">
+              {{ t('To date') }}
+              <input
+                :id="`${prefix}-to`"
+                name="date_to"
+                v-model="dates.date_to"
+                type="date"
+                :aria-invalid="!!dateError"
+                :aria-describedby="dateError ? `${prefix}-date-error` : undefined"
+            /></label>
+            <button type="submit">{{ t('Apply dates') }}</button
+            ><button type="button" @click="clearDates">{{ t('Clear dates') }}</button>
+            <p v-if="dateError" :id="`${prefix}-date-error`" class="error" role="alert">
+              {{ t(dateError) }}
+            </p>
+          </form>
+        </div>
       </template>
     </DataTable>
     <dl class="ledger-balances" :aria-label="t('Closing balance')">
@@ -231,6 +238,14 @@ function clearDates() {
   font-variant-numeric: tabular-nums;
 }
 
+.filter-row {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 16px;
+}
 .date-filters {
   display: flex;
   align-items: flex-end;

@@ -1,3 +1,7 @@
+vi.mock('@/composables/usePermissions', () => ({
+  usePermissions: () => ({ can: () => true, canVisit: () => true }),
+}))
+vi.mock('@/utils/current-date-time', () => ({ currentDateTime: () => '2026-09-15 14:47:41' }))
 import { mountLargeFormFlow } from './mountLargeFormFlow'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
@@ -94,7 +98,7 @@ async function fill(wrapper: ReturnType<typeof mount>) {
   await wrapper.get('[name="from_warehouse_id"]').setValue('2')
   await wrapper.get('[name="to_warehouse_id"]').setValue('3')
   await wrapper.get('[name="remark"]').setValue('Move rice to kitchen store')
-  await wrapper.get('[name="transaction_date"]').setValue('2026-09-15T14:47:41')
+  expect(wrapper.find('[name="transaction_date"]').exists()).toBe(false)
   await wrapper.get('[name="items[0].item_id"]').setValue('1')
   await wrapper.get('[name="items[0].unit_id"]').setValue('1')
   await wrapper.get('[name="items[0].quantity"]').setValue('10')
