@@ -8,6 +8,8 @@ export function mutationPermission(url: string, data: unknown): PermissionRequir
     .replace(/^\//, '')
   const [resource, idOrAction, action] = path.split('/')
   if (!resource || ['login', 'logout'].includes(resource)) return null
+  if (/^\/api\/v1\/admin\/opening-balances\/(cashbooks|items)(\/status)?$/.test(url.split('?')[0]!))
+    return null
   const group = resource.replaceAll('-', '_')
   const operation = action ?? idOrAction
   if (operation === 'close') return 'cashbooks.close'

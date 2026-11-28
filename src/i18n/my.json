@@ -1246,5 +1246,15 @@
   "out of service count": "အသုံးမပြုနိုင်သောအခန်းများ",
   "occupancy percentage": "အခန်းအသုံးပြုမှုရာခိုင်နှုန်း",
   "opening / closing history": "အဖွင့် / အပိတ် လက်ကျန်မှတ်တမ်း",
-  "booking dates cannot be in the past.": "ပြီးခဲ့သောရက်များအတွက် အခန်းမှာယူ၍ မရပါ။"
+  "booking dates cannot be in the past.": "ပြီးခဲ့သောရက်များအတွက် အခန်းမှာယူ၍ မရပါ။",
+  "cashbook opening balances": "ငွေစာရင်း အဖွင့်လက်ကျန်များ",
+  "item opening balances": "ပစ္စည်း အဖွင့်လက်ကျန်များ",
+  "add opening balance": "အဖွင့်လက်ကျန် ထည့်ရန်",
+  "lines": "စာရင်းကြောင်းများ",
+  "add line": "စာရင်းကြောင်း ထည့်ရန်",
+  "remove line": "စာရင်းကြောင်း ဖယ်ရန်",
+  "save draft": "မူကြမ်း သိမ်းရန်",
+  "confirmed at": "အတည်ပြုသည့်အချိန်",
+  "cancelled at": "ပယ်ဖျက်သည့်အချိန်",
+  "duplicate opening balance line.": "အဖွင့်လက်ကျန် စာရင်းကြောင်း ထပ်နေသည်။"
 }

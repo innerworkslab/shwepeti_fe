@@ -20,6 +20,11 @@ import { toApiError } from '@/services/api/api-error'
 const route = useRoute()
 const router = useRouter()
 const session = useSessionStore()
+const openingsOpen = ref(false)
+function toggleOpenings() {
+  if (!expanded.value) toggleSidebar()
+  openingsOpen.value = !openingsOpen.value
+}
 const reportsOpen = ref(false)
 function toggleReports() {
   if (!expanded.value) toggleSidebar()
@@ -368,6 +373,43 @@ async function logout() {
             >
             <p v-if="!cashbooks.length" class="cashbook-message">{{ t('No cashbooks found.') }}</p>
           </template>
+        </div>
+        <button
+          class="nav-link cashbook-toggle"
+          :class="{
+            'cashbook-toggle--open': openingsOpen && expanded,
+            'is-active': route.path.startsWith('/opening-balances/'),
+          }"
+          type="button"
+          :aria-expanded="openingsOpen"
+          aria-controls="opening-balance-links"
+          :aria-label="t('Opening Balance')"
+          :title="t('Opening Balance')"
+          @click="toggleOpenings"
+        >
+          <AppIcon name="ledger" :size="20" /><span v-if="expanded">{{ t('Opening Balance') }}</span>
+          <AppIcon
+            v-if="expanded"
+            name="chevronDown"
+            class="cashbook-chevron"
+            :size="16"
+            :style="{ transform: openingsOpen ? 'rotate(180deg)' : undefined }"
+          />
+        </button>
+        <div v-if="openingsOpen && expanded" id="opening-balance-links" class="cashbook-links">
+          <RouterLink
+            v-for="entry in [
+              { kind: 'cashbooks', label: 'Cashbook' },
+              { kind: 'items', label: 'Item' },
+            ]"
+            :key="entry.kind"
+            class="cashbook-link"
+            :to="`/opening-balances/${entry.kind}`"
+            :class="{ 'is-active': route.path.startsWith(`/opening-balances/${entry.kind}`) }"
+          >
+            <AppIcon :name="entry.kind === 'cashbooks' ? 'cashbooks' : 'items'" :size="16" />
+            <span class="cashbook-label"><span>{{ t(entry.label) }}</span></span>
+          </RouterLink>
         </div>
         <RouterLink
           v-if="canVisit('/cashbook-transfers')"

@@ -17,6 +17,7 @@ export function routePermission(path: string): string | null {
     .filter(Boolean)
   if (!parts.length) return path.startsWith('/pos') ? 'booking_dashboard.view' : null
   if (['login', 'access-denied'].includes(parts[0]!)) return null
+  if (!path.startsWith('/pos') && parts[0] === 'opening-balances') return null
   if (parts[0] === 'reports')
     return parts[1] === 'profit-and-loss' ? 'reports.profit_and_loss' : 'reports.hotel'
   if (parts[0] === 'cashbook-closings') return 'cashbooks.view'

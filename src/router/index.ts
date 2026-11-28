@@ -66,6 +66,13 @@ const router = createRouter({
       component: () => import('@/layouts/AdminLayout.vue'),
       children: [
         { path: 'access-denied', component: () => import('@/views/AccessDeniedView.vue') },
+        ...(['cashbooks', 'items'] as const).flatMap((kind) =>
+          ['', '/create'].map((suffix) => ({
+            path: `opening-balances/${kind}${suffix}`,
+            component: () => import('@/views/OpeningBalancesView.vue'),
+            props: { kind },
+          })),
+        ),
         ...(Object.keys(reportDefinitions) as AdminReport[]).map((report) => ({
           path: `reports/${report}`,
           name: `admin-report-${report}`,
